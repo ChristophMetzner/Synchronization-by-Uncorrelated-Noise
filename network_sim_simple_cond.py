@@ -251,8 +251,9 @@ def network_sim(signal, params):
     sparsity = float(K_etoe)/N_e
     assert 0 <= sparsity <= 1.0
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_e, K_etoe)
-    SynEE.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_e, K_etoe)
+    #SynEE.connect(i=prelist, j=postlist)
+    SynEE.connect(p=sparsity)
     # delays
     # no delay; nothing has to be implemented
     Net.add(SynEE)
@@ -261,8 +262,9 @@ def network_sim(signal, params):
     sparsity = float(K_etoi)/N_i
     assert 0 <= sparsity <= 1.0
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_i, K_etoi)
-    SynEI.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_i, K_etoi)
+    #SynEI.connect(i=prelist, j=postlist)
+    SynEI.connect(p=sparsity)
     # delays
     # no delay; nothing has to be implemented
     Net.add(SynEI)
@@ -272,8 +274,9 @@ def network_sim(signal, params):
     sparsity = float(K_itoe)/N_e
     assert 0 <= sparsity <= 1.0
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_i, K_itoe)
-    SynIE.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_i, K_itoe)
+    #SynIE.connect(i=prelist, j=postlist)
+    SynIE.connect(p=sparsity)
     # delays
     # no delay; nothing has to be implemented
     Net.add(SynIE)
@@ -282,8 +285,8 @@ def network_sim(signal, params):
     sparsity = float(K_itoi)/N_i
     assert 0 <= sparsity <= 1.0
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_i, K_itoi)
-    SynII.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_i, K_itoi)
+    SynII.connect(p=sparsity)
     # delays
     # no delay; nothing has to be implemented
     Net.add(SynII)
@@ -296,8 +299,8 @@ def network_sim(signal, params):
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_e, K_etoe)
-    SynEE2.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_e, K_etoe)
+    SynEE2.connect(p=sparsity)
     # delays
     # no delay; nothing has to be implemented
     Net.add(SynEE2)
@@ -306,8 +309,8 @@ def network_sim(signal, params):
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_i, K_etoi)
-    SynEI2.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_i, K_etoi)
+    SynEI2.connect(p=sparsity)
     # delays
     # no delay; nothing has to be implemented
     Net.add(SynEI2)
@@ -316,8 +319,8 @@ def network_sim(signal, params):
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_i, K_itoe)
-    SynIE2.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_i, K_itoe)
+    SynIE2.connect(p=sparsity)
     # delays
     # no delay; nothing has to be implemented
     Net.add(SynIE2)
@@ -326,8 +329,8 @@ def network_sim(signal, params):
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_i, K_itoi)
-    SynII2.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_i, K_itoi)
+    SynII2.connect(p=sparsity)
     # delays
     # no delay; nothing has to be implemented
     Net.add(SynII2)
@@ -337,32 +340,32 @@ def network_sim(signal, params):
 
     SynE1E2 = Synapses(E, E2, on_pre='g_ampa+=J_ppee')
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_e, K_ppee)
-    SynE1E2.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_e, K_ppee)
+    SynE1E2.connect(p=sparsity)
     # delays
     SynE1E2.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE1E2)
 
     SynE2E1 = Synapses(E2, E, on_pre='g_ampa+=J_ppee')
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_e, K_ppee)
-    SynE2E1.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_e, K_ppee)
+    SynE2E1.connect(p=sparsity)
     # delays
     SynE2E1.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE2E1)
 
     SynE1I2 = Synapses(E, I2, on_pre='g_ampa+=J_ppei')
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_i, K_ppei)
-    SynE1I2.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_i, K_ppei)
+    SynE1I2.connect(p=sparsity)
     # delays
     SynE1I2.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE1I2)
 
     SynE2I1 = Synapses(E2, I, on_pre='g_ampa+=J_ppei')
     # connectivity type
-    prelist, postlist = fixed_connectivity(N_i, K_ppei)
-    SynE2I1.connect(i=prelist, j=postlist)
+    #prelist, postlist = fixed_connectivity(N_i, K_ppei)
+    SynE2I1.connect(p=sparsity)
     # delays
     SynE2I1.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE2I1)

@@ -14,8 +14,8 @@ def get_params():
 
     # parameters for network simulation
     params['net_record_spikes'] = 1000  # 200 # number of neurons to record spikes from
-    params['net_record_all_neurons'] = False
-    params['net_record_all_neurons_dt'] = 10.  # keep this high; otherwise great deal of memory, zero if not
+    params['net_record_all_neurons'] = True # False
+    params['net_record_all_neurons_dt'] = 1.  # keep this high; otherwise great deal of memory, zero if not
     params['net_record_dt'] = 1.  # [ ms]
     params['net_w_refr'] = True   # clamp (True) or don't clamp (False) w during the refractory period
     params['net_w_init_e'] = 0.  # 20. # [pA]
@@ -53,7 +53,7 @@ def get_params():
     params['tau_AMPA'] = 3.0    # [ms]
     params['E_AMPA'] = 0.0      # [mV]
 
-    # todo: adjust params for inhibitory populations
+    # Inhibitory cells
     params['C_inh1'] = 200.      # [pF]
     params['gL_inh1'] = 10.      # [nS]
     params['taum_inh1'] = params['C_inh1'] / params['gL_inh1']  # [ms]
@@ -67,7 +67,7 @@ def get_params():
     params['b_inh1'] = 0.       # [pA]              spike-frequency adaptation param
     params['Vr_inh1'] = -70.     # [mV]
     params['t_ref_inh1'] = 1.0   # [ms]
-    params['tau_GABA'] = 8.0    # [ms]
+    params['tau_GABA'] = 9.0    # [ms]
     params['E_GABA'] = -70.0      # [mV]
 
     # Network size
@@ -75,22 +75,22 @@ def get_params():
     params['N_i'] = 250
 
     # for recurrency
-    # todo: adjust coupling parameters
-    params['J_etoe'] = .1       # [nS] synaptic strength E-E conns within population
-    params['J_etoi'] = .75      # [nS] synaptic strength E-I conns within population
-    params['J_itoe'] = 2.5      # [nS] synaptic strength I-E conns within population
-    params['J_itoi'] = .1       # [nS] synaptic strength I-I conns within population
+    factor = 10.
+    params['J_etoe'] = 0.01*factor      # [nS] synaptic strength E-E conns within population
+    params['J_etoi'] = .05*factor #.25      # [nS] synaptic strength E-I conns within population
+    params['J_itoe'] = 1.*factor      # [nS] synaptic strength I-E conns within population
+    params['J_itoi'] = 0.015*factor       # [nS] synaptic strength I-I conns within population
 
-    params['J_ppee'] = .1      # [nS] synaptic strength E-E conns between population
-    params['J_ppei'] = .1      # [nS] synaptic strength E-I conns between population
+    params['J_ppee'] = 0.5 #.1      # [nS] synaptic strength E-E conns between population
+    params['J_ppei'] = 0. #.1      # [nS] synaptic strength E-I conns between population
 
     params['K_etoe'] = 100       # number of E-E connections within population
-    params['K_etoi'] = 100       # number of E-I connections within population
+    params['K_etoi'] = 100      # number of E-I connections within population
     params['K_itoe'] = 100       # number of I-E connections within population
     params['K_itoi'] = 100       # number of I-I connections within population
 
-    params['K_ppee'] = 100       # number of E-E connections between population
-    params['K_ppei'] = 100       # number of E-I connections between population
+    params['K_ppee'] = 10       # number of E-E connections between population
+    params['K_ppei'] = 10       # number of E-I connections between population
 
     # initial value for the mean adaptation current
     params['wm_init'] = 0.  # [pA]

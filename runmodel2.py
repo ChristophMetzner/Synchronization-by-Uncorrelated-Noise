@@ -17,7 +17,7 @@ sys.path.insert(1, '../../..')  # allow parent modules to be imported
 # if not specified else below
 params = params_net.get_params()
 
-params['runtime'] = 3000.
+params['runtime'] = 3200.
 params['net_dt'] = 0.05
 
 params['min_dt'] = params['net_dt']
@@ -34,7 +34,7 @@ params['t_ext'] = t_ext
 
 
 params['ou_X0'] = 0.
-params['ou_mean'] = 1.5
+params['ou_mean'] = 5.0
 params['ou_sigma'] = .5
 params['ou_tau'] = 50.
 mu_ext1 = generate_OUinput(params)
@@ -51,15 +51,6 @@ sigma_ext1 = generate_OUinput(params)
 sigma_ext2 = generate_OUinput(params)
 
 
-
-
-# mu = const, sigma = OU process
-params['ou_X0'] = 0.  #
-params['ou_mean'] = 2.0
-params['ou_sigma'] = 0.2
-params['ou_tau'] = 1.
-sigma_ext1 = generate_OUinput(params)
-
 # collect ext input for model wrappers
 ext_input0 = [mu_ext1, sigma_ext1, mu_ext2, sigma_ext2]
 
@@ -72,9 +63,9 @@ results['model_results'] = dict()
 # brian network sim
 #ext_input = interpolate_input(ext_input0, params, 'net')
 results['model_results']['net'] = \
-    net.network_sim(ext_input0, params)
+    net.network_sim(ext_input0 , params)
 
 # save results
 
-with open('test_cond.pkl', 'wb') as handle:
+with open('test_cond_interactions.pkl', 'wb') as handle:
     pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
