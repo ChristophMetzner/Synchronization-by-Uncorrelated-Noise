@@ -1,2 +1,9 @@
+# Python
 *.pkl
 *.pyc
+
+# IntelliJ
+.idea
+
+# Brian2
+brian2_compile
