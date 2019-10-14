@@ -1,0 +1,1 @@
+Synchronization by uncorrelated noise
