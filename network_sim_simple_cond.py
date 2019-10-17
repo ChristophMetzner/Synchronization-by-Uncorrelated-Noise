@@ -4,7 +4,6 @@ import time
 import os
 import shutil
 import gc
-from utils_net import fixed_connectivity
 
 cpp_default_dir = 'brian2_compile'
 
@@ -144,6 +143,7 @@ def network_sim(signal, params):
         dg_gaba/dt = -g_gaba/tau_GABA : siemens # synaptic conductance
         ''' % (model_term_e, '- (w / C_e)' if have_adap_e else '',
                ('dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s' % w_refr_e) if have_adap_e else '')
+
     model_eqs_e2 = '''
         dv/dt = %s %s + mu_ext_e2(t) + sigma_ext_e2(t) * xi + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
@@ -153,6 +153,7 @@ def network_sim(signal, params):
         dg_gaba/dt = -g_gaba/tau_GABA : siemens # synaptic conductance
         ''' % (model_term_e, '- (w / C_e)' if have_adap_e else '',
                ('dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s' % w_refr_e) if have_adap_e else '')
+
     model_eqs_i1 = '''
         dv/dt = %s %s + mu_ext_i(t) + sigma_ext_i(t) * xi + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
@@ -162,6 +163,7 @@ def network_sim(signal, params):
         dg_gaba/dt = -g_gaba/tau_GABA : siemens # synaptic conductance
         ''' % (model_term_e, '- (w / C_e)' if have_adap_e else '',
                ('dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s' % w_refr_e) if have_adap_e else '')
+
     model_eqs_i2 = '''
         dv/dt = %s %s + mu_ext_i2(t) + sigma_ext_i2(t) * xi + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
@@ -171,6 +173,7 @@ def network_sim(signal, params):
         dg_gaba/dt = -g_gaba/tau_GABA : siemens # synaptic conductance
         ''' % (model_term_e, '- (w / C_e)' if have_adap_e else '',
                ('dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s' % w_refr_e) if have_adap_e else '')
+
     # model_eqs_i = '''
     #        dv/dt = %s %s  : volt (unless refractory)
     #        %s
@@ -213,142 +216,96 @@ def network_sim(signal, params):
     print('building synapses...')
     start_synapses = time.time()
 
+    # Synapse Parameters
     J_etoe = params['J_etoe'] * nS
     J_etoi = params['J_etoi'] * nS
     J_itoe = params['J_itoe'] * nS
     J_itoi = params['J_itoi'] * nS
-
     J_ppee = params['J_ppee'] * nS
     J_ppei = params['J_ppei'] * nS
-
     K_etoe = params['K_etoe']
     K_etoi = params['K_etoi']
     K_itoe = params['K_itoe']
     K_itoi = params['K_itoi']
-
     K_ppee = params['K_ppee']
     K_ppei = params['K_ppei']
 
     # Connections within population 1
-
     # synapses object
     # this only specifies the dynamics of the synapses. they get actually created when the .connect method is called
     SynEE = Synapses(E, E, on_pre='g_ampa+=J_etoe')
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_e, K_etoe)
-    # SynEE.connect(i=prelist, j=postlist)
-    SynEE.connect(p=sparsity)
-    # delays
-    # no delay; nothing has to be implemented
-    Net.add(SynEE)
 
+    SynEE.connect(p=sparsity)
+
+    Net.add(SynEE)
     SynEI = Synapses(E, I, on_pre='g_ampa+=J_etoi')
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_i, K_etoi)
-    # SynEI.connect(i=prelist, j=postlist)
-    SynEI.connect(p=sparsity)
-    # delays
-    # no delay; nothing has to be implemented
-    Net.add(SynEI)
 
+    SynEI.connect(p=sparsity)
+    Net.add(SynEI)
     SynIE = Synapses(I, E, on_pre='g_gaba+=J_itoe')
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_i, K_itoe)
-    # SynIE.connect(i=prelist, j=postlist)
-    SynIE.connect(p=sparsity)
-    # delays
-    # no delay; nothing has to be implemented
-    Net.add(SynIE)
 
+    SynIE.connect(p=sparsity)
+    Net.add(SynIE)
     SynII = Synapses(I, I, on_pre='g_gaba+=J_itoi')
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_i, K_itoi)
+
+    # Connections with population 2.
     SynII.connect(p=sparsity)
-    # delays
-    # no delay; nothing has to be implemented
     Net.add(SynII)
-
-    # Connections within population 2
-
     SynEE2 = Synapses(E2, E2, on_pre='g_ampa+=J_etoe')
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_e, K_etoe)
-    SynEE2.connect(p=sparsity)
-    # delays
-    # no delay; nothing has to be implemented
-    Net.add(SynEE2)
 
+    SynEE2.connect(p=sparsity)
+    Net.add(SynEE2)
     SynEI2 = Synapses(E2, I2, on_pre='g_ampa+=J_etoi')
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_i, K_etoi)
-    SynEI2.connect(p=sparsity)
-    # delays
-    # no delay; nothing has to be implemented
-    Net.add(SynEI2)
 
+    SynEI2.connect(p=sparsity)
+    Net.add(SynEI2)
     SynIE2 = Synapses(I2, E2, on_pre='g_gaba+=J_itoe')
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_i, K_itoe)
-    SynIE2.connect(p=sparsity)
-    # delays
-    # no delay; nothing has to be implemented
-    Net.add(SynIE2)
 
+    SynIE2.connect(p=sparsity)
+    Net.add(SynIE2)
     SynII2 = Synapses(I2, I2, on_pre='g_gaba+=J_itoi')
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_i, K_itoi)
+
     SynII2.connect(p=sparsity)
-    # delays
-    # no delay; nothing has to be implemented
+
     Net.add(SynII2)
 
-    # Connections between populations
-
+    """
+    Connections between populations
+    """
     SynE1E2 = Synapses(E, E2, on_pre='g_ampa+=J_ppee')
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_e, K_ppee)
+
     SynE1E2.connect(p=sparsity)
-    # delays
     SynE1E2.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE1E2)
 
     SynE2E1 = Synapses(E2, E, on_pre='g_ampa+=J_ppee')
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_e, K_ppee)
     SynE2E1.connect(p=sparsity)
-    # delays
     SynE2E1.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE2E1)
 
     SynE1I2 = Synapses(E, I2, on_pre='g_ampa+=J_ppei')
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_i, K_ppei)
     SynE1I2.connect(p=sparsity)
-    # delays
     SynE1I2.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE1I2)
 
     SynE2I1 = Synapses(E2, I, on_pre='g_ampa+=J_ppei')
-    # connectivity type
-    # prelist, postlist = fixed_connectivity(N_i, K_ppei)
     SynE2I1.connect(p=sparsity)
-    # delays
     SynE2I1.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE2I1)
 
