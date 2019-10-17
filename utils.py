@@ -20,9 +20,6 @@ except:
     jit = njit
 
 
-#
-#
-#
 @njit
 def ou_x(runtime, dt, tau, mean, sigma_stat, X0, rands):
     '''
