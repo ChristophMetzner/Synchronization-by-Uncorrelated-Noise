@@ -233,63 +233,59 @@ def network_sim(signal, params):
     # Connections within population 1
     # synapses object
     # this only specifies the dynamics of the synapses. they get actually created when the .connect method is called
-    SynEE = Synapses(E, E, on_pre='g_ampa+=J_etoe')
+    synEE = Synapses(E, E, on_pre='g_ampa+=J_etoe')
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
+    synEE.connect(p=sparsity)
+    Net.add(synEE)
 
-    SynEE.connect(p=sparsity)
-
-    Net.add(SynEE)
-    SynEI = Synapses(E, I, on_pre='g_ampa+=J_etoi')
+    synEI = Synapses(E, I, on_pre='g_ampa+=J_etoi')
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
+    synEI.connect(p=sparsity)
+    Net.add(synEI)
 
-    SynEI.connect(p=sparsity)
-    Net.add(SynEI)
-    SynIE = Synapses(I, E, on_pre='g_gaba+=J_itoe')
+    syn_IE = Synapses(I, E, on_pre='g_gaba+=J_itoe')
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
+    syn_IE.connect(p=sparsity)
+    Net.add(syn_IE)
 
-    SynIE.connect(p=sparsity)
-    Net.add(SynIE)
-    SynII = Synapses(I, I, on_pre='g_gaba+=J_itoi')
+    syn_II = Synapses(I, I, on_pre='g_gaba+=J_itoi')
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
-
     # Connections with population 2.
-    SynII.connect(p=sparsity)
-    Net.add(SynII)
-    SynEE2 = Synapses(E2, E2, on_pre='g_ampa+=J_etoe')
+    syn_II.connect(p=sparsity)
+    Net.add(syn_II)
+
+    syn_EE2 = Synapses(E2, E2, on_pre='g_ampa+=J_etoe')
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
+    syn_EE2.connect(p=sparsity)
+    Net.add(syn_EE2)
 
-    SynEE2.connect(p=sparsity)
-    Net.add(SynEE2)
-    SynEI2 = Synapses(E2, I2, on_pre='g_ampa+=J_etoi')
+    syn_EI2 = Synapses(E2, I2, on_pre='g_ampa+=J_etoi')
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
+    syn_EI2.connect(p=sparsity)
+    Net.add(syn_EI2)
 
-    SynEI2.connect(p=sparsity)
-    Net.add(SynEI2)
-    SynIE2 = Synapses(I2, E2, on_pre='g_gaba+=J_itoe')
+    syn_IE2 = Synapses(I2, E2, on_pre='g_gaba+=J_itoe')
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
+    syn_IE2.connect(p=sparsity)
+    Net.add(syn_IE2)
 
-    SynIE2.connect(p=sparsity)
-    Net.add(SynIE2)
-    SynII2 = Synapses(I2, I2, on_pre='g_gaba+=J_itoi')
+    synII2 = Synapses(I2, I2, on_pre='g_gaba+=J_itoi')
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
-
-    SynII2.connect(p=sparsity)
-
-    Net.add(SynII2)
+    synII2.connect(p=sparsity)
+    Net.add(synII2)
 
     """
     Connections between populations
     """
     SynE1E2 = Synapses(E, E2, on_pre='g_ampa+=J_ppee')
-
     SynE1E2.connect(p=sparsity)
     SynE1E2.delay = '{} * ms'.format(params['const_delay'])
     Net.add(SynE1E2)
