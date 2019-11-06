@@ -45,7 +45,7 @@ def psd(data, duration: int = 300, dt: float = 1.0, prefix: str = None):
 
     base = "psd.png"
     fname = f"{prefix}-{base}" if prefix else base
-    plt.savefig("plots/" + fname)
+    plt.savefig(f"plots/{fname}")
 
     print("Saved PSD plot to file")
 

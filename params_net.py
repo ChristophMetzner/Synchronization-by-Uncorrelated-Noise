@@ -21,6 +21,7 @@ def get_params():
     params['net_w_init_e'] = 0.  # 20. # [pA]
     params['net_w_init_i'] = 0.  # 20. # [pA]
     params['net_v_lower_bound'] = None  # -100. #if None --> NO lower bound, else value of lower bound e.g. -200 in [mV]
+
     # initial conditions
     # the transient response of the network and the solution of the fp eq are in good agreement for the init: normal
     # note for uniform distribution: by default the uniform initial distribution is set on the interval [Vr, Vcut]
