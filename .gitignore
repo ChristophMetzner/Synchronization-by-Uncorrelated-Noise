@@ -10,3 +10,7 @@ brian2_compile
 
 # Virtual Environment
 venv
+
+# Generated Artifacts
+plots
+models
