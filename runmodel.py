@@ -78,7 +78,8 @@ def run(base_name: str, modified_params: dict = None):
         pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-# run("base")
+# i -> e of 1.0 * factor
+run("base")
 
 factor = 10.
 # low synaptic strength i -> e
@@ -97,6 +98,6 @@ run("mid_synaptic_strength", {
     "J_etoe": 0.01 * factor,
     # e -> i
     "J_etoi": .05 * factor,
-    # low synaptic strength between i -> e
+    # mid synaptic strength between i -> e
     "J_itoe": 0.7 * factor,
 })
