@@ -14,7 +14,7 @@ sys.path.insert(1, '../../..')  # allow parent modules to be imported
 
 # use the following in IPython for qt plots: %matplotlib qt
 
-# use as default the parameters from file params.py
+# use as default the parameters from file params_net.py
 # if not specified else below
 params = params_net.get_params()
 

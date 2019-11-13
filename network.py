@@ -77,7 +77,7 @@ def network_sim(signal, params):
     sigma_ext_array_e = signal[1]  # [mV/sqrt(ms)]
     mu_ext_array_e2 = signal[2]  # [mV/ms]
     sigma_ext_array_e2 = signal[3]  # [mV/sqrt(ms)]
-    # todo: Change runmodel.py to create specific input for inhibitory population(s)
+    # todo: Change runner.py to create specific input for inhibitory population(s)
     mu_ext_array_i = np.zeros_like(mu_ext_array_e)  # signal[0] # [mV/ms]
     sigma_ext_array_i = np.zeros_like(mu_ext_array_e)  # signal[1] # [mV/sqrt(ms)]
     mu_ext_array_i2 = np.zeros_like(mu_ext_array_e)  # signal[0] # [mV/ms]
@@ -211,7 +211,7 @@ def network_sim(signal, params):
     rate_monitor_i2 = PopulationRateMonitor(I2, name='aeif_ratemon_i2')
 
     # initialize net
-    Net = Network(E, E2, I, I2, rate_monitor_e, rate_monitor_e2, rate_monitor_i, rate_monitor_i2)
+    net = Network(E, E2, I, I2, rate_monitor_e, rate_monitor_e2, rate_monitor_i, rate_monitor_i2)
 
     print('building synapses...')
     start_synapses = time.time()
@@ -237,50 +237,50 @@ def network_sim(signal, params):
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
     synEE.connect(p=sparsity)
-    Net.add(synEE)
+    net.add(synEE)
 
     synEI = Synapses(E, I, on_pre='g_ampa+=J_etoi')
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
     synEI.connect(p=sparsity)
-    Net.add(synEI)
+    net.add(synEI)
 
     syn_IE = Synapses(I, E, on_pre='g_gaba+=J_itoe')
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
     syn_IE.connect(p=sparsity)
-    Net.add(syn_IE)
+    net.add(syn_IE)
 
     syn_II = Synapses(I, I, on_pre='g_gaba+=J_itoi')
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
     # Connections with population 2.
     syn_II.connect(p=sparsity)
-    Net.add(syn_II)
+    net.add(syn_II)
 
     syn_EE2 = Synapses(E2, E2, on_pre='g_ampa+=J_etoe')
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
     syn_EE2.connect(p=sparsity)
-    Net.add(syn_EE2)
+    net.add(syn_EE2)
 
     syn_EI2 = Synapses(E2, I2, on_pre='g_ampa+=J_etoi')
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
     syn_EI2.connect(p=sparsity)
-    Net.add(syn_EI2)
+    net.add(syn_EI2)
 
     syn_IE2 = Synapses(I2, E2, on_pre='g_gaba+=J_itoe')
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
     syn_IE2.connect(p=sparsity)
-    Net.add(syn_IE2)
+    net.add(syn_IE2)
 
     synII2 = Synapses(I2, I2, on_pre='g_gaba+=J_itoi')
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
     synII2.connect(p=sparsity)
-    Net.add(synII2)
+    net.add(synII2)
 
     """
     Connections between populations
@@ -288,22 +288,22 @@ def network_sim(signal, params):
     SynE1E2 = Synapses(E, E2, on_pre='g_ampa+=J_ppee')
     SynE1E2.connect(p=sparsity)
     SynE1E2.delay = '{} * ms'.format(params['const_delay'])
-    Net.add(SynE1E2)
+    net.add(SynE1E2)
 
     SynE2E1 = Synapses(E2, E, on_pre='g_ampa+=J_ppee')
     SynE2E1.connect(p=sparsity)
     SynE2E1.delay = '{} * ms'.format(params['const_delay'])
-    Net.add(SynE2E1)
+    net.add(SynE2E1)
 
     SynE1I2 = Synapses(E, I2, on_pre='g_ampa+=J_ppei')
     SynE1I2.connect(p=sparsity)
     SynE1I2.delay = '{} * ms'.format(params['const_delay'])
-    Net.add(SynE1I2)
+    net.add(SynE1I2)
 
     SynE2I1 = Synapses(E2, I, on_pre='g_ampa+=J_ppei')
     SynE2I1.connect(p=sparsity)
     SynE2I1.delay = '{} * ms'.format(params['const_delay'])
-    Net.add(SynE2I1)
+    net.add(SynE2I1)
 
     print('build synapses time: {}s'.format(time.time() - start_synapses))
 
@@ -330,60 +330,60 @@ def network_sim(signal, params):
                                          % float(params['net_v_lower_bound']),
                                          when='end', order=-1, dt=dt_sim)
         print('Lower bound active at {}'.format(params['net_v_lower_bound']))
-        Net.add(V_lowerbound_E)
+        net.add(V_lowerbound_E)
 
         V_lowerbound_E2 = E2.run_regularly('v = clip(v, %s * mV, 10000 * mV)'
                                            % float(params['net_v_lower_bound']),
                                            when='end', order=-1, dt=dt_sim)
         print('Lower bound active at {}'.format(params['net_v_lower_bound']))
-        Net.add(V_lowerbound_E2)
+        net.add(V_lowerbound_E2)
 
         # new in Brian2.0b4: custom_operation --> run_regularly
         V_lowerbound_I1 = I.run_regularly('v = clip(v, %s * mV, 10000 * mV)'
                                           % float(params['net_v_lower_bound']),
                                           when='end', order=-1, dt=dt_sim)
         print('Lower bound active at {}'.format(params['net_v_lower_bound']))
-        Net.add(V_lowerbound_I1)
+        net.add(V_lowerbound_I1)
 
         # new in Brian2.0b4: custom_operation --> run_regularly
         V_lowerbound_I2 = I2.run_regularly('v = clip(v, %s * mV, 10000 * mV)'
                                            % float(params['net_v_lower_bound']),
                                            when='end', order=-1, dt=dt_sim)
         print('Lower bound active at {}'.format(params['net_v_lower_bound']))
-        Net.add(V_lowerbound_I2)
+        net.add(V_lowerbound_I2)
 
     if record_all_v_at_times:
         # define clock which runs on a very course time grid (memory issue)
         clock_record_all = Clock(params['net_record_all_neurons_dt'] * ms)
         v_monitor_record_all_E = StateMonitor(E, 'v', record=True, clock=clock_record_all)
-        Net.add(v_monitor_record_all_E)
+        net.add(v_monitor_record_all_E)
         v_monitor_record_all_E2 = StateMonitor(E2, 'v', record=True, clock=clock_record_all)
-        Net.add(v_monitor_record_all_E2)
+        net.add(v_monitor_record_all_E2)
         v_monitor_record_all_I1 = StateMonitor(I, 'v', record=True, clock=clock_record_all)
-        Net.add(v_monitor_record_all_I1)
+        net.add(v_monitor_record_all_I1)
         v_monitor_record_all_I2 = StateMonitor(I2, 'v', record=True, clock=clock_record_all)
-        Net.add(v_monitor_record_all_I2)
+        net.add(v_monitor_record_all_I2)
 
     if record_spikes > 0:
         record_spikes_group_E = Subgroup(E, 0, min(record_spikes, N_e))
         spike_monitor_E = SpikeMonitor(record_spikes_group_E, name='E1_spikemon')
-        Net.add(spike_monitor_E, record_spikes_group_E)
+        net.add(spike_monitor_E, record_spikes_group_E)
 
         record_spikes_group_E2 = Subgroup(E2, 0, min(record_spikes, N_e))
         spike_monitor_E2 = SpikeMonitor(record_spikes_group_E2, name='E2_spikemon')
-        Net.add(spike_monitor_E2, record_spikes_group_E2)
+        net.add(spike_monitor_E2, record_spikes_group_E2)
 
         record_spikes_group_I1 = Subgroup(I, 0, min(record_spikes, N_i))
         spike_monitor_I1 = SpikeMonitor(record_spikes_group_I1, name='I1_spikemon')
-        Net.add(spike_monitor_I1, record_spikes_group_I1)
+        net.add(spike_monitor_I1, record_spikes_group_I1)
 
         record_spikes_group_I2 = Subgroup(I2, 0, min(record_spikes, N_i))
         spike_monitor_I2 = SpikeMonitor(record_spikes_group_I2, name='I2_spikemon')
-        Net.add(spike_monitor_I2, record_spikes_group_I2)
+        net.add(spike_monitor_I2, record_spikes_group_I2)
 
     print('------------------ running network!')
     start_time = time.time()
-    Net.run(runtime, report='text')
+    net.run(runtime, report='text')
 
     if params['brian2_standalone']:
         project_dir = cpp_default_dir + '/test' + str(os.getpid())

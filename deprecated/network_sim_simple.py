@@ -72,7 +72,7 @@ def network_sim(signal, params):
 
     mu_ext_array_e = signal[0]  # [mV/ms]
     sigma_ext_array_e = signal[1]  # [mV/sqrt(ms)]
-    # todo: Change runmodel.py to create specific input for inhibitory population(s)
+    # todo: Change runner.py to create specific input for inhibitory population(s)
     mu_ext_array_i = np.zeros_like(mu_ext_array_e)  # signal[0] # [mV/ms]
     sigma_ext_array_i = np.zeros_like(mu_ext_array_e)  # signal[1] # [mV/sqrt(ms)]
 

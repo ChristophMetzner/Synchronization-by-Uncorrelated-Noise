@@ -5,9 +5,9 @@ from matplotlib import mlab
 
 
 def plot_noise(data, save: bool = True, prefix: str = None):
-    # External Signal to first population
-    ext_signal_1_mean = data['input_mean1']
-    ext_signal_1_sigma = data['input_sigma1']
+    """ Plot External Noise of 1st population. """
+    ext_signal_1_mean = data['input_mean_1']
+    ext_signal_1_sigma = data['input_sigma_1']
 
     fig = plt.figure(figsize=[20, 15])
     ax = fig.add_subplot(111)
@@ -17,7 +17,7 @@ def plot_noise(data, save: bool = True, prefix: str = None):
     ax.plot(ext_signal_1_mean)
     ax.plot(ext_signal_1_sigma)
 
-    _save_to_file("noise", save=save, prefix=prefix)
+    _save_to_file("noise", save=save, folder=prefix)
 
 
 def plot_summed_voltage(title: str, key: str, lfp1, lfp2, duration, dt, prefix: str = None, save: bool = True):
@@ -34,7 +34,7 @@ def plot_summed_voltage(title: str, key: str, lfp1, lfp2, duration, dt, prefix: 
     _save_to_file("summed_voltage", save, key, prefix)
 
 
-def psd(title: str, key: str, lfp1, lfp2, duration: int = 300, dt: float = 1.0, prefix: str = None, save: bool = True):
+def psd(title: str, key: str, lfp1, lfp2, duration: int = 300, dt: float = 1.0, folder: str = None, save: bool = True):
     """
     Plots the Power Spectral Density.
     """
@@ -57,10 +57,10 @@ def psd(title: str, key: str, lfp1, lfp2, duration: int = 300, dt: float = 1.0, 
     ax.plot(freqs * 1000, psd2, '0.75', linewidth=3.0, c='y')
     ax.set_xlim([0, 80])
 
-    _save_to_file("psd", save, key, prefix)
+    _save_to_file("psd", save, key, folder)
 
 
-def plot_raster(s_e1, s_i1, x_left: int, x_right: int, save: bool = True, key: str = "", prefix: str = None):
+def plot_raster(s_e1, s_i1, x_left: int, x_right: int, save: bool = True, key: str = "", folder: str = None):
     fig = plt.figure(figsize=[20, 15])
     ax = fig.add_subplot(111)
 
@@ -71,11 +71,11 @@ def plot_raster(s_e1, s_i1, x_left: int, x_right: int, save: bool = True, key: s
     ax.plot(s_i1[1] * 1000, s_i1[0] + 1000, 'k.', c='dimgray')
     ax.set_xlim(left=x_left, right=x_right)
 
-    _save_to_file("raster", save=save, key=key, prefix=prefix)
+    _save_to_file("raster", save=save, key=key, folder=folder)
 
 
-def _save_to_file(name: str, save: bool, key: str = None, prefix: str = None):
+def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
     if save:
         base = f"{name}-{key}.png" if key else f"{name}.png"
-        fname = f"{prefix}-{base}" if prefix else base
+        fname = f"{folder}/{base}" if folder else base
         plt.savefig(f"plots/{fname}")

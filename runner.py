@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import params_net
 import pickle
-import network_sim_simple_cond as net
+import network as net
 
 from utils import generate_OUinput
 
@@ -21,7 +21,7 @@ def run(base_name: str, modified_params: dict = None):
     :param base_name: file name of model without extension.
     :return:
     """
-    # use as default the parameters from file params.py
+    # use as default the parameters from file params_net.py
     # if not specified else below
     params = params_net.get_params()
 
@@ -65,23 +65,28 @@ def run(base_name: str, modified_params: dict = None):
 
     # saving results in global results dict
     results = dict()
-    results['input_mean1'] = mu_ext1
-    results['input_sigma1'] = sigma_ext1
+
+    results['input_mean_1'] = mu_ext1
+    results['input_sigma_1'] = sigma_ext1
+
+    results['input_mean_2'] = mu_ext2
+    results['input_sigma_2'] = sigma_ext2
+
     results['model_results'] = dict()
 
     # brian network sim
     # ext_input = interpolate_input(ext_input0, params, 'net')
-    results['model_results']['net'] = \
-        net.network_sim(ext_input0, params)
+    results['model_results']['net'] = net.network_sim(ext_input0, params)
 
     with open(f"models/{base_name}.pkl", 'wb') as handle:
         pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # i -> e of 1.0 * factor
-run("base")
+# run("base")
 
 factor = 10.
+
 # low synaptic strength i -> e
 run("low_synaptic_strength", {
     # e -> e
@@ -101,3 +106,12 @@ run("mid_synaptic_strength", {
     # mid synaptic strength between i -> e
     "J_itoe": 0.7 * factor,
 })
+
+# explore effects of synaptic strength
+for i_to_e_strength in np.arange(0, 2, 0.1):
+    i_to_e_strength = np.around(i_to_e_strength, 1)
+    run(f"synaptic_strength_{i_to_e_strength}", {
+        "J_etoe": 0.01 * factor,
+        "J_etoi": .05 * factor,
+        "J_itoe": i_to_e_strength * factor,
+    })

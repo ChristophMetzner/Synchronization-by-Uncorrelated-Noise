@@ -1,1 +1,1 @@
-Synchronization by uncorrelated noise
+# Synchronization by Uncorrelated Noise
