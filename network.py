@@ -183,26 +183,38 @@ def network_sim(signal, params):
     # initialize Neuron groups
 
     # Population 1
-    E = NeuronGroup(N=N_e, model=model_eqs_e1,
-                    threshold='v > Vcut_e', clock=simclock,
+    E = NeuronGroup(N=N_e,
+                    model=model_eqs_e1,
+                    threshold='v > Vcut_e',
+                    clock=simclock,
                     reset='v = Vr_e%s' % ('; w += b_e(t)' if have_adap_e else ''),
-                    refractory=t_ref_e, method=params['net_integration_method'])
+                    refractory=t_ref_e,
+                    method=params['net_integration_method'])
 
-    I = NeuronGroup(N=N_i, model=model_eqs_i1,
-                    threshold='v > Vcut_i', clock=simclock,
+    I = NeuronGroup(N=N_i,
+                    model=model_eqs_i1,
+                    threshold='v > Vcut_i',
+                    clock=simclock,
                     reset='v = Vr_i%s' % ('; w += b_i(t)' if have_adap_i else ''),
-                    refractory=t_ref_i, method=params['net_integration_method'])
+                    refractory=t_ref_i,
+                    method=params['net_integration_method'])
 
     # Population 2
-    E2 = NeuronGroup(N=N_e, model=model_eqs_e2,
-                     threshold='v > Vcut_e', clock=simclock,
+    E2 = NeuronGroup(N=N_e,
+                     model=model_eqs_e2,
+                     threshold='v > Vcut_e',
+                     clock=simclock,
                      reset='v = Vr_e%s' % ('; w += b_e(t)' if have_adap_e else ''),
-                     refractory=t_ref_e, method=params['net_integration_method'])
+                     refractory=t_ref_e,
+                     method=params['net_integration_method'])
 
-    I2 = NeuronGroup(N=N_i, model=model_eqs_i2,
-                     threshold='v > Vcut_i', clock=simclock,
+    I2 = NeuronGroup(N=N_i,
+                     model=model_eqs_i2,
+                     threshold='v > Vcut_i',
+                     clock=simclock,
                      reset='v = Vr_i%s' % ('; w += b_i(t)' if have_adap_i else ''),
-                     refractory=t_ref_i, method=params['net_integration_method'])
+                     refractory=t_ref_i,
+                     method=params['net_integration_method'])
 
     # initialize PopulationRateMonitor
     rate_monitor_e = PopulationRateMonitor(E, name='aeif_ratemon_e')

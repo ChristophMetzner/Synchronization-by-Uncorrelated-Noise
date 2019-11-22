@@ -60,15 +60,15 @@ def psd(title: str, key: str, lfp1, lfp2, duration: int = 300, dt: float = 1.0, 
     _save_to_file("psd", save, key, folder)
 
 
-def plot_raster(s_e1, s_i1, x_left: int, x_right: int, save: bool = True, key: str = "", folder: str = None):
+def plot_raster(s_e, s_i, x_left: int, x_right: int, save: bool = True, key: str = "", folder: str = None):
     fig = plt.figure(figsize=[20, 15])
     ax = fig.add_subplot(111)
 
     ax.set_title("Raster Plot")
     ax.set_xlabel('Time in ms')
     ax.set_ylabel('Neuron index')
-    ax.plot(s_e1[1] * 1000, s_e1[0], 'k.', c='darkgray')
-    ax.plot(s_i1[1] * 1000, s_i1[0] + 1000, 'k.', c='dimgray')
+    ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='darkgray')
+    ax.plot(s_i[1] * 1000, s_i[0] + 1000, 'k.', c='dimgray')
     ax.set_xlim(left=x_left, right=x_right)
 
     _save_to_file("raster", save=save, key=key, folder=folder)

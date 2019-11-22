@@ -81,8 +81,11 @@ def analyze_model(data, base_name: str):
 
     plots.plot_noise(data, prefix=base_name)
 
-    plots.plot_raster(s_e1=s_e1, s_i1=s_i1, x_left=1000, x_right=1080, key="narrow", folder=base_name)
-    plots.plot_raster(s_e1=s_e1, s_i1=s_i1, x_left=1000, x_right=2000, key="wide", folder=base_name)
+    plots.plot_raster(s_e=s_e1, s_i=s_i1, x_left=1000, x_right=1080, key="group1_narrow", folder=base_name)
+    plots.plot_raster(s_e=s_e1, s_i=s_i1, x_left=1000, x_right=2000, key="group1_wide", folder=base_name)
+
+    plots.plot_raster(s_e=s_e2, s_i=s_i2, x_left=1000, x_right=1080, key="group2_narrow", folder=base_name)
+    plots.plot_raster(s_e=s_e2, s_i=s_i2, x_left=1000, x_right=2000, key="group2_wide", folder=base_name)
 
 
 def analyze():

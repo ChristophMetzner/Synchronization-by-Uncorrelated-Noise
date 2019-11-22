@@ -82,36 +82,41 @@ def run(base_name: str, modified_params: dict = None):
         pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-# i -> e of 1.0 * factor
-# run("base")
+run("base")
+
+# Sets the connection strength of synapses connecting the networks to 0.
+# Thus the networks are isolated and do not affect each other.
+# run("decoupled", {
+#     "J_ppee": 0.0
+# })
 
 factor = 10.
 
-# low synaptic strength i -> e
-run("low_synaptic_strength", {
-    # e -> e
-    "J_etoe": 0.01 * factor,
-    # e -> i
-    "J_etoi": .05 * factor,
-    # low synaptic strength between i -> e
-    "J_itoe": 0.3 * factor,
-})
-
-# mid synaptic strength i -> e
-run("mid_synaptic_strength", {
-    # e -> e
-    "J_etoe": 0.01 * factor,
-    # e -> i
-    "J_etoi": .05 * factor,
-    # mid synaptic strength between i -> e
-    "J_itoe": 0.7 * factor,
-})
-
-# explore effects of synaptic strength
-for i_to_e_strength in np.arange(0, 2, 0.1):
-    i_to_e_strength = np.around(i_to_e_strength, 1)
-    run(f"synaptic_strength_{i_to_e_strength}", {
-        "J_etoe": 0.01 * factor,
-        "J_etoi": .05 * factor,
-        "J_itoe": i_to_e_strength * factor,
-    })
+# # low synaptic strength i -> e
+# run("low_synaptic_strength", {
+#     # e -> e
+#     "J_etoe": 0.01 * factor,
+#     # e -> i
+#     "J_etoi": .05 * factor,
+#     # low synaptic strength between i -> e
+#     "J_itoe": 0.3 * factor,
+# })
+#
+# # mid synaptic strength i -> e
+# run("mid_synaptic_strength", {
+#     # e -> e
+#     "J_etoe": 0.01 * factor,
+#     # e -> i
+#     "J_etoi": .05 * factor,
+#     # mid synaptic strength between i -> e
+#     "J_itoe": 0.7 * factor,
+# })
+#
+# # explore effects of synaptic strength
+# for i_to_e_strength in np.arange(0, 2, 0.1):
+#     i_to_e_strength = np.around(i_to_e_strength, 1)
+#     run(f"synaptic_strength_{i_to_e_strength}", {
+#         "J_etoe": 0.01 * factor,
+#         "J_etoi": .05 * factor,
+#         "J_itoe": i_to_e_strength * factor,
+#     })
