@@ -6,9 +6,6 @@ are used for brian2 simulations. So far, only brian2 model parameters are includ
 def get_params():
     params = dict()
 
-    # runtime options #
-    # reduced models
-
     # params for ou process #
     params['ou_stationary'] = True  # if False --> ou process starts at X0
 

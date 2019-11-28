@@ -41,18 +41,16 @@ def ou_x(runtime, dt, tau, mean, sigma_stat, X0, rands):
     return x
 
 
-def generate_OUinput(params):
-    simtime = params['runtime']
-    dt = params['min_dt']
+def generate_ou_input(run_time, min_dt, stationary: bool, params: dict):
     tau = params['ou_tau']
     sigma = params['ou_sigma']
     mu = params['ou_mean']
-    if params['ou_stationary']:
+    if stationary:
         X0 = mu
     else:
         X0 = params['ou_X0']
-    rands = np.random.randn(int(simtime / dt))
-    ou_trace = ou_x(simtime, dt, tau, mu, sigma, X0, rands)
+    rands = np.random.randn(int(run_time / min_dt))
+    ou_trace = ou_x(run_time, min_dt, tau, mu, sigma, X0, rands)
     return ou_trace
 
 
@@ -492,8 +490,10 @@ def integrate_rate_subints_deprecated(t, rate, dt):
             idx_right -= diff_idx_right
         #        subint_size_k = idx_right-idx_left # the subint_size of the last bin can be shorter
         rate_integral[k] = sum(
-            0.5 * (rate[idx_left:idx_right - (0 if k < subints - 1 else 1)] + rate[idx_left + 1:idx_right + (1 if k < subints - 1 else 0)])) * dt_data
-        t_smoothed[k] = 0.5 * (t[idx_left] + t[idx_right - (0 if k < subints - 1 else 1)])  # center point of the subints
+            0.5 * (rate[idx_left:idx_right - (0 if k < subints - 1 else 1)] + rate[idx_left + 1:idx_right + (
+                1 if k < subints - 1 else 0)])) * dt_data
+        t_smoothed[k] = 0.5 * (
+                t[idx_left] + t[idx_right - (0 if k < subints - 1 else 1)])  # center point of the subints
     return t_smoothed, rate_integral
 
 

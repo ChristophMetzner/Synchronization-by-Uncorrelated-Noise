@@ -100,4 +100,5 @@ def analyze():
                     print(f"Skipped analyzing model {base_name} due to unexpected failure.", e)
 
 
-analyze()
+if __name__ == '__main__':
+    analyze()
