@@ -8,7 +8,7 @@ import gc
 cpp_default_dir = 'brian2_compile'
 
 
-def network_sim(signal, params):
+def network_sim(signal, params: dict):
     if params['brian2_standalone']:
         # build on run = False (changed for brian2_rc3)
         set_device(params['brian2_device'], build_on_run=False)
@@ -341,27 +341,39 @@ def network_sim(signal, params):
         # new in Brian2.0b4: custom_operation --> run_regularly
         V_lowerbound_E = E.run_regularly('v = clip(v, %s * mV, 10000 * mV)'
                                          % float(params['net_v_lower_bound']),
-                                         when='end', order=-1, dt=dt_sim)
+                                         when='end',
+                                         order=-1,
+                                         dt=dt_sim)
+
         print('Lower bound active at {}'.format(params['net_v_lower_bound']))
         net.add(V_lowerbound_E)
 
         V_lowerbound_E2 = E2.run_regularly('v = clip(v, %s * mV, 10000 * mV)'
                                            % float(params['net_v_lower_bound']),
-                                           when='end', order=-1, dt=dt_sim)
+                                           when='end',
+                                           order=-1,
+                                           dt=dt_sim)
+
         print('Lower bound active at {}'.format(params['net_v_lower_bound']))
         net.add(V_lowerbound_E2)
 
         # new in Brian2.0b4: custom_operation --> run_regularly
         V_lowerbound_I1 = I.run_regularly('v = clip(v, %s * mV, 10000 * mV)'
                                           % float(params['net_v_lower_bound']),
-                                          when='end', order=-1, dt=dt_sim)
+                                          when='end',
+                                          order=-1,
+                                          dt=dt_sim)
+
         print('Lower bound active at {}'.format(params['net_v_lower_bound']))
         net.add(V_lowerbound_I1)
 
         # new in Brian2.0b4: custom_operation --> run_regularly
         V_lowerbound_I2 = I2.run_regularly('v = clip(v, %s * mV, 10000 * mV)'
                                            % float(params['net_v_lower_bound']),
-                                           when='end', order=-1, dt=dt_sim)
+                                           when='end',
+                                           order=-1,
+                                           dt=dt_sim)
+
         print('Lower bound active at {}'.format(params['net_v_lower_bound']))
         net.add(V_lowerbound_I2)
 

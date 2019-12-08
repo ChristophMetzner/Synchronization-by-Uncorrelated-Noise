@@ -7,6 +7,7 @@ from numpy import zeros
 from math import sqrt
 import matplotlib.pyplot as plt
 import scipy.signal
+import collections.abc
 
 # try to import numba
 # or define dummy decorator
@@ -521,3 +522,12 @@ def interpolate_input(external_input, params, model):
             mu_ext = np.interp(t_interpolated, t_ext, mu_ext)
             sigma_ext = np.interp(t_interpolated, t_ext, sigma_ext)
     return [mu_ext, sigma_ext]
+
+
+def update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
