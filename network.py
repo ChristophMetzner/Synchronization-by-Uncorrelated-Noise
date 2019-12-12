@@ -175,14 +175,6 @@ def network_sim(signal, params: dict):
         ''' % (model_term_e, '- (w / C_e)' if have_adap_e else '',
                ('dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s' % w_refr_e) if have_adap_e else '')
 
-    # model_eqs_i = '''
-    #        dv/dt = %s %s  : volt (unless refractory)
-    #        %s
-    #        ''' % (model_term_i, '- (w / C_i)' if have_adap_i else '',
-    #               ('dw/dt = (a_i(t) * (v - Ew_i) - w) / tauw_i : amp %s' % w_refr_i) if have_adap_i else '')
-
-    # initialize Neuron groups
-
     # Population 1
     E = NeuronGroup(N=N_e,
                     model=model_eqs_e1,
@@ -382,10 +374,13 @@ def network_sim(signal, params: dict):
         clock_record_all = Clock(params['net_record_all_neurons_dt'] * ms)
         v_monitor_record_all_E = StateMonitor(E, 'v', record=True, clock=clock_record_all)
         net.add(v_monitor_record_all_E)
+
         v_monitor_record_all_E2 = StateMonitor(E2, 'v', record=True, clock=clock_record_all)
         net.add(v_monitor_record_all_E2)
+
         v_monitor_record_all_I1 = StateMonitor(I, 'v', record=True, clock=clock_record_all)
         net.add(v_monitor_record_all_I1)
+
         v_monitor_record_all_I2 = StateMonitor(I2, 'v', record=True, clock=clock_record_all)
         net.add(v_monitor_record_all_I2)
 
@@ -433,25 +428,25 @@ def network_sim(signal, params: dict):
         # multiply by 1 like this to ensure brian extracts the results before we delete the compile directory
         net_spikes_e = spike_monitor_E.it
         i, t = net_spikes_e
-        i = i * 1;
+        i = i * 1
         t = t * 1
         net_spikes_e = [i, t]
 
         net_spikes_e2 = spike_monitor_E2.it
         i, t = net_spikes_e2
-        i = i * 1;
+        i = i * 1
         t = t * 1
         net_spikes_e2 = [i, t]
 
         net_spikes_i1 = spike_monitor_I1.it
         i, t = net_spikes_i1
-        i = i * 1;
+        i = i * 1
         t = t * 1
         net_spikes_i1 = [i, t]
 
         net_spikes_i2 = spike_monitor_I2.it
         i, t = net_spikes_i2
-        i = i * 1;
+        i = i * 1
         t = t * 1
         net_spikes_i2 = [i, t]
 
@@ -474,12 +469,14 @@ def network_sim(signal, params: dict):
 
     # for smoothing function net_rates do: helpers.smooth_trace(net_rates, int(rates_dt / dt_sim))
     # smooth out our hyper-resolution rate trace manually cause brian2 can't do it
-    results_dict = {'brian_version': 2, 'r_e': net_rates_e, 'r_e2': net_rates_e2,
-                    'r_i1': net_rates_i1,
-                    'r_i2': net_rates_i2, 't': time_r}
-    # results_dict = {'brian_version':2, 'r':net_rates, 't':net_t}
-    # print(len(results_dict['t']))
-    # time binning
+    results_dict = {
+        'brian_version': 2,
+        'r_e': net_rates_e,
+        'r_e2': net_rates_e2,
+        'r_i1': net_rates_i1,
+        'r_i2': net_rates_i2,
+        't': time_r
+    }
 
     if record_spikes > 0:
         results_dict['net_spikes_e'] = net_spikes_e
@@ -496,4 +493,5 @@ def network_sim(signal, params: dict):
         results_dict['t_all_neurons_1i'] = t_all_neurons_i1
         results_dict['v_all_neurons_i2'] = v_all_neurons_i2
         results_dict['t_all_neurons_i2'] = t_all_neurons_i2
+
     return results_dict

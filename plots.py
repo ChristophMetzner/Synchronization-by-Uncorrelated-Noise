@@ -1,4 +1,5 @@
 from collections import Iterator
+from typing import Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -56,7 +57,7 @@ def summed_voltage(title: str, data: dict, duration, dt, prefix: str = None, sav
     _save_to_file("summed_voltage", save, key, prefix)
 
 
-def psd(title: str, data: dict, duration: int = 300, dt: float = 1.0, folder: str = None, save: bool = True,
+def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: str = None, save: bool = True,
         excitatory: bool = False):
     """
     Plots the Power Spectral Density.
@@ -64,12 +65,14 @@ def psd(title: str, data: dict, duration: int = 300, dt: float = 1.0, folder: st
     print("Generate PSD plot ...")
     skip = 0
 
+    duration = duration if duration else model["params"]["runtime"]
+
     if excitatory:
         key = 'excitatory'
     else:
         key = 'inhibitory'
 
-    lfp1, lfp2 = _calculate_local_field_potentials(data, duration, excitatory, skip)
+    lfp1, lfp2 = _calculate_local_field_potentials(model, duration, excitatory, skip)
 
     timepoints = int((duration / dt) / 2)
     fs = 1. / dt
@@ -93,9 +96,9 @@ def psd(title: str, data: dict, duration: int = 300, dt: float = 1.0, folder: st
     _save_to_file("psd", save, key, folder)
 
 
-def raster(data: dict, x_left: int, x_right: int, save: bool = True, key: str = "", folder: str = None,
-           population: int = 1):
-    fig = plt.figure(figsize=FIG_SIZE)
+def raster(data: dict, x_left: int = None, x_right: int = None, save: bool = True, key: str = "", folder: str = None,
+           population: int = 1, fig_size: Tuple = None):
+    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
     ax = fig.add_subplot(111)
 
     if population == 1:
@@ -107,13 +110,42 @@ def raster(data: dict, x_left: int, x_right: int, save: bool = True, key: str = 
         s_i = data['model_results']['net']['net_spikes_i2']
 
     ax.set_title("Raster Plot")
+
     ax.set_xlabel('Time in ms')
     ax.set_ylabel('Neuron index')
-    ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='darkgray')
-    ax.plot(s_i[1] * 1000, s_i[0] + 1000, 'k.', c='dimgray')
+
+    ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='darkgray', markersize="4")
+    ax.plot(s_i[1] * 1000, s_i[0] + (s_e[0].max() + 1), 'k.', c='dimgray', markersize="4")
+
     ax.set_xlim(left=x_left, right=x_right)
 
     _save_to_file("raster", save=save, key=key, folder=folder)
+
+
+def population_rates(model: dict):
+    """
+    Plots the smoothed population rates.
+
+    @param model: model.
+    """
+    fig, axs = plt.subplots(2, 2, figsize=(20, 10))
+
+    r_e = model['model_results']['net']['r_e']
+    r_i1 = model['model_results']['net']['r_i1']
+    r_e2 = model['model_results']['net']['r_e2']
+    r_i2 = model['model_results']['net']['r_i2']
+
+    axs[0, 0].plot(r_e, c="black")
+    axs[0, 0].set_title("Population 1 - Excitatory")
+
+    axs[0, 1].plot(r_i1, c="grey")
+    axs[0, 1].set_title("Population 1 - Inhibitory")
+
+    axs[1, 0].plot(r_e2, c="black")
+    axs[1, 0].set_title("Population 2 - Excitatory")
+
+    axs[1, 1].plot(r_i2, c="grey")
+    axs[1, 1].set_title("Population 2 - Inhibitory")
 
 
 def _calculate_local_field_potentials(data, duration, excitatory, skip):
@@ -134,13 +166,6 @@ def _calculate_local_field_potentials(data, duration, excitatory, skip):
         lfp1 = np.sum(v_i1, axis=0) / N_i
         lfp2 = np.sum(v_i2, axis=0) / N_i
     return lfp1, lfp2
-
-
-def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
-    if save:
-        base = f"{name}-{key}.png" if key else f"{name}.png"
-        fname = f"{folder}/{base}" if folder else base
-        plt.savefig(f"plots/{fname}")
 
 
 def all_psd(models: Iterator, n_cols, n_rows):
@@ -182,3 +207,10 @@ def all_psd(models: Iterator, n_cols, n_rows):
 
     plt.tight_layout()
     plt.show()
+
+
+def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
+    if save:
+        base = f"{name}-{key}.png" if key else f"{name}.png"
+        fname = f"{folder}/{base}" if folder else base
+        plt.savefig(f"plots/{fname}")

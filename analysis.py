@@ -21,13 +21,13 @@ def analyze_model(data, base_name: str):
         print(e)
 
     plots.psd(title="Power Spectral Density of Excitatory Neurons",
-              data=data,
+              model=data,
               duration=duration,
               dt=1.0,
               folder=base_name)
 
     plots.psd(title="Power Spectral Density of Inhibitory Neurons",
-              data=data,
+              model=data,
               duration=duration,
               dt=1.0,
               folder=base_name)
