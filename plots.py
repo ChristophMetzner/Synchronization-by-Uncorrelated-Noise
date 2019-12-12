@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from matplotlib import mlab
+from utils import generate_ou_input
 
 # FIG_SIZE = [20, 15]
 FIG_SIZE = [10, 8]
@@ -117,6 +118,8 @@ def raster(data: dict, x_left: int = None, x_right: int = None, save: bool = Tru
     ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='darkgray', markersize="4")
     ax.plot(s_i[1] * 1000, s_i[0] + (s_e[0].max() + 1), 'k.', c='dimgray', markersize="4")
 
+    # TODO: plot complete time axis, currently only x-ticks for available data is plotted
+
     ax.set_xlim(left=x_left, right=x_right)
 
     _save_to_file("raster", save=save, key=key, folder=folder)
@@ -124,7 +127,7 @@ def raster(data: dict, x_left: int = None, x_right: int = None, save: bool = Tru
 
 def population_rates(model: dict):
     """
-    Plots the smoothed population rates.
+    Plots the smoothed population rates for excitatory and inhibitory groups of both populations.
 
     @param model: model.
     """
@@ -138,11 +141,11 @@ def population_rates(model: dict):
     axs[0, 0].plot(r_e, c="black")
     axs[0, 0].set_title("Population 1 - Excitatory")
 
-    axs[0, 1].plot(r_i1, c="grey")
-    axs[0, 1].set_title("Population 1 - Inhibitory")
+    axs[1, 0].plot(r_i1, c="grey")
+    axs[1, 0].set_title("Population 1 - Inhibitory")
 
-    axs[1, 0].plot(r_e2, c="black")
-    axs[1, 0].set_title("Population 2 - Excitatory")
+    axs[0, 1].plot(r_e2, c="black")
+    axs[0, 1].set_title("Population 2 - Excitatory")
 
     axs[1, 1].plot(r_i2, c="grey")
     axs[1, 1].set_title("Population 2 - Inhibitory")
@@ -214,3 +217,9 @@ def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
         base = f"{name}-{key}.png" if key else f"{name}.png"
         fname = f"{folder}/{base}" if folder else base
         plt.savefig(f"plots/{fname}")
+
+
+def ou_noise_by_params(params: dict):
+    mean = generate_ou_input(params['runtime'], params['min_dt'], params['ou_stationary'], params['ou_mu'])
+    sigma = generate_ou_input(params['runtime'], params['min_dt'], params['ou_stationary'], params['ou_sigma'])
+    noise(mean, sigma, save=False)

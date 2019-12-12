@@ -95,19 +95,6 @@ def run(base_name: str, modified_params: dict = None):
     return results
 
 
-def noise_experiment():
-    results = []
-
-    for m in np.arange(0, 5, 0.5):
-        config = dict()
-        config['ou_mu'] = {
-            'ou_mean': m,
-        }
-
-        result = run(m, modified_params=config)
-        results.append((m, result))
-
-
 if __name__ == '__main__':
     # results = run("base_low_noise")
     # analysis.analyze_model(results, 'base_low_noise')
