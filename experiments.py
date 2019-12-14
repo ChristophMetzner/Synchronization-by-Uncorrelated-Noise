@@ -1,13 +1,16 @@
 import numpy as np
 
 from itertools import product
+from typing import List
 
 import runner
 
 
 class Experiment:
     """ Base Experiment."""
-    pass
+
+    def run(self) -> List:
+        raise NotImplementedError()
 
 
 class NoiseExperiment(Experiment):
@@ -22,19 +25,23 @@ class NoiseExperiment(Experiment):
         3. Tau
     """
 
-    def __init__(self):
-        mean = np.arange(0, 5, 0.1)
-        sigma = np.arange(0, 5, 0.1)
-        tau = np.arange(1, 50, 1)
+    name = 'noise'
 
-        self._param_space = product(mean, sigma, tau)
+    def __init__(self):
+        mean = np.arange(0, 6, 1)
+        sigma = np.arange(0, 6, 1)
+        tau = np.arange(1, 60, 10)
+
+        self._param_space = list(product(mean, sigma, tau))
 
     def run(self):
         results = []
 
-        for vals in self._param_space:
+        total = len(self._param_space)
+        for idx, vals in enumerate(self._param_space):
             (m, s, t) = vals
-            print("Running parameter configuration", (m, s, t))
+            print(f"{idx + 1} of {total} Running parameter configuration: {m} - {s} - {t}")
+
             config = dict()
             config['runtime'] = 1000
 
@@ -51,6 +58,7 @@ class NoiseExperiment(Experiment):
                 'ou_tau': 1
             }
 
-            # TODO: add base directory for the experiment
-            result = runner.run(f"{m}-{s}-{t}", modified_params=config)
+            result = runner.run(f"{m}-{s}-{t}", experiment_name=self.name, modified_params=config)
             results.append((m, result))
+
+        return results

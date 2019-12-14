@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 import pickle
+import os
 
 import analysis
 import params
@@ -14,13 +15,13 @@ sys.path.insert(1, '../..')  # allow parent modules to be imported
 sys.path.insert(1, '../../..')  # allow parent modules to be imported
 
 
-def run(base_name: str, modified_params: dict = None):
+def run(base_name: str, experiment_name: str = None, modified_params: dict = None):
     """
     Runs the simulation and persists the model with `basename`.
 
-    :param modified_params: dict that updates the default params.
-    :param base_name: file name of model without extension.
-    :return:
+    @param modified_params: dict that updates the default params.
+    @param base_name: file name of model without extension.
+    @param experiment_name: used as parent folder to group by experiment.
     """
     # use as default the parameters from file params.py
     # if not specified else below
@@ -89,7 +90,16 @@ def run(base_name: str, modified_params: dict = None):
     # ext_input = interpolate_input(ext_input0, params, 'net')
     results['model_results']['net'] = net.network_sim(ext_input0, p)
 
-    with open(f"models/{base_name}.pkl", 'wb') as handle:
+    if experiment_name:
+        try:
+            os.mkdir("models/" + experiment_name)
+        except FileExistsError:
+            # ignore
+            pass
+
+    base_path = f"models/{experiment_name}" if experiment_name else "models"
+
+    with open(f"{base_path}/{base_name}.pkl", 'wb') as handle:
         pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     return results
