@@ -1,9 +1,9 @@
-from collections import Iterator
-from typing import Tuple
-
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
+from typing import Tuple, List, Dict
 from matplotlib import mlab
 from utils import generate_ou_input
 
@@ -151,27 +151,30 @@ def population_rates(model: dict):
     axs[1, 1].set_title("Population 2 - Inhibitory")
 
 
-def _calculate_local_field_potentials(data, duration, excitatory, skip):
+def _calculate_local_field_potentials(data, duration: int = None, excitatory: bool = False, skip: int = None):
+    if duration:
+        duration = int(duration)
+
     if excitatory:
         N_e = data['params']['N_e']
 
-        v_e1 = data['model_results']['net']['v_all_neurons_e'][:, skip:duration + skip]
-        v_e2 = data['model_results']['net']['v_all_neurons_e2'][:, skip:duration + skip]
+        v_e1 = data['model_results']['net']['v_all_neurons_e'][:skip][:duration]
+        v_e2 = data['model_results']['net']['v_all_neurons_e2'][:skip][:duration]
 
         lfp1 = np.sum(v_e1, axis=0) / N_e
         lfp2 = np.sum(v_e2, axis=0) / N_e
     else:
         N_i = data['params']['N_i']
 
-        v_i1 = data['model_results']['net']['v_all_neurons_i1'][:, skip:duration + skip]
-        v_i2 = data['model_results']['net']['v_all_neurons_i2'][:, skip:duration + skip]
+        v_i1 = data['model_results']['net']['v_all_neurons_i1'][:skip][:duration]
+        v_i2 = data['model_results']['net']['v_all_neurons_i2'][:skip][:duration]
 
         lfp1 = np.sum(v_i1, axis=0) / N_i
         lfp2 = np.sum(v_i2, axis=0) / N_i
     return lfp1, lfp2
 
 
-def all_psd(models: Iterator, n_cols, n_rows):
+def all_psd(models: List[Dict], n_cols, n_rows):
     models = list(models)
 
     # TODO: use ration and define columns and rows depending on length of models
@@ -186,12 +189,10 @@ def all_psd(models: Iterator, n_cols, n_rows):
         else:
             ax.set_title(f"mean = {title}", fontsize=10)
 
-            duration = 300
-            excitatory = True
-            skip = 0
+            duration = data["params"]["runtime"]
             dt = 1.0
 
-            lfp1, lfp2 = _calculate_local_field_potentials(data, duration, excitatory, skip)
+            lfp1, lfp2 = _calculate_local_field_potentials(data=data, duration=duration)
 
             timepoints = int((duration / dt) / 2)
             fs = 1. / dt
@@ -204,12 +205,12 @@ def all_psd(models: Iterator, n_cols, n_rows):
 
             ax.set_xlabel("Frequency")
             ax.set_ylabel("Density")
-            ax.plot(freqs * 1000, psd1, '0.25', linewidth=3.0, c='darkgray')
-            ax.plot(freqs * 1000, psd2, '0.75', linewidth=3.0, c='dimgray')
+            ax.plot(freqs * 1000, psd1, '0.25', linewidth=1.0, c='black')
+            ax.plot(freqs * 1000, psd2, '0.75', linewidth=1.0, c='dimgray')
             ax.set_xlim([0, 80])
 
     plt.tight_layout()
-    plt.show()
+    return fig, axs
 
 
 def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
@@ -223,3 +224,83 @@ def ou_noise_by_params(params: dict):
     mean = generate_ou_input(params['runtime'], params['min_dt'], params['ou_stationary'], params['ou_mu'])
     sigma = generate_ou_input(params['runtime'], params['min_dt'], params['ou_stationary'], params['ou_sigma'])
     noise(mean, sigma, save=False)
+
+
+def heat_map(models: List[Dict], x: str = "mean", y: str = "sigma", metric: str = "bandpower", **kwargs):
+    """
+    Plots heat map for noise experiment.
+
+    Setup:
+        x: sigma
+        y: mean
+        z: amplitude
+    """
+    data = _prepare_data(metric, models, x, y)
+    fig = plt.figure(figsize=FIG_SIZE)
+
+    df = pd.DataFrame.from_dict(data)
+    df = df.sort_values(by=[x, y])
+
+    heatmap_data = pd.pivot_table(df,
+                                  values=metric,
+                                  index=[x],
+                                  columns=y)
+    ax = sns.heatmap(heatmap_data, **kwargs)
+    return fig, ax, df
+
+
+def _prepare_data(metric: str, models: [dict], x: str, y: str):
+    data = {
+        x: [],
+        y: [],
+        metric: []
+    }
+
+    for model in models:
+        # x: mean
+        # y: sigma
+        # z: max_amplitude
+        mean_ = model["params"]["ou_mu"]["ou_mean"]
+        sigma_ = model["params"]["ou_mu"]["ou_sigma"]
+        tau_ = model["params"]["ou_mu"]["ou_tau"]
+
+        max_amplitude, peak_freq = band_power(model)
+
+        if x == 'tau':
+            data[x].append(tau_)
+        elif x == 'mean':
+            data[x].append(mean_)
+        else:
+            data[x].append(tau_)
+
+        data[y].append(sigma_)
+
+        if metric == "bandpower":
+            value = max_amplitude
+        elif metric == "freq":
+            value = peak_freq
+        else:
+            value = max_amplitude
+
+        data[metric].append(value)
+
+    return data
+
+
+def band_power(model):
+    lfp1, lfp2 = _calculate_local_field_potentials(model)
+
+    runtime_ = model["params"]["runtime"]
+    dt = 1.0
+    timepoints = int((runtime_ / dt) / 2)
+    fs = 1. / dt
+
+    psd, freqs = mlab.psd(lfp1, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none)
+    psd[0] = 0.0
+    freqs = freqs * 1000
+    freqs = [int(freq) for freq in freqs]
+
+    max_amplitude = psd.max()
+    peak_freq = freqs[psd.argmax()]
+
+    return max_amplitude, peak_freq
