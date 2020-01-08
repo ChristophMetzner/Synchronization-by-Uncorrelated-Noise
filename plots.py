@@ -30,11 +30,13 @@ def noise(mean, sigma, save: bool = True, prefix: str = None, decompose: bool = 
         ax.plot(mean)
         ax.plot(sigma)
 
-    ax.plot(mean + sigma)
+    ax.plot(mean + sigma, c="black", linewidth=0.5)
 
     plt.tight_layout()
 
     _save_to_file("noise", save=save, folder=prefix)
+
+    return fig, ax
 
 
 def summed_voltage(title: str, model: dict, dt: float = 1.0, duration: int = None, prefix: str = None,
@@ -237,7 +239,7 @@ def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
 def ou_noise_by_params(params: dict):
     mean = generate_ou_input(params['runtime'], params['min_dt'], params['ou_stationary'], params['ou_mu'])
     sigma = generate_ou_input(params['runtime'], params['min_dt'], params['ou_stationary'], params['ou_sigma'])
-    noise(mean, sigma, save=False)
+    return noise(mean, sigma, save=False)
 
 
 def heat_map(models: List[Dict], x: str = "mean", y: str = "sigma", metric: str = "bandpower", **kwargs):
