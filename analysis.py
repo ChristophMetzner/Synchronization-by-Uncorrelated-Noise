@@ -33,13 +33,13 @@ def analyze_model(data, base_name: str):
               folder=base_name)
 
     plots.summed_voltage(title='Summed Voltage Change of Excitatory Neurons Over Time',
-                         data=data,
+                         model=data,
                          duration=duration,
                          dt=dt,
                          prefix=base_name)
 
     plots.summed_voltage(title='Summed Voltage Change of Inhibitory Neurons Over Time',
-                         data=data,
+                         model=data,
                          duration=duration,
                          dt=dt,
                          prefix=base_name)

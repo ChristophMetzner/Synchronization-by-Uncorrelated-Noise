@@ -8,7 +8,8 @@ from matplotlib import mlab
 from utils import generate_ou_input
 
 # FIG_SIZE = [20, 15]
-FIG_SIZE = [10, 8]
+FIG_SIZE = [8, 5]
+FIG_SIZE_QUADRATIC = [8, 6]
 
 
 def noise(mean, sigma, save: bool = True, prefix: str = None, decompose: bool = False, skip: int = None,
@@ -31,19 +32,21 @@ def noise(mean, sigma, save: bool = True, prefix: str = None, decompose: bool = 
 
     ax.plot(mean + sigma)
 
+    plt.tight_layout()
+
     _save_to_file("noise", save=save, folder=prefix)
 
 
-def summed_voltage(title: str, data: dict, duration, dt, prefix: str = None, save: bool = True,
-                   excitatory: bool = False):
-    skip = 0
+def summed_voltage(title: str, model: dict, dt: float = 1.0, duration: int = None, prefix: str = None,
+                   save: bool = True, skip: int = None, excitatory: bool = False):
+    duration = duration if duration else model["params"]["runtime"]
 
     if excitatory:
         key = 'excitatory'
     else:
         key = 'inhibitory'
 
-    lfp1, lfp2 = _calculate_local_field_potentials(data, duration, excitatory, skip)
+    lfp1, lfp2 = _calculate_local_field_potentials(model, duration, excitatory, skip)
 
     t = np.linspace(0, duration, int(duration / dt))
 
@@ -55,7 +58,11 @@ def summed_voltage(title: str, data: dict, duration, dt, prefix: str = None, sav
     ax.plot(t, lfp1, '0.75')
     ax.plot(t, lfp2, '0.25')
 
+    plt.tight_layout()
+
     _save_to_file("summed_voltage", save, key, prefix)
+
+    return fig, ax
 
 
 def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: str = None, save: bool = True,
@@ -64,7 +71,7 @@ def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: 
     Plots the Power Spectral Density.
     """
     print("Generate PSD plot ...")
-    skip = 0
+    skip = None
 
     duration = duration if duration else model["params"]["runtime"]
 
@@ -96,8 +103,11 @@ def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: 
 
     _save_to_file("psd", save, key, folder)
 
+    return fig, ax
 
-def raster(data: dict, x_left: int = None, x_right: int = None, save: bool = True, key: str = "", folder: str = None,
+
+def raster(data: dict, title: str = None, x_left: int = None, x_right: int = None, save: bool = True, key: str = "",
+           folder: str = None,
            population: int = 1, fig_size: Tuple = None):
     fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
     ax = fig.add_subplot(111)
@@ -110,7 +120,7 @@ def raster(data: dict, x_left: int = None, x_right: int = None, save: bool = Tru
         s_e = data['model_results']['net']['net_spikes_e2']
         s_i = data['model_results']['net']['net_spikes_i2']
 
-    ax.set_title("Raster Plot")
+    ax.set_title(title)
 
     ax.set_xlabel('Time in ms')
     ax.set_ylabel('Neuron index')
@@ -122,7 +132,11 @@ def raster(data: dict, x_left: int = None, x_right: int = None, save: bool = Tru
 
     ax.set_xlim(left=x_left, right=x_right)
 
+    plt.tight_layout()
+
     _save_to_file("raster", save=save, key=key, folder=folder)
+
+    return fig, ax
 
 
 def population_rates(model: dict):
@@ -151,7 +165,7 @@ def population_rates(model: dict):
     axs[1, 1].set_title("Population 2 - Inhibitory")
 
 
-def _calculate_local_field_potentials(data, duration: int = None, excitatory: bool = False, skip: int = None):
+def _calculate_local_field_potentials(data: dict, duration: int = None, excitatory: bool = False, skip: int = None):
     if duration:
         duration = int(duration)
 
@@ -236,7 +250,7 @@ def heat_map(models: List[Dict], x: str = "mean", y: str = "sigma", metric: str 
         z: amplitude
     """
     data = _prepare_data(metric, models, x, y)
-    fig = plt.figure(figsize=FIG_SIZE)
+    fig = plt.figure(figsize=FIG_SIZE_QUADRATIC)
 
     df = pd.DataFrame.from_dict(data)
     df = df.sort_values(by=[x, y])
@@ -245,7 +259,9 @@ def heat_map(models: List[Dict], x: str = "mean", y: str = "sigma", metric: str 
                                   values=metric,
                                   index=[x],
                                   columns=y)
+
     ax = sns.heatmap(heatmap_data, **kwargs)
+
     return fig, ax, df
 
 
