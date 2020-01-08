@@ -27,10 +27,10 @@ class NoiseExperiment(Experiment):
 
     name = 'noise'
 
-    def __init__(self):
-        mean = np.arange(0, 6, 1)
-        sigma = np.arange(0, 6, 1)
-        tau = np.arange(1, 60, 10)
+    def __init__(self, mean_range: np.ndarray = None, sigma_range: np.array = None, tau_range: np.array = None):
+        mean = mean_range if mean_range else np.arange(0, 10, 0.5)
+        sigma = sigma_range if sigma_range else np.arange(0, 6, 0.5)
+        tau = tau_range if tau_range else np.arange(1, 60, 5)
 
         self._param_space = list(product(mean, sigma, tau))
 
@@ -38,6 +38,8 @@ class NoiseExperiment(Experiment):
         results = []
 
         total = len(self._param_space)
+        print(f"Starting simulation of {total} parameter configurations ...")
+
         for idx, vals in enumerate(self._param_space):
             (m, s, t) = vals
             print(f"{idx + 1} of {total} Running parameter configuration: {m} - {s} - {t}")
