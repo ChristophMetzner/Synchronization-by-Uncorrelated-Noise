@@ -1,7 +1,7 @@
 import numpy as np
 
 from itertools import product
-from typing import List
+from typing import List, Iterable
 
 import runner
 
@@ -34,9 +34,7 @@ class NoiseExperiment(Experiment):
 
         self._param_space = list(product(mean, sigma, tau))
 
-    def run(self):
-        results = []
-
+    def run(self) -> Iterable:
         total = len(self._param_space)
         print(f"Starting simulation of {total} parameter configurations ...")
 
@@ -61,6 +59,4 @@ class NoiseExperiment(Experiment):
             }
 
             result = runner.run(f"{m}-{s}-{t}", experiment_name=self.name, modified_params=config)
-            results.append((m, result))
-
-        return results
+            yield m, result
