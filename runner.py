@@ -55,6 +55,8 @@ def run(base_name: str, experiment_name: str = None, modified_params: dict = Non
         # Update params with modified_params
         p = update(p, modified_params)
 
+    # TODO: check if model already exist, if it should not be overwritten, skip this run!
+
     # external time trace used for generating input and plotting
     # if time step is unequal to model_dt input gets interpolated
     steps = int(p['runtime'] / p['min_dt'])

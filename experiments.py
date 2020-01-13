@@ -1,7 +1,8 @@
+import glob
+import pickle
 import numpy as np
 
 from itertools import product
-from typing import List
 
 import runner
 
@@ -9,8 +10,21 @@ import runner
 class Experiment:
     """ Base Experiment."""
 
-    def run(self) -> List:
+    name = "name"
+
+    def run(self):
         raise NotImplementedError()
+
+    @classmethod
+    def load(cls, condition=lambda x: True) -> [dict]:
+        models = []
+        base_path = f"models/{cls.name}"
+        for file in glob.glob(f"{base_path}/*.pkl"):
+            with open(file, 'rb') as f:
+                model = pickle.load(f)
+                if condition(model):
+                    models.append(model)
+        return models
 
 
 class NoiseExperiment(Experiment):
@@ -59,3 +73,18 @@ class NoiseExperiment(Experiment):
             }
 
             runner.run(f"{m}-{s}-{t}", experiment_name=self.name, modified_params=config)
+
+
+class CouplingStrengthExperiment(Experiment):
+    name = "coupling"
+
+    def __init__(self):
+        e_to_i = np.arange(0, 1, 0.1)
+        self._param_space = e_to_i
+
+    def run(self):
+        print(f"Starting simulation of {len(self._param_space)} parameter configurations ...")
+        for idx, param in enumerate(self._param_space):
+            param = param * 10.
+            print(f"{idx + 1} of {len(self._param_space)} Running parameter configuration: {param}")
+            runner.run(f"{param}", experiment_name=self.name, modified_params={"J_etoi": param})
