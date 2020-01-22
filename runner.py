@@ -3,10 +3,9 @@ import sys
 import pickle
 import os
 
-import analysis
 import params
 import network as net
-import plots
+import constants
 
 from utils import generate_ou_input, update
 
@@ -15,19 +14,19 @@ sys.path.insert(1, '../..')  # allow parent modules to be imported
 sys.path.insert(1, '../../..')  # allow parent modules to be imported
 
 
-def run(base_name: str, experiment_name: str = None, modified_params: dict = None):
+def run(file_name: str = None, experiment_name: str = None, modified_params: dict = None):
     """
     Runs the simulation and persists the model with `basename`.
 
-    @param modified_params: dict that updates the default params.
-    @param base_name: file name of model without extension.
-    @param experiment_name: used as parent folder to group by experiment.
+    :param modified_params: dict that updates the default params.
+    :param file_name: file name of model without extension.
+    :param experiment_name: used as parent folder to group by experiment.
     """
     # use as default the parameters from file params.py
     # if not specified else below
     p = params.get_params()
 
-    p['runtime'] = 3200.
+    p['runtime'] = 500.
     p['net_dt'] = 0.05
     p['min_dt'] = p['net_dt']
     p['t_ref'] = 0.0
@@ -38,7 +37,7 @@ def run(base_name: str, experiment_name: str = None, modified_params: dict = Non
     # noise params for mu
     p['ou_mu'] = {
         'ou_X0': 0.,
-        'ou_mean': .5,
+        'ou_mean': 3.0,
         'ou_sigma': .5,
         'ou_tau': 50.
     }
@@ -94,63 +93,15 @@ def run(base_name: str, experiment_name: str = None, modified_params: dict = Non
 
     if experiment_name:
         try:
-            os.mkdir("models/" + experiment_name)
+            os.mkdir(f"{constants.MODELS_PATH}/" + experiment_name)
         except FileExistsError:
             # ignore
             pass
 
-    base_path = f"models/{experiment_name}" if experiment_name else "models"
+    base_path = f"{constants.MODELS_PATH}/{experiment_name}" if experiment_name else constants.MODELS_PATH
 
-    with open(f"{base_path}/{base_name}.pkl", 'wb') as handle:
-        pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    if file_name:
+        with open(f"{base_path}/{file_name}.pkl", 'wb') as handle:
+            pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     return results
-
-
-if __name__ == '__main__':
-    # results = run("base_low_noise")
-    # analysis.analyze_model(results, 'base_low_noise')
-
-    models = analysis.load([str(el) for el in np.arange(0, 5, 0.5)])
-    plots.all_psd(models=models, n_cols=2, n_rows=5)
-
-    # Sets the connection strength of synapses connecting the networks to 0.
-    # Thus the networks are isolated and do not affect each other.
-    # run("decoupled", {
-    #     "J_ppee": 0.0
-    # })
-
-    factor = 10.
-
-    # # low synaptic strength i -> e
-    # run("low_synaptic_strength", {
-    #     # e -> e
-    #     "J_etoe": 0.01 * factor,
-    #     # e -> i
-    #     "J_etoi": .05 * factor,
-    #     # low synaptic strength between i -> e
-    #     "J_itoe": 0.3 * factor,
-    # })
-    #
-    # # mid synaptic strength i -> e
-    # run("mid_synaptic_strength", {
-    #     # e -> e
-    #     "J_etoe": 0.01 * factor,
-    #     # e -> i
-    #     "J_etoi": .05 * factor,
-    #     # mid synaptic strength between i -> e
-    #     "J_itoe": 0.7 * factor,
-    # })
-    #
-    # # explore effects of synaptic strength
-    # for i_to_e_strength in np.arange(0, 2, 0.1):
-    #     i_to_e_strength = np.around(i_to_e_strength, 1)
-    #     run(f"synaptic_strength_{i_to_e_strength}", {
-    #         "J_etoe": 0.01 * factor,
-    #         "J_etoi": .05 * factor,
-    #         "J_itoe": i_to_e_strength * factor,
-    #     })
-
-    import sys
-
-    sys.exit()

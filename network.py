@@ -135,6 +135,11 @@ def network_sim(signal, params: dict):
     model_term_e = '((EL_e - v) + deltaT_e * exp((negVT_e + v) / deltaT_e)) / taum_e'
     model_term_i = '((EL_i - v) + deltaT_i * exp((negVT_i + v) / deltaT_i)) / taum_i'
 
+    # TODO: use mu_ext_e[i](t) to access noise by neuron index, generate N * noise signals beforehand and add to array
+    # (https://brian2.readthedocs.io/en/stable/user/input.html)
+
+    # TODO: use named subexpressions instead of string formatting
+
     model_eqs_e1 = '''
         dv/dt = %s %s + mu_ext_e(t) + sigma_ext_e(t) * xi + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
@@ -211,9 +216,10 @@ def network_sim(signal, params: dict):
 
     # initialize PopulationRateMonitor
     rate_monitor_e = PopulationRateMonitor(E, name='aeif_ratemon_e')
-    rate_monitor_e2 = PopulationRateMonitor(E2, name='aeif_ratemon_e2')
     rate_monitor_i = PopulationRateMonitor(I, name='aeif_ratemon_i')
+
     rate_monitor_i2 = PopulationRateMonitor(I2, name='aeif_ratemon_i2')
+    rate_monitor_e2 = PopulationRateMonitor(E2, name='aeif_ratemon_e2')
 
     # initialize net
     net = Network(E, E2, I, I2, rate_monitor_e, rate_monitor_e2, rate_monitor_i, rate_monitor_i2)
@@ -323,6 +329,7 @@ def network_sim(signal, params: dict):
         # standard deviation of w_mean is set to 0.1
         E.w = 0.1 * np.random.randn(len(E)) * pA + net_w_init_e
         E2.w = 0.1 * np.random.randn(len(E2)) * pA + net_w_init_e
+
     if have_adap_i:
         # standard deviation of w_mean is set to 0.1
         I.w = 0.1 * np.random.randn(len(I)) * pA + net_w_init_i

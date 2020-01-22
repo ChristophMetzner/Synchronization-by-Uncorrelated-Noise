@@ -1,6 +1,7 @@
 import glob
 import pickle
 import numpy as np
+import constants
 
 from itertools import product
 
@@ -18,7 +19,7 @@ class Experiment:
     @classmethod
     def load(cls, condition=lambda x: True) -> [dict]:
         models = []
-        base_path = f"models/{cls.name}"
+        base_path = f"{constants.MODELS_PATH}/{cls.name}"
         for file in glob.glob(f"{base_path}/*.pkl"):
             with open(file, 'rb') as f:
                 model = pickle.load(f)
@@ -79,12 +80,16 @@ class CouplingStrengthExperiment(Experiment):
     name = "coupling"
 
     def __init__(self):
-        e_to_i = np.arange(0, 1, 0.1)
+        e_to_i = np.arange(0.1, 0.6, 0.1)
+        # e_to_e = np.arange(0.05, 0.2, 0.02)
         self._param_space = e_to_i
 
     def run(self):
         print(f"Starting simulation of {len(self._param_space)} parameter configurations ...")
+        # TODO: product of multiple parameters
         for idx, param in enumerate(self._param_space):
-            param = param * 10.
+            param = param
             print(f"{idx + 1} of {len(self._param_space)} Running parameter configuration: {param}")
             runner.run(f"{param}", experiment_name=self.name, modified_params={"J_etoi": param})
+
+        print("Finished simulation.")
