@@ -2,6 +2,7 @@ import glob
 import pickle
 import numpy as np
 import constants
+import os
 
 from itertools import product
 
@@ -26,6 +27,17 @@ class Experiment:
                 if condition(model):
                     models.append(model)
         return models
+
+    @classmethod
+    def clean(cls):
+        print(f"Start cleaning models of experiment {cls.name}")
+
+        base_path = f"{constants.MODELS_PATH}/{cls.name}"
+        for file in glob.glob(f"{base_path}/*.pkl"):
+            print(f"Remove file {file}")
+            os.remove(file)
+
+        print("Finished cleaning.")
 
 
 class NoiseExperiment(Experiment):
