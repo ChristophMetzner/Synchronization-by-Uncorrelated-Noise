@@ -39,13 +39,13 @@ def run(file_name: str = None, experiment_name: str = None, modified_params: dic
         'ou_X0': 0.,
         'ou_mean': 3.0,
         'ou_sigma': .5,
-        'ou_tau': 50.
+        'ou_tau': 1.
     }
 
     # noise params for sigma
     p['ou_sigma'] = {
         'ou_X0': 0.,
-        'ou_mean': 2.0,
+        'ou_mean': 1.0,
         'ou_sigma': 0.2,
         'ou_tau': 1.
     }

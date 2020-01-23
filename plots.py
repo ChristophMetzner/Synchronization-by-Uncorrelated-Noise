@@ -110,9 +110,11 @@ def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: 
 
 
 def raster(model: dict, title: str = None, x_left: int = None, x_right: int = None, save: bool = False, key: str = "",
-           folder: str = None, population: int = 1, fig_size: Tuple = None):
-    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
-    ax = fig.add_subplot(111)
+           folder: str = None, population: int = 1, fig_size: Tuple = None, ax=None):
+    fig = None
+    if not ax:
+        fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
+        ax = fig.add_subplot(111)
 
     if population == 1:
         s_e = model['model_results']['net']['net_spikes_e']
@@ -125,8 +127,8 @@ def raster(model: dict, title: str = None, x_left: int = None, x_right: int = No
     ax.set_title(title)
     ax.set_xlabel('Time in ms')
     ax.set_ylabel('Neuron index')
-    ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='darkgray', markersize="1.5")
-    ax.plot(s_i[1] * 1000, s_i[0] + (s_e[0].max() + 1), 'k.', c='dimgray', markersize="1.5")
+    ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='darkgray', markersize="2.0")
+    ax.plot(s_i[1] * 1000, s_i[0] + (s_e[0].max() + 1), 'k.', c='black', markersize="2.0")
 
     # TODO: plot complete time axis, currently only x-ticks for available data is plotted
     ax.set_xlim(left=x_left, right=x_right)

@@ -71,5 +71,10 @@ def load(names: [str]):
             yield name, data
 
 
+def load_model(name: str):
+    with open(f"{MODELS_PATH}/{name}.pkl", 'rb') as handle:
+        return pickle.load(handle)
+
+
 if __name__ == '__main__':
     analyze()

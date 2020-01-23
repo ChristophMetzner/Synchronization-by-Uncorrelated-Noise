@@ -80,7 +80,7 @@ def get_params():
     params['J_etoe'] = 0.1 * factor  # [nS] synaptic strength E-E conns within population
     params['J_etoi'] = .05 * factor  # .25      # [nS] synaptic strength E-I conns within population
     params['J_itoe'] = 1. * factor  # [nS] synaptic strength I-E conns within population
-    params['J_itoi'] = 0.5 * factor  # [nS] synaptic strength I-I conns within population
+    params['J_itoi'] = 0.2 * factor  # [nS] synaptic strength I-I conns within population
 
     # TODO: to simulate coupled populations, increase again
     params['J_ppee'] = 0.0  # .1      # [nS] synaptic strength E-E conns between population
