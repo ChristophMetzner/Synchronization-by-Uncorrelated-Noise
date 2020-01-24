@@ -1,5 +1,8 @@
-""" manages the parameter sets for all models. all parameter are given without brian units except the ones that
-are used for brian2 simulations. So far, only brian2 model parameters are included. FP parameters will be added later.
+"""
+Manages the parameter sets for all models.
+
+All parameter are given without brian units except the ones that are used for brian2 simulations.
+So far, only brian2 model parameters are included. FP parameters will be added later.
 """
 
 
@@ -68,7 +71,8 @@ def get_params():
     params['t_ref_inh1'] = 1.0  # [ms]
 
     # GABA synapse (inhibitory)
-    params['tau_GABA'] = 9.0  # [ms]
+    # Neuronal Dynamics (https://neuronaldynamics.epfl.ch/online/Ch3.S1.html#SS1.p3) suggests 6 ms.
+    params['tau_GABA'] = 6.0  # [ms] # 9.0 starting point
     params['E_GABA'] = -70.0  # [mV] Reversal potential of GABA synapse , usually set to -70 to -75mV
 
     # Network size
