@@ -87,7 +87,7 @@ def get_params():
     params['J_itoe'] = 1. * factor  # [nS] synaptic strength I-E conns within population
     params['J_itoi'] = 0.2 * factor  # [nS] synaptic strength I-I conns within population
 
-    params['J_ppee'] = 0.5  # .1      # [nS] synaptic strength E-E conns between population
+    params['J_ppee'] = 0.2  # .1      # [nS] synaptic strength E-E conns between population
     params['J_ppei'] = 0.  # .1      # [nS] synaptic strength E-I conns between population
 
     params['K_etoe'] = 100  # number of E-E connections within population
