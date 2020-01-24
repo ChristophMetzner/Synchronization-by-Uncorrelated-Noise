@@ -72,6 +72,7 @@ def get_params():
     params['E_GABA'] = -70.0  # [mV] Reversal potential of GABA synapse , usually set to -70 to -75mV
 
     # Network size
+    params['N_pop'] = 1  # number of populations 1 or 2
     params['N_e'] = 1000
     params['N_i'] = 250
 
@@ -82,8 +83,7 @@ def get_params():
     params['J_itoe'] = 1. * factor  # [nS] synaptic strength I-E conns within population
     params['J_itoi'] = 0.2 * factor  # [nS] synaptic strength I-I conns within population
 
-    # TODO: to simulate coupled populations, increase again
-    params['J_ppee'] = 0.0  # .1      # [nS] synaptic strength E-E conns between population
+    params['J_ppee'] = 0.5  # .1      # [nS] synaptic strength E-E conns between population
     params['J_ppei'] = 0.  # .1      # [nS] synaptic strength E-I conns between population
 
     params['K_etoe'] = 100  # number of E-E connections within population

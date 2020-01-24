@@ -146,10 +146,10 @@ def population_rates(model: dict):
     """
     fig, axs = plt.subplots(2, 2, figsize=(20, 10))
 
+    N_pop = model["params"]["N_pop"]
+
     r_e = model['model_results']['net']['r_e']
     r_i1 = model['model_results']['net']['r_i1']
-    r_e2 = model['model_results']['net']['r_e2']
-    r_i2 = model['model_results']['net']['r_i2']
 
     axs[0, 0].plot(r_e, c="black")
     axs[0, 0].set_title("Population 1 - Excitatory")
@@ -157,11 +157,15 @@ def population_rates(model: dict):
     axs[1, 0].plot(r_i1, c="grey")
     axs[1, 0].set_title("Population 1 - Inhibitory")
 
-    axs[0, 1].plot(r_e2, c="black")
-    axs[0, 1].set_title("Population 2 - Excitatory")
+    if N_pop > 1:
+        r_e2 = model['model_results']['net']['r_e2']
+        r_i2 = model['model_results']['net']['r_i2']
 
-    axs[1, 1].plot(r_i2, c="grey")
-    axs[1, 1].set_title("Population 2 - Inhibitory")
+        axs[0, 1].plot(r_e2, c="black")
+        axs[0, 1].set_title("Population 2 - Excitatory")
+
+        axs[1, 1].plot(r_i2, c="grey")
+        axs[1, 1].set_title("Population 2 - Inhibitory")
 
 
 def calculate_local_field_potentials(data: dict, duration: int = None, excitatory: bool = False, skip: int = None,
