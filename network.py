@@ -498,7 +498,6 @@ def build_synapses_multiple_populations(E, E2, I, I2, K_etoe, K_etoi, K_itoe, K_
 
 
 def build_synapses_first_population(E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net):
-    # Connections within population 1
     # synapses object
     # this only specifies the dynamics of the synapses. they get actually created when the .connect method is called
     synEE = Synapses(E, E, on_pre='g_ampa+=J_etoe')

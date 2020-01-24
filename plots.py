@@ -41,7 +41,8 @@ def noise(mean, sigma, save: bool = True, prefix: str = None, decompose: bool = 
 
 
 def summed_voltage(model: dict, title: str = "Summed Voltage", dt: float = 1.0, duration: int = None,
-                   prefix: str = None, save: bool = False, skip: int = None, excitatory: bool = False):
+                   prefix: str = None, save: bool = False, skip: int = None, excitatory: bool = False,
+                   population: int = 1):
     duration = duration if duration else model["params"]["runtime"]
 
     if excitatory:
@@ -49,7 +50,7 @@ def summed_voltage(model: dict, title: str = "Summed Voltage", dt: float = 1.0, 
     else:
         key = 'inhibitory'
 
-    lfp1, lfp2 = calculate_local_field_potentials(model, duration, excitatory, skip)
+    lfp1, lfp2 = calculate_local_field_potentials(model, duration, excitatory, skip, population=population)
 
     t = np.linspace(0, duration, int(duration / dt))
 
@@ -69,21 +70,19 @@ def summed_voltage(model: dict, title: str = "Summed Voltage", dt: float = 1.0, 
 
 
 def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: str = None, save: bool = False,
-        excitatory: bool = False):
+        population: int = 1, excitatory: bool = False, skip: int = None, fig_size: tuple = None):
     """
     Plots the Power Spectral Density.
     """
     print("Generate PSD plot ...")
-    skip = None
 
     duration = duration if duration else model["params"]["runtime"]
-
     if excitatory:
         key = 'excitatory'
     else:
         key = 'inhibitory'
 
-    lfp1, lfp2 = calculate_local_field_potentials(model, duration, excitatory, skip)
+    lfp1, lfp2 = calculate_local_field_potentials(model, duration, excitatory, skip, population=population)
 
     timepoints = int((duration / dt) / 2)
     fs = 1. / dt
@@ -94,7 +93,7 @@ def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: 
     psd1[0] = 0.0
     psd2[0] = 0.0
 
-    fig = plt.figure(figsize=FIG_SIZE)
+    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
 
     ax = fig.add_subplot(111)
     ax.set_title(title)
@@ -124,7 +123,7 @@ def raster(model: dict, title: str = None, x_left: int = None, x_right: int = No
         s_e = model['model_results']['net']['net_spikes_e2']
         s_i = model['model_results']['net']['net_spikes_i2']
 
-    ax.set_title(title)
+    ax.set_title(title if title else "Raster")
     ax.set_xlabel('Time in ms')
     ax.set_ylabel('Neuron index')
     ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='darkgray', markersize="2.0")
@@ -169,33 +168,34 @@ def population_rates(model: dict):
 
 
 def calculate_local_field_potentials(data: dict, duration: int = None, excitatory: bool = False, skip: int = None,
-                                     single_population: bool = True) -> Tuple:
+                                     population: int = 1) -> Tuple:
     if duration:
         duration = int(duration)
 
-    if single_population:
-        N_e = data['params']['N_e']
-        N_i = data['params']['N_i']
+    N_e = data['params']['N_e']
+    N_i = data['params']['N_i']
 
-        v_e1 = data['model_results']['net']['v_all_neurons_e'][:skip][:duration]
-        v_i1 = data['model_results']['net']['v_all_neurons_i1'][:skip][:duration]
-        lfp1 = np.sum(v_e1, axis=0) / N_e
-        lfp2 = np.sum(v_i1, axis=0) / N_i
+    if population == 1:
+        v_e = data['model_results']['net']['v_all_neurons_e'][:skip][:duration]
+        v_i = data['model_results']['net']['v_all_neurons_i1'][:skip][:duration]
+        lfp1 = np.sum(v_e, axis=0) / N_e
+        lfp2 = np.sum(v_i, axis=0) / N_i
+        return lfp1, lfp2
 
-        # exc, inh lfp
+    elif population == 2:
+        v_e = data['model_results']['net']['v_all_neurons_e2'][:skip][:duration]
+        v_i = data['model_results']['net']['v_all_neurons_i2'][:skip][:duration]
+        lfp1 = np.sum(v_e, axis=0) / N_e
+        lfp2 = np.sum(v_i, axis=0) / N_i
         return lfp1, lfp2
 
     if excitatory:
-        N_e = data['params']['N_e']
-
         v_e1 = data['model_results']['net']['v_all_neurons_e'][:skip][:duration]
         v_e2 = data['model_results']['net']['v_all_neurons_e2'][:skip][:duration]
 
         lfp1 = np.sum(v_e1, axis=0) / N_e
         lfp2 = np.sum(v_e2, axis=0) / N_e
     else:
-        N_i = data['params']['N_i']
-
         v_i1 = data['model_results']['net']['v_all_neurons_i1'][:skip][:duration]
         v_i2 = data['model_results']['net']['v_all_neurons_i2'][:skip][:duration]
 
