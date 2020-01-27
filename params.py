@@ -82,13 +82,13 @@ def get_params():
 
     # for recurrency
     factor = 10.
-    params['J_etoe'] = 0.1 * factor  # [nS] synaptic strength E-E conns within population
+    params['J_etoe'] = 0.01 * factor  # [nS] synaptic strength E-E conns within population
     params['J_etoi'] = .05 * factor  # .25      # [nS] synaptic strength E-I conns within population
     params['J_itoe'] = 1. * factor  # [nS] synaptic strength I-E conns within population
-    params['J_itoi'] = 0.2 * factor  # [nS] synaptic strength I-I conns within population
+    params['J_itoi'] = 0.3 * factor  # [nS] synaptic strength I-I conns within population
 
     params['J_ppee'] = 0.2  # .1      # [nS] synaptic strength E-E conns between population
-    params['J_ppei'] = 0.  # .1      # [nS] synaptic strength E-I conns between population
+    params['J_ppei'] = 0.1  # .1      # [nS] synaptic strength E-I conns between population
 
     params['K_etoe'] = 100  # number of E-E connections within population
     params['K_etoi'] = 100  # number of E-I connections within population
@@ -102,7 +102,7 @@ def get_params():
     params['wm_init'] = 0.  # [pA]
 
     # for recurrency
-    params['const_delay'] = 0.  # [ms]
+    params['const_delay'] = 0.1  # [ms]
 
     # for plotting
     # colors[modelname] = color
