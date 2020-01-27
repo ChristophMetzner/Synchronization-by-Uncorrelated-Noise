@@ -140,7 +140,7 @@ def lfp_nets(model: dict, single_net: bool = False):
     dt = 1.0
     duration = model["params"]["runtime"]
 
-    lfp1 = processing.lfp_net(model)
+    lfp1 = processing.lfp_single_net(model)
 
     t = np.linspace(0, duration, int(duration / dt))
 
@@ -154,7 +154,7 @@ def lfp_nets(model: dict, single_net: bool = False):
     handles = [mpatches.Patch(color='black', label='Network 1')]
 
     if not single_net:
-        lfp2 = processing.lfp_net(model, population=2)
+        lfp2 = processing.lfp_single_net(model, population=2)
         ax.plot(t, lfp2, '0.75', color="darkgrey")
         handles.append(mpatches.Patch(color='darkgrey', label='Network 2'))
 
@@ -212,7 +212,7 @@ def all_psd(models: List[Dict], n_cols, n_rows):
             duration = data["params"]["runtime"]
             dt = 1.0
 
-            lfp1, lfp2 = processing.lfp(data=data, duration=duration)
+            lfp1, lfp2 = processing.lfp(model=data, duration=duration)
 
             timepoints = int((duration / dt) / 2)
             fs = 1. / dt
@@ -265,7 +265,7 @@ def heat_map(models: List[Dict], x: str = "mean", y: str = "sigma", metric: str 
 
 
 def band_power(model):
-    lfp = processing.lfp_net(model)
+    lfp = processing.lfp_single_net(model)
 
     runtime_ = model["params"]["runtime"]
     dt = 1.0
