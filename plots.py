@@ -1,16 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import seaborn as sns
 import pandas as pd
+
 import constants
+import processing
 
 from typing import Tuple, List, Dict
 from matplotlib import mlab
+
 from utils import generate_ou_input
 
 # FIG_SIZE = [20, 15]
-FIG_SIZE = [8, 5]
+FIG_SIZE = [10, 6]
 FIG_SIZE_QUADRATIC = [8, 6]
+FIG_SIZE_PSD = [8, 3]
 
 
 def noise(mean, sigma, save: bool = True, prefix: str = None, decompose: bool = False, skip: int = None,
@@ -40,17 +45,11 @@ def noise(mean, sigma, save: bool = True, prefix: str = None, decompose: bool = 
     return fig, ax
 
 
-def summed_voltage(model: dict, title: str = "Summed Voltage", dt: float = 1.0, duration: int = None,
-                   prefix: str = None, save: bool = False, skip: int = None, excitatory: bool = False,
-                   population: int = 1):
+def lfp(model: dict, title: str = "Summed Voltage", dt: float = 1.0, duration: int = None,
+        prefix: str = None, save: bool = False, skip: int = None, population: int = 1):
     duration = duration if duration else model["params"]["runtime"]
 
-    if excitatory:
-        key = 'excitatory'
-    else:
-        key = 'inhibitory'
-
-    lfp1, lfp2 = calculate_local_field_potentials(model, duration, excitatory, skip, population=population)
+    lfp1, lfp2 = processing.lfp(model, duration, skip, population=population)
 
     t = np.linspace(0, duration, int(duration / dt))
 
@@ -64,13 +63,13 @@ def summed_voltage(model: dict, title: str = "Summed Voltage", dt: float = 1.0, 
 
     plt.tight_layout()
 
-    _save_to_file("summed_voltage", save, key, prefix)
+    _save_to_file("summed_voltage", save, prefix)
 
     return fig, ax
 
 
 def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: str = None, save: bool = False,
-        population: int = 1, excitatory: bool = False, skip: int = None, fig_size: tuple = None):
+        population: int = 1, excitatory: bool = False, fig_size: tuple = None):
     """
     Plots the Power Spectral Density.
     """
@@ -82,7 +81,7 @@ def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: 
     else:
         key = 'inhibitory'
 
-    lfp1, lfp2 = calculate_local_field_potentials(model, duration, excitatory, skip, population=population)
+    lfp1, lfp2 = processing.lfp(model, population=population)
 
     timepoints = int((duration / dt) / 2)
     fs = 1. / dt
@@ -93,7 +92,7 @@ def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: 
     psd1[0] = 0.0
     psd2[0] = 0.0
 
-    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
+    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
 
     ax = fig.add_subplot(111)
     ax.set_title(title)
@@ -137,6 +136,34 @@ def raster(model: dict, title: str = None, x_left: int = None, x_right: int = No
     return fig, ax
 
 
+def lfp_nets(model: dict, single_net: bool = False):
+    dt = 1.0
+    duration = model["params"]["runtime"]
+
+    lfp1 = processing.lfp_net(model)
+
+    t = np.linspace(0, duration, int(duration / dt))
+
+    fig = plt.figure(figsize=FIG_SIZE)
+    ax = fig.add_subplot(111)
+    ax.set_title(f"LFP of both networks")
+    ax.set_xlabel("Elapsed Time in ms")
+    ax.set_ylabel("Voltage")
+    ax.plot(t, lfp1, '0.75', color="black")
+
+    handles = [mpatches.Patch(color='black', label='Network 1')]
+
+    if not single_net:
+        lfp2 = processing.lfp_net(model, population=2)
+        ax.plot(t, lfp2, '0.75', color="darkgrey")
+        handles.append(mpatches.Patch(color='darkgrey', label='Network 2'))
+
+    plt.legend(handles=handles)
+    plt.tight_layout()
+
+    return ax
+
+
 def population_rates(model: dict):
     """
     Plots the smoothed population rates for excitatory and inhibitory groups of both populations.
@@ -167,44 +194,6 @@ def population_rates(model: dict):
         axs[1, 1].set_title("Population 2 - Inhibitory")
 
 
-def calculate_local_field_potentials(data: dict, duration: int = None, excitatory: bool = False, skip: int = None,
-                                     population: int = 1) -> Tuple:
-    if duration:
-        duration = int(duration)
-
-    N_e = data['params']['N_e']
-    N_i = data['params']['N_i']
-
-    if population == 1:
-        v_e = data['model_results']['net']['v_all_neurons_e'][:skip][:duration]
-        v_i = data['model_results']['net']['v_all_neurons_i1'][:skip][:duration]
-        lfp1 = np.sum(v_e, axis=0) / N_e
-        lfp2 = np.sum(v_i, axis=0) / N_i
-        return lfp1, lfp2
-
-    elif population == 2:
-        v_e = data['model_results']['net']['v_all_neurons_e2'][:skip][:duration]
-        v_i = data['model_results']['net']['v_all_neurons_i2'][:skip][:duration]
-        lfp1 = np.sum(v_e, axis=0) / N_e
-        lfp2 = np.sum(v_i, axis=0) / N_i
-        return lfp1, lfp2
-
-    if excitatory:
-        v_e1 = data['model_results']['net']['v_all_neurons_e'][:skip][:duration]
-        v_e2 = data['model_results']['net']['v_all_neurons_e2'][:skip][:duration]
-
-        lfp1 = np.sum(v_e1, axis=0) / N_e
-        lfp2 = np.sum(v_e2, axis=0) / N_e
-    else:
-        v_i1 = data['model_results']['net']['v_all_neurons_i1'][:skip][:duration]
-        v_i2 = data['model_results']['net']['v_all_neurons_i2'][:skip][:duration]
-
-        lfp1 = np.sum(v_i1, axis=0) / N_i
-        lfp2 = np.sum(v_i2, axis=0) / N_i
-
-    return lfp1, lfp2
-
-
 def all_psd(models: List[Dict], n_cols, n_rows):
     models = list(models)
 
@@ -223,7 +212,7 @@ def all_psd(models: List[Dict], n_cols, n_rows):
             duration = data["params"]["runtime"]
             dt = 1.0
 
-            lfp1, lfp2 = calculate_local_field_potentials(data=data, duration=duration)
+            lfp1, lfp2 = processing.lfp(data=data, duration=duration)
 
             timepoints = int((duration / dt) / 2)
             fs = 1. / dt
@@ -242,13 +231,6 @@ def all_psd(models: List[Dict], n_cols, n_rows):
 
     plt.tight_layout()
     return fig, axs
-
-
-def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
-    if save:
-        base = f"{name}-{key}.png" if key else f"{name}.png"
-        fname = f"{folder}/{base}" if folder else base
-        plt.savefig(f"{constants.PLOTS_PATH}/{fname}")
 
 
 def ou_noise_by_params(params: dict):
@@ -280,6 +262,25 @@ def heat_map(models: List[Dict], x: str = "mean", y: str = "sigma", metric: str 
     ax = sns.heatmap(heatmap_data, **kwargs)
 
     return fig, ax, df
+
+
+def band_power(model):
+    lfp = processing.lfp_net(model)
+
+    runtime_ = model["params"]["runtime"]
+    dt = 1.0
+    timepoints = int((runtime_ / dt) / 2)
+    fs = 1. / dt
+
+    psd, freqs = mlab.psd(lfp, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none)
+    psd[0] = 0.0
+    freqs = freqs * 1000
+    freqs = [int(freq) for freq in freqs]
+
+    max_amplitude = psd.max()
+    peak_freq = freqs[psd.argmax()]
+
+    return max_amplitude, peak_freq
 
 
 def _prepare_data(metric: str, models: [dict], x: str, y: str):
@@ -320,20 +321,8 @@ def _prepare_data(metric: str, models: [dict], x: str, y: str):
     return data
 
 
-def band_power(model):
-    lfp1, lfp2 = calculate_local_field_potentials(model)
-
-    runtime_ = model["params"]["runtime"]
-    dt = 1.0
-    timepoints = int((runtime_ / dt) / 2)
-    fs = 1. / dt
-
-    psd, freqs = mlab.psd(lfp1, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none)
-    psd[0] = 0.0
-    freqs = freqs * 1000
-    freqs = [int(freq) for freq in freqs]
-
-    max_amplitude = psd.max()
-    peak_freq = freqs[psd.argmax()]
-
-    return max_amplitude, peak_freq
+def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
+    if save:
+        base = f"{name}-{key}.png" if key else f"{name}.png"
+        fname = f"{folder}/{base}" if folder else base
+        plt.savefig(f"{constants.PLOTS_PATH}/{fname}")

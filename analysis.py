@@ -31,10 +31,10 @@ def analyze_model(model, base_name: str):
               dt=1.0,
               folder=base_name)
 
-    plots.summed_voltage(title='Summed Voltage Change of first Network',
-                         model=model,
-                         dt=1.0,
-                         prefix=base_name)
+    plots.lfp(title='Summed Voltage Change of first Network',
+              model=model,
+              dt=1.0,
+              prefix=base_name)
 
     plots.noise(model['input_mean_1'], model['input_sigma_1'], prefix=base_name)
 
