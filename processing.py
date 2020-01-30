@@ -2,6 +2,8 @@ import numpy as np
 
 from typing import Tuple
 
+from scipy.signal import hilbert
+
 
 def lfp(model: dict, duration: int = None, skip: int = None, population: int = 1) -> Tuple:
     if duration:
@@ -46,3 +48,41 @@ def lfp_nets(model):
 
 def _lfp(v, N):
     return np.sum(v, axis=0) / N
+
+
+def hilphase(y1, y2):
+    sig1_hill = hilbert(y1)
+    sig2_hill = hilbert(y2)
+    pdt = (np.inner(sig1_hill, np.conj(sig2_hill)) / (np.sqrt(np.inner(
+        sig1_hill,
+        np.conj(sig1_hill)) * np.inner(sig2_hill, np.conj(sig2_hill)))))
+    phase = np.angle(pdt)
+    return phase
+
+
+def phase(signal):
+    hil = hilbert(signal)
+    return np.unwrap(np.angle(hil))
+
+
+def hilphase_2(y1, y2):
+    sig1_hill = hilbert(y1)
+    sig2_hill = hilbert(y2)
+
+    phase_y1 = np.unwrap(np.angle(sig1_hill))
+    phase_y2 = np.unwrap(np.angle(sig2_hill))
+
+    Inst_phase_diff = phase_y1 - phase_y2
+    avg_phase = np.average(Inst_phase_diff)
+
+    return Inst_phase_diff, avg_phase
+
+
+def phase_locking_value(signals):
+    signals = [s - np.mean(s) for s in signals]
+    phases = [np.angle(hilbert(s)) for s in signals]
+    complex_planes = [np.exp(1j * phase) for phase in phases]
+
+    avg = np.average(complex_planes)
+    phi = np.abs(avg)
+    return np.mean(phi), complex_planes, phases

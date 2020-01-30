@@ -19,9 +19,9 @@ FIG_SIZE_PSD = [8, 3]
 
 
 def noise(mean, sigma, save: bool = True, prefix: str = None, decompose: bool = False, skip: int = None,
-          duration: int = None):
+          duration: int = None, fig_size: bool = None):
     """ Plot External Noise. """
-    fig = plt.figure(figsize=FIG_SIZE)
+    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
     ax = fig.add_subplot(111)
 
     ax.set_title("External Input Signal to population")
@@ -56,10 +56,17 @@ def lfp(model: dict, title: str = "Summed Voltage", dt: float = 1.0, duration: i
     fig = plt.figure(figsize=FIG_SIZE)
     ax = fig.add_subplot(111)
     ax.set_title(title)
+
     ax.set_xlabel("Elapsed Time in ms")
     ax.set_ylabel("Voltage")
-    ax.plot(t, lfp1, '0.75')
-    ax.plot(t, lfp2, '0.25')
+
+    ax.plot(t, lfp1, '0.75', c="black")
+    ax.plot(t, lfp2, '0.25', c="darkgrey")
+
+    plt.legend(handles=[
+        mpatches.Patch(color='black', label='Excitatory Group'),
+        mpatches.Patch(color='darkgrey', label='Inhibitory Group')
+    ])
 
     plt.tight_layout()
 
@@ -68,7 +75,7 @@ def lfp(model: dict, title: str = "Summed Voltage", dt: float = 1.0, duration: i
     return fig, ax
 
 
-def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: str = None, save: bool = False,
+def psd(model: dict, title: str = None, duration: int = None, dt: float = 1.0, folder: str = None, save: bool = False,
         population: int = 1, excitatory: bool = False, fig_size: tuple = None):
     """
     Plots the Power Spectral Density.
@@ -95,7 +102,7 @@ def psd(title: str, model: dict, duration: int = None, dt: float = 1.0, folder: 
     fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
 
     ax = fig.add_subplot(111)
-    ax.set_title(title)
+    ax.set_title(title if title else "PSD")
     ax.set_xlabel("Frequency")
     ax.set_ylabel("Density")
     ax.plot(freqs * 1000, psd1, '0.25', linewidth=3.0, c='darkgray')
@@ -125,8 +132,13 @@ def raster(model: dict, title: str = None, x_left: int = None, x_right: int = No
     ax.set_title(title if title else "Raster")
     ax.set_xlabel('Time in ms')
     ax.set_ylabel('Neuron index')
-    ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='darkgray', markersize="2.0")
-    ax.plot(s_i[1] * 1000, s_i[0] + (s_e[0].max() + 1), 'k.', c='black', markersize="2.0")
+    ax.plot(s_e[1] * 1000, s_e[0], 'k.', c='dimgrey', markersize="4.0")
+    ax.plot(s_i[1] * 1000, s_i[0] + (s_e[0].max() + 1), 'k.', c='black', markersize="4.0")
+
+    plt.legend(handles=[
+        mpatches.Patch(color='dimgrey', label='Excitatory Group'),
+        mpatches.Patch(color='black', label='Inhibitory Group')
+    ])
 
     # TODO: plot complete time axis, currently only x-ticks for available data is plotted
     ax.set_xlim(left=x_left, right=x_right)
@@ -233,10 +245,10 @@ def all_psd(models: List[Dict], n_cols, n_rows):
     return fig, axs
 
 
-def ou_noise_by_params(params: dict):
+def ou_noise_by_params(params: dict, fig_size: Tuple = None):
     mean = generate_ou_input(params['runtime'], params['min_dt'], params['ou_stationary'], params['ou_mu'])
     sigma = generate_ou_input(params['runtime'], params['min_dt'], params['ou_stationary'], params['ou_sigma'])
-    return noise(mean, sigma, save=False)
+    return noise(mean, sigma, save=False, fig_size=fig_size)
 
 
 def heat_map(models: List[Dict], x: str = "mean", y: str = "sigma", metric: str = "bandpower", **kwargs):
