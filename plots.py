@@ -158,7 +158,7 @@ def lfp_nets(model: dict, single_net: bool = False):
 
     fig = plt.figure(figsize=FIG_SIZE)
     ax = fig.add_subplot(111)
-    ax.set_title(f"LFP of both networks")
+    ax.set_title("LFP of network" if single_net else "LFP of both networks")
     ax.set_xlabel("Elapsed Time in ms")
     ax.set_ylabel("Voltage")
     ax.plot(t, lfp1, '0.75', color="black")

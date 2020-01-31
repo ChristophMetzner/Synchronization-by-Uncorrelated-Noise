@@ -81,8 +81,8 @@ def hilphase_2(y1, y2):
 def phase_locking_value(signals):
     signals = [s - np.mean(s) for s in signals]
     phases = [np.angle(hilbert(s)) for s in signals]
-    complex_planes = [np.exp(1j * phase) for phase in phases]
+    complex_phase = [np.exp(1j * phase) for phase in phases]
 
-    avg = np.average(complex_planes)
+    avg = np.average(complex_phase)
     phi = np.abs(avg)
-    return np.mean(phi), complex_planes, phases
+    return np.mean(phi)
