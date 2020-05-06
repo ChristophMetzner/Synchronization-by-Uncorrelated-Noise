@@ -95,6 +95,7 @@ def get_params():
     params['K_itoe'] = 100  # number of I-E connections within population
     params['K_itoi'] = 100  # number of I-I connections within population
 
+    # TODO: reasoning for choosing 10?
     params['K_ppee'] = 10  # number of E-E connections between population
     params['K_ppei'] = 10  # number of E-I connections between population
 

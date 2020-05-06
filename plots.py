@@ -107,6 +107,12 @@ def psd(model: dict, title: str = None, duration: int = None, dt: float = 1.0, f
     ax.set_ylabel("Density")
     ax.plot(freqs * 1000, psd1, '0.25', linewidth=3.0, c='darkgray')
     ax.plot(freqs * 1000, psd2, '0.75', linewidth=3.0, c='dimgray')
+
+    plt.legend(handles=[
+        mpatches.Patch(color='darkgray', label='Excitatory Group'),
+        mpatches.Patch(color='dimgray', label='Inhibitory Group')
+    ])
+
     ax.set_xlim([0, 80])
 
     _save_to_file("psd", save, key, folder)
@@ -182,7 +188,7 @@ def population_rates(model: dict):
 
     :param model: model.
     """
-    fig, axs = plt.subplots(2, 2, figsize=(20, 10))
+    fig, axs = plt.subplots(2, 2, figsize=(20, 10), sharey='col')
 
     N_pop = model["params"]["N_pop"]
 
