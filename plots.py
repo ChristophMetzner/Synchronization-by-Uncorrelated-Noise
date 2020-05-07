@@ -24,7 +24,7 @@ def noise(mean, sigma, save: bool = True, prefix: str = None, decompose: bool = 
     fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
     ax = fig.add_subplot(111)
 
-    ax.set_title("External Input Signal to population")
+    ax.set_title("External Input Signal to Population")
     ax.set_xlabel("Steps")
     ax.set_ylabel("Voltage in mV")
 

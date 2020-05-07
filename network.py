@@ -135,8 +135,6 @@ def network_sim(signal, params: dict):
     mu_ext_i = TimedArray(mu_ext_array_i * (mV / ms), dt_sim)
     sigma_ext_i = TimedArray(sigma_ext_array_i * (mV / sqrt(ms)), dt_sim)
 
-    # get the model specific term EIF
-
     model_term_e = "((EL_e - v) + deltaT_e * exp((negVT_e + v) / deltaT_e)) / taum_e"
     model_term_i = "((EL_i - v) + deltaT_i * exp((negVT_i + v) / deltaT_i)) / taum_i"
 
@@ -144,8 +142,8 @@ def network_sim(signal, params: dict):
     # (https://brian2.readthedocs.io/en/stable/user/input.html)
 
     # TODO: use named subexpressions instead of string formatting
-    model_eqs_e1 = """
-        dv/dt = %s %s + mu_ext_e(t) + sigma_ext_e(t) * xi + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
+    model_eqs_e1 = f"""
+        dv/dt = %s %s {"+ mu_ext_e(t) + sigma_ext_e(t) * xi" if params["ext_input_type"] == "ou" else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
         I_syn_AMPA = g_ampa*(E_AMPA-v): amp # synaptic current
         dg_ampa/dt = -g_ampa/tau_AMPA : siemens # synaptic conductance
@@ -159,15 +157,15 @@ def network_sim(signal, params: dict):
         else "",
     )
 
-    model_eqs_i1 = """
-        dv/dt = %s %s + mu_ext_i(t) + sigma_ext_i(t) * xi + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
+    model_eqs_i1 = f"""
+        dv/dt = %s %s {"+ mu_ext_i(t) + sigma_ext_i(t) * xi" if params["ext_input_type"] == "ou" else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
         I_syn_AMPA = g_ampa*(E_AMPA-v): amp # synaptic current
         dg_ampa/dt = -g_ampa/tau_AMPA : siemens # synaptic conductance
         I_syn_GABA = g_gaba*(E_GABA-v): amp # synaptic current
         dg_gaba/dt = -g_gaba/tau_GABA : siemens # synaptic conductance
         """ % (
-        model_term_e,
+        model_term_i,
         "- (w / C_e)" if have_adap_e else "",
         ("dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s" % w_refr_e)
         if have_adap_e
@@ -214,8 +212,10 @@ def network_sim(signal, params: dict):
         mu_ext_i2 = TimedArray(mu_ext_array_i2 * (mV / ms), dt_sim)
         sigma_ext_i2 = TimedArray(sigma_ext_array_i2 * (mV / sqrt(ms)), dt_sim)
 
-        model_eqs_e2 = """
-        dv/dt = %s %s + mu_ext_e2(t) + sigma_ext_e2(t) * xi + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
+        noise_e2 = "+ mu_ext_e2(t) + sigma_ext_e2(t) * xi"
+
+        model_eqs_e2 = f"""
+        dv/dt = %s %s {noise_e2 if params["ext_input_type"] == "ou" else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
         I_syn_AMPA = g_ampa*(E_AMPA-v): amp # synaptic current
         dg_ampa/dt = -g_ampa/tau_AMPA : siemens # synaptic conductance
@@ -229,15 +229,15 @@ def network_sim(signal, params: dict):
             else "",
         )
 
-        model_eqs_i2 = """
-        dv/dt = %s %s + mu_ext_i2(t) + sigma_ext_i2(t) * xi + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
+        model_eqs_i2 = f"""
+        dv/dt = %s %s {"+ mu_ext_i2(t) + sigma_ext_i2(t) * xi" if params["ext_input_type"] == "ou" else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
         I_syn_AMPA = g_ampa*(E_AMPA-v): amp # synaptic current
         dg_ampa/dt = -g_ampa/tau_AMPA : siemens # synaptic conductance
         I_syn_GABA = g_gaba*(E_GABA-v): amp # synaptic current
         dg_gaba/dt = -g_gaba/tau_GABA : siemens # synaptic conductance
         """ % (
-            model_term_e,
+            model_term_i,
             "- (w / C_e)" if have_adap_e else "",
             ("dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s" % w_refr_e)
             if have_adap_e
@@ -257,28 +257,34 @@ def network_sim(signal, params: dict):
             t_ref_i,
         )
 
-    # initialize PopulationRateMonitor
     rate_monitor_e = PopulationRateMonitor(E, name="aeif_ratemon_e")
     rate_monitor_i = PopulationRateMonitor(I, name="aeif_ratemon_i")
 
-    print("initializing net ...")
+    print("Initializing net ...")
     start_init = time.time()
 
-    # initialize net
+    net = Network(E, I, rate_monitor_e, rate_monitor_i,)
+
+    if params["ext_input_type"] == "poisson":
+        poisson_strength_ = params["poisson_strength"]
+        rate_ = params["poisson_rate"]
+
+        P_E = PoissonGroup(200, np.arange(200) * Hz + rate_ * Hz)
+        P_I = PoissonGroup(200, np.arange(200) * Hz + rate_ * Hz)
+
+        S_pe = Synapses(P_E, E, on_pre=f"v+={poisson_strength_}*mV")
+        S_pe.connect(j="i")
+
+        S_pi = Synapses(P_I, I, on_pre=f"v+={poisson_strength_}*mV")
+        S_pi.connect(j="i")
+
+        net.add(P_I, P_E, S_pe, S_pi)
+
     if N_pop > 1:
         rate_monitor_i2 = PopulationRateMonitor(I2, name="aeif_ratemon_i2")
         rate_monitor_e2 = PopulationRateMonitor(E2, name="aeif_ratemon_e2")
+        net.add(E2, I2, rate_monitor_e2, rate_monitor_i2)
 
-        net = Network(
-            E,
-            E2,
-            I,
-            I2,
-            rate_monitor_e,
-            rate_monitor_e2,
-            rate_monitor_i,
-            rate_monitor_i2,
-        )
         build_synapses_first_population(
             E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net
         )
@@ -286,7 +292,6 @@ def network_sim(signal, params: dict):
             E, E2, I, I2, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net, params
         )
     else:
-        net = Network(E, I, rate_monitor_e, rate_monitor_i)
         build_synapses_first_population(
             E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net
         )
@@ -567,8 +572,6 @@ def build_synapses_multiple_populations(
 def build_synapses_first_population(
     E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net
 ):
-    # synapses object
-    # this only specifies the dynamics of the synapses. they get actually created when the .connect method is called
     synEE = Synapses(E, E, on_pre="g_ampa+=J_etoe")
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
