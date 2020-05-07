@@ -273,10 +273,12 @@ def network_sim(signal, params: dict):
         P_I = PoissonGroup(200, np.arange(200) * Hz + rate_ * Hz)
 
         S_pe = Synapses(P_E, E, on_pre=f"v+={poisson_strength_}*mV")
-        S_pe.connect(j="i")
+        # TODO: what kind of connectivity do we want here?
+        # all-to-all connectivity, every target neuron gets input of 200 neruons
+        S_pe.connect()
 
         S_pi = Synapses(P_I, I, on_pre=f"v+={poisson_strength_}*mV")
-        S_pi.connect(j="i")
+        S_pi.connect()
 
         net.add(P_I, P_E, S_pe, S_pi)
 
