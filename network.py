@@ -269,8 +269,10 @@ def network_sim(signal, params: dict):
         poisson_strength_ = params["poisson_strengths"][0]
         rate_ = params["poisson_rates"][0]
 
-        P_E = PoissonGroup(200, np.arange(200) * Hz + rate_ * Hz)
-        P_I = PoissonGroup(200, np.arange(200) * Hz + rate_ * Hz)
+        P_E = PoissonGroup(200, rate_ * Hz)
+        P_I = PoissonGroup(200, rate_ * Hz)
+        MP_E = SpikeMonitor(P_E)
+        MP_I = SpikeMonitor(P_I)
 
         S_pe = Synapses(P_E, E, on_pre=f"v+={poisson_strength_}*mV")
         # TODO: what kind of connectivity do we want here?
@@ -280,15 +282,21 @@ def network_sim(signal, params: dict):
         S_pi = Synapses(P_I, I, on_pre=f"v+={poisson_strength_}*mV")
         S_pi.connect()
 
-        net.add(P_I, P_E, S_pe, S_pi)
+        net.add(P_E, P_I, S_pe, S_pi, MP_E, MP_I)
 
     if N_pop > 1:
+        rate_monitor_i2 = PopulationRateMonitor(I2, name="aeif_ratemon_i2")
+        rate_monitor_e2 = PopulationRateMonitor(E2, name="aeif_ratemon_e2")
+        net.add(E2, I2, rate_monitor_e2, rate_monitor_i2)
+
         if params["ext_input_type"] == "poisson":
             poisson_strength_2 = params["poisson_strengths"][1]
             rate_2 = params["poisson_rates"][1]
 
-            P_E_2 = PoissonGroup(200, np.arange(200) * Hz + rate_2 * Hz)
-            P_I_2 = PoissonGroup(200, np.arange(200) * Hz + rate_2 * Hz)
+            P_E_2 = PoissonGroup(200, rate_2 * Hz)
+            P_I_2 = PoissonGroup(200, rate_2 * Hz)
+            MP_E_2 = SpikeMonitor(P_E_2)
+            MP_I_2 = SpikeMonitor(P_I_2)
 
             S_pe_2 = Synapses(P_E_2, E2, on_pre=f"v+={poisson_strength_2}*mV")
             S_pe_2.connect()
@@ -296,11 +304,8 @@ def network_sim(signal, params: dict):
             S_pi_2 = Synapses(P_I_2, I2, on_pre=f"v+={poisson_strength_2}*mV")
             S_pi_2.connect()
 
-            net.add(P_E_2, P_I_2, S_pe_2, S_pi_2)
+            net.add(P_E_2, P_I_2, S_pe_2, S_pi_2, MP_E_2, MP_I_2)
 
-        rate_monitor_i2 = PopulationRateMonitor(I2, name="aeif_ratemon_i2")
-        rate_monitor_e2 = PopulationRateMonitor(E2, name="aeif_ratemon_e2")
-        net.add(E2, I2, rate_monitor_e2, rate_monitor_i2)
 
         build_synapses_first_population(
             E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net
