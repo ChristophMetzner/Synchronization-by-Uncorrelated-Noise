@@ -266,8 +266,8 @@ def network_sim(signal, params: dict):
     net = Network(E, I, rate_monitor_e, rate_monitor_i,)
 
     if params["ext_input_type"] == "poisson":
-        poisson_strength_ = params["poisson_strength"]
-        rate_ = params["poisson_rate"]
+        poisson_strength_ = params["poisson_strengths"][0]
+        rate_ = params["poisson_rates"][0]
 
         P_E = PoissonGroup(200, np.arange(200) * Hz + rate_ * Hz)
         P_I = PoissonGroup(200, np.arange(200) * Hz + rate_ * Hz)
@@ -283,6 +283,21 @@ def network_sim(signal, params: dict):
         net.add(P_I, P_E, S_pe, S_pi)
 
     if N_pop > 1:
+        if params["ext_input_type"] == "poisson":
+            poisson_strength_2 = params["poisson_strengths"][1]
+            rate_2 = params["poisson_rates"][1]
+
+            P_E_2 = PoissonGroup(200, np.arange(200) * Hz + rate_2 * Hz)
+            P_I_2 = PoissonGroup(200, np.arange(200) * Hz + rate_2 * Hz)
+
+            S_pe_2 = Synapses(P_E_2, E2, on_pre=f"v+={poisson_strength_2}*mV")
+            S_pe_2.connect()
+
+            S_pi_2 = Synapses(P_I_2, I2, on_pre=f"v+={poisson_strength_2}*mV")
+            S_pi_2.connect()
+
+            net.add(P_E_2, P_I_2, S_pe_2, S_pi_2)
+
         rate_monitor_i2 = PopulationRateMonitor(I2, name="aeif_ratemon_i2")
         rate_monitor_e2 = PopulationRateMonitor(E2, name="aeif_ratemon_e2")
         net.add(E2, I2, rate_monitor_e2, rate_monitor_i2)

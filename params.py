@@ -14,8 +14,8 @@ def get_params():
     params["ext_input_type"] = "ou"  # "ou", "poisson" is supported
 
     # params for poisson input
-    params["poisson_rate"] = 50
-    params["poisson_strength"] = 10.0
+    params["poisson_rates"] = [50, 30]
+    params["poisson_strengths"] = [3.0, 3.0]
 
     # params for ou process #
     params["ou_stationary"] = True  # if False --> ou process starts at X0
@@ -101,16 +101,16 @@ def get_params():
     # for recurrency
     factor = 10.0
     params["J_etoe"] = (
-        0.01 * factor
+            0.01 * factor
     )  # [nS] synaptic strength E-E conns within population
     params["J_etoi"] = (
-        0.05 * factor
+            0.05 * factor
     )  # .25      # [nS] synaptic strength E-I conns within population
     params["J_itoe"] = (
-        1.0 * factor
+            1.0 * factor
     )  # [nS] synaptic strength I-E conns within population
     params["J_itoi"] = (
-        0.3 * factor
+            0.3 * factor
     )  # [nS] synaptic strength I-I conns within population
 
     params[
