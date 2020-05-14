@@ -14,23 +14,23 @@ import collections.abc
 try:
     from numba import njit, jit
 except:
+
     def njit(func):
         return func
-
 
     jit = njit
 
 
 @njit
 def ou_x(runtime, dt, tau, mean, sigma_stat, X0, rands):
-    '''
+    """
     generate OU process. [cf. https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process]
     parameters: tau, mean, sig_stat [sig_stat is the std of the stationary OU process]
     simulating the ou process according to the Langevin Eq.:
     dX = 1/tau*(mu - X)*dt + sigL * dW(t).
-    sigL = sigma_stat*sqrt(2/tau) '''
+    sigL = sigma_stat*sqrt(2/tau) """
 
-    sigL = sigma_stat * np.sqrt(2. / tau)
+    sigL = sigma_stat * np.sqrt(2.0 / tau)
     steps = int(runtime / dt)
     x = np.zeros(steps + 1)
     # optimizations
@@ -43,13 +43,13 @@ def ou_x(runtime, dt, tau, mean, sigma_stat, X0, rands):
 
 
 def generate_ou_input(run_time, min_dt, stationary: bool, params: dict):
-    tau = params['ou_tau']
-    sigma = params['ou_sigma']
-    mu = params['ou_mean']
+    tau = params["ou_tau"]
+    sigma = params["ou_sigma"]
+    mu = params["ou_mean"]
     if stationary:
         X0 = mu
     else:
-        X0 = params['ou_X0']
+        X0 = params["ou_X0"]
     rands = np.random.randn(int(run_time / min_dt))
     ou_trace = ou_x(run_time, min_dt, tau, mu, sigma, X0, rands)
     return ou_trace
@@ -58,13 +58,13 @@ def generate_ou_input(run_time, min_dt, stationary: bool, params: dict):
 # computes the filtered trace x_filtered of an input trace x
 # using a gaussian or a biexponential filter function
 def x_filter(x, params):
-    runtime = params['runtime']
-    dt = params['min_dt']
+    runtime = params["runtime"]
+    dt = params["min_dt"]
     tsteps = int(runtime / dt)
-    t = np.linspace(0., runtime, tsteps + 1)
-    if params['filter_type'] == 'gauss':
+    t = np.linspace(0.0, runtime, tsteps + 1)
+    if params["filter_type"] == "gauss":
         # sigma of the filter function in [ms]
-        gauss_filter_sigma = params['filter_gauss_sigma']  # [ms]
+        gauss_filter_sigma = params["filter_gauss_sigma"]  # [ms]
         sigma3 = gauss_filter_sigma * 3
         # gauss_filter_sigma translates to the number of
         # points sigmaN which fullfill the equation sigmaN*dt=sigma
@@ -73,14 +73,18 @@ def x_filter(x, params):
         # such that N_tot*dt=sigma*6 = sigma*3 (left side) + sigma*3 (right side)
         N_tot = sigmaN * 3 * 2 + 1  # symmtery
         filter_t = np.linspace(-sigma3, sigma3, N_tot)
-        filter_function = np.exp((-filter_t ** 2) / (gauss_filter_sigma ** 2 * 2))
+        filter_function = np.exp((-(filter_t ** 2)) / (gauss_filter_sigma ** 2 * 2))
         # normalize filter_function
         filter_function /= np.sum(filter_function)
         #        x_filtered_wrong = np.convolve(x,filter_function, mode='same') # wrong: boundary effects
-        x_filtered_inner = np.convolve(x, filter_function, mode='valid')
-        x_filtered = np.concatenate((x_filtered_inner[::-1][-(N_tot // 2):],
-                                     x_filtered_inner,
-                                     x_filtered_inner[::-1][:(N_tot - N_tot // 2 - 1)]))
+        x_filtered_inner = np.convolve(x, filter_function, mode="valid")
+        x_filtered = np.concatenate(
+            (
+                x_filtered_inner[::-1][-(N_tot // 2) :],
+                x_filtered_inner,
+                x_filtered_inner[::-1][: (N_tot - N_tot // 2 - 1)],
+            )
+        )
         assert len(x_filtered) == len(t)
     # stuff below should implement a biexponential filter
     # elif params['filter_type']=='bi_exp':
@@ -95,31 +99,40 @@ def x_filter(x, params):
     #     # make x and filtered x equal in length
     #     x_filtered = x_filtered[:len(x)]
     else:
-        raise NotImplementedError('{} filter not implemented!'.format(params['filter_type']))
+        raise NotImplementedError(
+            "{} filter not implemented!".format(params["filter_type"])
+        )
     return x_filtered
 
 
 # for getting e.g. a ramp or quadratic increase in an input (sub)interval
-def get_changing_input(runtime, start_change, dt,
-                       start_val, end_val, type_of_input='ramp',
-                       quad_factor=None, duration_change=None):
+def get_changing_input(
+    runtime,
+    start_change,
+    dt,
+    start_val,
+    end_val,
+    type_of_input="ramp",
+    quad_factor=None,
+    duration_change=None,
+):
     steps = int(runtime / dt)
-    t = np.linspace(0., runtime, steps + 1)
+    t = np.linspace(0.0, runtime, steps + 1)
     # print(type_of_input)
-    if type_of_input == 'ramp':
+    if type_of_input == "ramp":
         idx_s = int(start_change / dt)
         idx_d = int(duration_change / dt)
         input = np.ones_like(t) * start_val
-        input[idx_s:idx_s + idx_d] = np.linspace(start_val, end_val, idx_d)
-        input[idx_s + idx_d:] = end_val
-    elif type_of_input == 'quad':
+        input[idx_s : idx_s + idx_d] = np.linspace(start_val, end_val, idx_d)
+        input[idx_s + idx_d :] = end_val
+    elif type_of_input == "quad":
         idx_s = int(start_change / dt)
-        input = start_val + quad_factor * (t - start_change) ** 2 / 1000. ** 2
+        input = start_val + quad_factor * (t - start_change) ** 2 / 1000.0 ** 2
         input[:idx_s] = start_val
         idx_up = np.where(input > end_val)
         input[idx_up] = end_val
     else:
-        raise NotImplementedError('Input type {} is not implemented'.format(type))
+        raise NotImplementedError("Input type {} is not implemented".format(type))
     return input
 
 
@@ -137,10 +150,14 @@ def interpolate(xi, yi, range_x, range_y):
         x_nearest_index = np.argmin(np.abs(range_x - xi))
         if (xi - range_x[x_nearest_index]) > 0:
             x_floor_id = x_nearest_index
-            x_dist_id = (xi - range_x[int(x_floor_id)]) / (range_x[int(x_floor_id + 1)] - range_x[int(x_floor_id)])
+            x_dist_id = (xi - range_x[int(x_floor_id)]) / (
+                range_x[int(x_floor_id + 1)] - range_x[int(x_floor_id)]
+            )
         else:
             x_floor_id = x_nearest_index - 1
-            x_dist_id = (xi - range_x[int(x_floor_id)]) / (range_x[int(x_floor_id)] - range_x[int(x_floor_id - 1)])
+            x_dist_id = (xi - range_x[int(x_floor_id)]) / (
+                range_x[int(x_floor_id)] - range_x[int(x_floor_id - 1)]
+            )
     if yi < range_y[0]:
         y_floor_id = 0
         y_dist_id = 0
@@ -151,10 +168,14 @@ def interpolate(xi, yi, range_x, range_y):
         y_nearest_index = np.argmin(np.abs(range_y - yi))
         if (yi - range_y[y_nearest_index]) > 0:
             y_floor_id = y_nearest_index
-            y_dist_id = (yi - range_y[int(y_floor_id)]) / (range_y[int(y_floor_id + 1)] - range_y[int(y_floor_id)])
+            y_dist_id = (yi - range_y[int(y_floor_id)]) / (
+                range_y[int(y_floor_id + 1)] - range_y[int(y_floor_id)]
+            )
         else:
             y_floor_id = y_nearest_index - 1
-            y_dist_id = (yi - range_y[int(y_floor_id)]) / (range_y[int(y_floor_id)] - range_y[int(y_floor_id - 1)])
+            y_dist_id = (yi - range_y[int(y_floor_id)]) / (
+                range_y[int(y_floor_id)] - range_y[int(y_floor_id - 1)]
+            )
 
     weights = np.zeros(4)
     weights[0] = float(x_floor_id)
@@ -181,10 +202,12 @@ def look_up_function_1d(Z, weights):
     elif xid1 == -1 and yid1 != -1:
         return Z[int(xid1), int(yid1)] * (1 - dyid) + Z[int(xid1), int(yid1 + 1)] * dyid
     else:
-        return Z[int(xid1), int(yid1)] * (1 - dxid) * (1 - dyid) + \
-               Z[int(xid1 + 1), int(yid1)] * dxid * (1 - dyid) + \
-               Z[int(xid1), int(yid1 + 1)] * (1 - dxid) * dyid + \
-               Z[int(xid1 + 1), int(yid1 + 1)] * dxid * dyid
+        return (
+            Z[int(xid1), int(yid1)] * (1 - dxid) * (1 - dyid)
+            + Z[int(xid1 + 1), int(yid1)] * dxid * (1 - dyid)
+            + Z[int(xid1), int(yid1 + 1)] * (1 - dxid) * dyid
+            + Z[int(xid1 + 1), int(yid1 + 1)] * dxid * dyid
+        )
 
 
 # use xi/yi -> mu/sigma to have correct warnings
@@ -230,10 +253,12 @@ def lookup_xy(table, weights):
     distx = weights[1]
     idy = weights[2]
     disty = weights[3]
-    return table[int(idx), int(idy)] * (1 - distx) * (1 - disty) + \
-           table[int(idx + 1), int(idy)] * distx * (1 - disty) + \
-           table[int(idx), int(idy + 1)] * (1 - distx) * disty + \
-           table[int(idx + 1), int(idy + 1)] * distx * disty
+    return (
+        table[int(idx), int(idy)] * (1 - distx) * (1 - disty)
+        + table[int(idx + 1), int(idy)] * distx * (1 - disty)
+        + table[int(idx), int(idy + 1)] * (1 - distx) * disty
+        + table[int(idx + 1), int(idy + 1)] * distx * disty
+    )
 
 
 # function for outside grid warnings.
@@ -242,15 +267,15 @@ def lookup_xy(table, weights):
 @njit
 def outside_grid_warning(xi, yi, rangex, rangey, when):
     # mu warnings
-    if (xi < rangex[0]):
-        print('--- OUTSIDE-GRID-WARNING: mu too low: ', xi, ' at time: ', when, 's')
-    elif (xi > rangex[-1]):
-        print('--- OUTSIDE-GRID-WARNING: mu too high: ', xi, ' at time: ', when, 's')
+    if xi < rangex[0]:
+        print("--- OUTSIDE-GRID-WARNING: mu too low: ", xi, " at time: ", when, "s")
+    elif xi > rangex[-1]:
+        print("--- OUTSIDE-GRID-WARNING: mu too high: ", xi, " at time: ", when, "s")
     # sigma warnings
-    if (yi < rangey[0]):
-        print('--- OUTSIDE-GRID-WARNING: sigma too low: ', yi, ' at time: ', when, 's')
-    elif (yi > rangey[-1]):
-        print('--- OUTSIDE-GRID-WARNING: sigma too high: ', yi, ' at time: ', when, 's')
+    if yi < rangey[0]:
+        print("--- OUTSIDE-GRID-WARNING: sigma too low: ", yi, " at time: ", when, "s")
+    elif yi > rangey[-1]:
+        print("--- OUTSIDE-GRID-WARNING: sigma too high: ", yi, " at time: ", when, "s")
 
 
 # functions to compute synaptic mean and std of the synaptic input
@@ -301,8 +326,8 @@ def fixed_connectivity(n, k):
     postlist = np.zeros_like(prelist)
     for j in range(n):
         presynapses = choose_k_from_n(n, k)
-        prelist[j * k:(j + 1) * k] = presynapses
-        postlist[j * k:(j + 1) * k] = j * np.ones(k, dtype=int)
+        prelist[j * k : (j + 1) * k] = presynapses
+        postlist[j * k : (j + 1) * k] = j * np.ones(k, dtype=int)
 
     return prelist, postlist
 
@@ -316,7 +341,7 @@ def choose_k_from_n(n, k):
         return ans
 
     nums = range(n)
-    swaps = (np.random.rand(k) * range(n, n - k, -1)).astype('int') + range(k)
+    swaps = (np.random.rand(k) * range(n, n - k, -1)).astype("int") + range(k)
     for i in range(k):
         # swap with some random element from here to end - these swap positions precalculated
         nums[i], nums[swaps[i]] = nums[swaps[i]], nums[i]
@@ -325,8 +350,7 @@ def choose_k_from_n(n, k):
     return ans
 
 
-class SubplotRect():
-
+class SubplotRect:
     def __init__(self, rows, cols, current=1, create_axes=False):
         self.rows = rows
         self.cols = cols
@@ -364,10 +388,18 @@ class SubplotRect():
 # returns the power spectral density for real-valued data x sampled with dt [ms]
 # using welch's method with half overlapping windows (with winsize # of data points)
 # note that we use boxcar instead of the scipy default 'hanning'
-def powerspec(x, dt, winsize, window='boxcar'):
-    noverlap = min(winsize, len(x)) // 2  # make code compatible with short time series x
-    freqs, psd_r = scipy.signal.welch(x, fs=1000.0 / dt, nperseg=winsize, noverlap=noverlap,
-                                      return_onesided=True, window=window)
+def powerspec(x, dt, winsize, window="boxcar"):
+    noverlap = (
+        min(winsize, len(x)) // 2
+    )  # make code compatible with short time series x
+    freqs, psd_r = scipy.signal.welch(
+        x,
+        fs=1000.0 / dt,
+        nperseg=winsize,
+        noverlap=noverlap,
+        return_onesided=True,
+        window=window,
+    )
     psd_r *= 0.5  # because of onesided spectrum for the real data
     return freqs, psd_r
 
@@ -377,12 +409,16 @@ def powerspec(x, dt, winsize, window='boxcar'):
 def kernelavg(x, y, dx):
     dx_coarse = dx
     dx_fine = x[1] - x[0]
-    assert abs(round(dx_coarse / (2 * dx_fine)) - dx_coarse / (2 * dx_fine)) < 1e-15  # enforce even multiple
+    assert (
+        abs(round(dx_coarse / (2 * dx_fine)) - dx_coarse / (2 * dx_fine)) < 1e-15
+    )  # enforce even multiple
     M = int(round(dx_coarse / (2 * dx_fine)))
 
     # moving window
-    x_avg = x[M - 1:-M] + dx_fine / 2.  # begin after the first M intervals => t_mwin[0] = t[M-1 + 1/2]
-    y_avg = np.convolve(y, np.ones(2 * M) / float(2 * M), mode='valid')
+    x_avg = (
+        x[M - 1 : -M] + dx_fine / 2.0
+    )  # begin after the first M intervals => t_mwin[0] = t[M-1 + 1/2]
+    y_avg = np.convolve(y, np.ones(2 * M) / float(2 * M), mode="valid")
     # scipy version (equivalent)
     # y_avg = scipy.signal.convolve(y, scipy.signal.boxcar(2*M)/float(2*M), mode='valid')
 
@@ -397,8 +433,8 @@ def resample(x, y, N):
     assert N % 2 == 0
     dx = x[1] - x[0]
 
-    x_resampled = x[N / 2 - 1: -N / 2: N] + dx / 2.
-    y_truncated_rowise = y[:len(x_resampled) * N].reshape(-1, N)
+    x_resampled = x[N / 2 - 1 : -N / 2 : N] + dx / 2.0
+    y_truncated_rowise = y[: len(x_resampled) * N].reshape(-1, N)
     y_resampled = np.mean(y_truncated_rowise, axis=1)
 
     return x_resampled, y_resampled
@@ -432,7 +468,11 @@ def steplike(x, y, dx):
 def rectify_trace(t, f, name_f):
     negative_f = f < 0
     if negative_f.any():
-        print('WARNING: rectifying negative values {}({}) = {}'.format(name_f, t[negative_f], f[negative_f]))
+        print(
+            "WARNING: rectifying negative values {}({}) = {}".format(
+                name_f, t[negative_f], f[negative_f]
+            )
+        )
     f[negative_f] = 0.0
 
 
@@ -441,14 +481,18 @@ def compare_dicts(d1, d2, ignore):
     for k1 in d1.keys():
         if k1 not in ignore:
             if k1 not in d2.keys():
-                print('DEBUG: second dict does not contain: {}'.format(k1))
+                print("DEBUG: second dict does not contain: {}".format(k1))
             else:
                 if d1[k1] != d2[k1]:
-                    print('DEBUG: the dictionaries differ in key {}: {} vs. {}'.format(k1, d1[k1], d2[k1]))
+                    print(
+                        "DEBUG: the dictionaries differ in key {}: {} vs. {}".format(
+                            k1, d1[k1], d2[k1]
+                        )
+                    )
 
     for k2 in d2.keys():
         if k2 not in ignore and k2 not in d1.keys():
-            print('DEBUG: first dict does not contain: {}'.format(k2))
+            print("DEBUG: first dict does not contain: {}".format(k2))
 
 
 # deprecated but maybe interesting stuff:
@@ -469,7 +513,9 @@ def resample_rate_deprecated(t, rate, dt):
             idx_right -= diff_idx_right
         binsize_k = idx_right - idx_left  # the binsize of the last bin can be shorter
         rate_resampled[k] = rate[idx_left:idx_right].sum() / float(binsize_k)
-        t_smoothed[k] = 0.5 * (t[idx_left] + t[idx_right - 1])  # center point of the bins
+        t_smoothed[k] = 0.5 * (
+            t[idx_left] + t[idx_right - 1]
+        )  # center point of the bins
     return t_smoothed, rate_resampled
 
 
@@ -480,7 +526,8 @@ def integrate_rate_subints_deprecated(t, rate, dt):
     t_points = len(t)
     subint_size = int(dt // dt_data)
     subints = int(t_points / subint_size) + (
-        1 if t_points % subint_size > 1 else 0)  # K*subint_size+1 is the equidist subint case, therefore modulo > 1
+        1 if t_points % subint_size > 1 else 0
+    )  # K*subint_size+1 is the equidist subint case, therefore modulo > 1
     rate_integral = zeros(subints)
     t_smoothed = zeros(subints)
     for k in range(subints):
@@ -490,11 +537,19 @@ def integrate_rate_subints_deprecated(t, rate, dt):
         if diff_idx_right > 0:
             idx_right -= diff_idx_right
         #        subint_size_k = idx_right-idx_left # the subint_size of the last bin can be shorter
-        rate_integral[k] = sum(
-            0.5 * (rate[idx_left:idx_right - (0 if k < subints - 1 else 1)] + rate[idx_left + 1:idx_right + (
-                1 if k < subints - 1 else 0)])) * dt_data
+        rate_integral[k] = (
+            sum(
+                0.5
+                * (
+                    rate[idx_left : idx_right - (0 if k < subints - 1 else 1)]
+                    + rate[idx_left + 1 : idx_right + (1 if k < subints - 1 else 0)]
+                )
+            )
+            * dt_data
+        )
         t_smoothed[k] = 0.5 * (
-                t[idx_left] + t[idx_right - (0 if k < subints - 1 else 1)])  # center point of the subints
+            t[idx_left] + t[idx_right - (0 if k < subints - 1 else 1)]
+        )  # center point of the subints
     return t_smoothed, rate_integral
 
 
@@ -502,23 +557,23 @@ def integrate_rate_subints_deprecated(t, rate, dt):
 def interpolate_input(external_input, params, model):
     mu_ext = external_input[0]
     sigma_ext = external_input[1]
-    t_ext = params['t_ext']
-    if model == 'reduced':
-        if params['uni_dt'] > params['min_dt']:
-            steps = int(params['runtime'] / params['uni_dt'])
-            t_interpolated = np.linspace(0., params['runtime'], steps + 1)
+    t_ext = params["t_ext"]
+    if model == "reduced":
+        if params["uni_dt"] > params["min_dt"]:
+            steps = int(params["runtime"] / params["uni_dt"])
+            t_interpolated = np.linspace(0.0, params["runtime"], steps + 1)
             mu_ext = np.interp(t_interpolated, t_ext, mu_ext)
             sigma_ext = np.interp(t_interpolated, t_ext, sigma_ext)
-    elif model == 'fp':
-        if params['fp_dt'] > params['min_dt']:
-            steps = int(params['runtime'] / params['fp_dt'])
-            t_interpolated = np.linspace(0., params['runtime'], steps + 1)
+    elif model == "fp":
+        if params["fp_dt"] > params["min_dt"]:
+            steps = int(params["runtime"] / params["fp_dt"])
+            t_interpolated = np.linspace(0.0, params["runtime"], steps + 1)
             mu_ext = np.interp(t_interpolated, t_ext, mu_ext)
             sigma_ext = np.interp(t_interpolated, t_ext, sigma_ext)
-    elif model == 'net':
-        if params['net_dt'] > params['min_dt']:
-            steps = int(params['runtime'] / params['net_dt'])
-            t_interpolated = np.linspace(0., params['runtime'], steps + 1)
+    elif model == "net":
+        if params["net_dt"] > params["min_dt"]:
+            steps = int(params["runtime"] / params["net_dt"])
+            t_interpolated = np.linspace(0.0, params["runtime"], steps + 1)
             mu_ext = np.interp(t_interpolated, t_ext, mu_ext)
             sigma_ext = np.interp(t_interpolated, t_ext, sigma_ext)
     return [mu_ext, sigma_ext]

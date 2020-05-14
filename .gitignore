@@ -10,9 +10,11 @@
 
 # Brian2
 brian2_compile
+notebooks/output
 
 # Virtual Environment
 venv
 
 # Plots
 *.png
+

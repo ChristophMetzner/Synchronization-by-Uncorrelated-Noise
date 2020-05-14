@@ -12,14 +12,12 @@ cpp_default_dir = "brian2_compile"
 
 def network_sim(signal, params: dict):
     if params["brian2_standalone"]:
-        # build on run = False (changed for brian2_rc3)
         set_device(params["brian2_device"], build_on_run=False)
         device.insert_code(
             "main", "srand(" + str(int(time.time()) + os.getpid()) + ");"
         )
-        # standalonedir = 'standalone_{}_pid{}'.format(time.strftime("%Y-=%m-%dT%H:%M:%S"), os.getpid())
     else:
-        prefs.codegen.target = "numpy"
+        prefs.codegen.target = "cython"
 
     # stripe on brian units within the copied dict for the simulation so that brian can work with them
 
@@ -97,6 +95,7 @@ def network_sim(signal, params: dict):
         if "net_w_refr_e" not in params or params["net_w_refr_e"]
         else ""
     )
+
     w_refr_i = (
         " (unless refractory)"
         if "net_w_refr_i" not in params or params["net_w_refr_i"]
@@ -167,7 +166,7 @@ def network_sim(signal, params: dict):
         """ % (
         model_term_i,
         "- (w / C_e)" if have_adap_e else "",
-        ("dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s" % w_refr_e)
+        ("dw/dt = (a_e(t) * (v - Ew_e) - w) / tauw_e : amp %s" % w_refr_i)
         if have_adap_e
         else "",
     )
@@ -275,8 +274,6 @@ def network_sim(signal, params: dict):
         MP_I = SpikeMonitor(P_I)
 
         S_pe = Synapses(P_E, E, on_pre=f"v+={poisson_strength_}*mV")
-        # TODO: what kind of connectivity do we want here?
-        # all-to-all connectivity, every target neuron gets input of 200 neruons
         S_pe.connect()
 
         S_pi = Synapses(P_I, I, on_pre=f"v+={poisson_strength_}*mV")
@@ -305,7 +302,6 @@ def network_sim(signal, params: dict):
             S_pi_2.connect()
 
             net.add(P_E_2, P_I_2, S_pe_2, S_pi_2, MP_E_2, MP_I_2)
-
 
         build_synapses_first_population(
             E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net
@@ -430,15 +426,20 @@ def network_sim(signal, params: dict):
             spike_monitor_I2 = SpikeMonitor(record_spikes_group_I2, name="I2_spikemon")
             net.add(spike_monitor_I2, record_spikes_group_I2)
 
-    print("------------------ running network!")
+    print("==== Running Network ... ====")
     start_time = time.time()
     net.run(runtime, report="text")
+    print("==== Network Run Finished ====")
 
     if params["brian2_standalone"]:
         project_dir = cpp_default_dir + "/test" + str(os.getpid())
-        device.build(directory=project_dir, compile=True, run=True)
+        device.build(directory=project_dir, compile=True, run=True, debug=False)
 
-    # extract results
+    if MP_E:
+        plot(MP_E.t / ms, MP_E.i, ".")
+
+    run_time = time.time() - start_time
+    print("runtime: %1.1f" % run_time)
 
     # unbinned quantities
     net_rates_e = rate_monitor_e.smooth_rate(window="flat", width=10.0 * ms) / Hz
@@ -446,61 +447,6 @@ def network_sim(signal, params: dict):
 
     net_rates_i1 = rate_monitor_i.smooth_rate(window="flat", width=10.0 * ms) / Hz
     net_t_i1 = rate_monitor_i.t / ms
-
-    if N_pop > 1:
-        net_rates_e2 = rate_monitor_e2.smooth_rate(window="flat", width=10.0 * ms) / Hz
-        net_t_e2 = rate_monitor_e2.t / ms
-
-        net_rates_i2 = rate_monitor_i2.smooth_rate(window="flat", width=10.0 * ms) / Hz
-        net_t_i2 = rate_monitor_i2.t / ms
-
-    if record_spikes > 0:
-        # multiply by 1 like this to ensure brian extracts the results before we delete the compile directory
-        net_spikes_e = spike_monitor_E.it
-        i, t = net_spikes_e
-        i = i * 1
-        t = t * 1
-        net_spikes_e = [i, t]
-
-        net_spikes_i1 = spike_monitor_I1.it
-        i, t = net_spikes_i1
-        i = i * 1
-        t = t * 1
-        net_spikes_i1 = [i, t]
-
-        if N_pop > 1:
-            net_spikes_e2 = spike_monitor_E2.it
-            i, t = net_spikes_e2
-            i = i * 1
-            t = t * 1
-            net_spikes_e2 = [i, t]
-
-            net_spikes_i2 = spike_monitor_I2.it
-            i, t = net_spikes_i2
-            i = i * 1
-            t = t * 1
-            net_spikes_i2 = [i, t]
-
-    if record_all_v_at_times:
-        v_all_neurons_e = v_monitor_record_all_E.v / mV
-        t_all_neurons_e = v_monitor_record_all_E.t / ms
-
-        v_all_neurons_i1 = v_monitor_record_all_I1.v / mV
-        t_all_neurons_i1 = v_monitor_record_all_I1.t / ms
-
-        if N_pop > 1:
-            v_all_neurons_e2 = v_monitor_record_all_E2.v / mV
-            t_all_neurons_e2 = v_monitor_record_all_E2.t / ms
-
-            v_all_neurons_i2 = v_monitor_record_all_I2.v / mV
-            t_all_neurons_i2 = v_monitor_record_all_I2.t / ms
-
-    run_time = time.time() - start_time
-    print("runtime: %1.1f" % run_time)
-
-    if params["brian2_standalone"]:
-        shutil.rmtree(project_dir)
-        device.reinit()
 
     # for smoothing function net_rates do: helpers.smooth_trace(net_rates, int(rates_dt / dt_sim))
     # smooth out our hyper-resolution rate trace manually cause brian2 can't do it
@@ -512,18 +458,47 @@ def network_sim(signal, params: dict):
     }
 
     if N_pop > 1:
+        net_rates_e2 = rate_monitor_e2.smooth_rate(window="flat", width=10.0 * ms) / Hz
+        net_t_e2 = rate_monitor_e2.t / ms
+
+        net_rates_i2 = rate_monitor_i2.smooth_rate(window="flat", width=10.0 * ms) / Hz
+        net_t_i2 = rate_monitor_i2.t / ms
+
         results_dict["r_e2"] = net_rates_e2
         results_dict["r_i2"] = net_rates_i2
 
     if record_spikes > 0:
+        # multiply by 1 like this to ensure brian extracts the results before we delete the compile directory
+        net_spikes_e = spike_monitor_E.it
+        i, t = net_spikes_e
+        net_spikes_e = [i * 1, t * 1]
+
+        net_spikes_i1 = spike_monitor_I1.it
+        i, t = net_spikes_i1
+        net_spikes_i1 = [i * 1, t * 1]
+
         results_dict["net_spikes_e"] = net_spikes_e
         results_dict["net_spikes_i1"] = net_spikes_i1
 
         if N_pop > 1:
+            net_spikes_e2 = spike_monitor_E2.it
+            i, t = net_spikes_e2
+            net_spikes_e2 = [i * 1, t * 1]
+
+            net_spikes_i2 = spike_monitor_I2.it
+            i, t = net_spikes_i2
+            net_spikes_i2 = [i * 1, t * 1]
+
             results_dict["net_spikes_e2"] = net_spikes_e2
             results_dict["net_spikes_i2"] = net_spikes_i2
 
     if record_all_v_at_times:
+        v_all_neurons_e = v_monitor_record_all_E.v / mV
+        t_all_neurons_e = v_monitor_record_all_E.t / ms
+
+        v_all_neurons_i1 = v_monitor_record_all_I1.v / mV
+        t_all_neurons_i1 = v_monitor_record_all_I1.t / ms
+
         results_dict["v_all_neurons_e"] = v_all_neurons_e
         results_dict["t_all_neurons_e"] = t_all_neurons_e
 
@@ -531,11 +506,21 @@ def network_sim(signal, params: dict):
         results_dict["t_all_neurons_1i"] = t_all_neurons_i1
 
         if N_pop > 1:
+            v_all_neurons_e2 = v_monitor_record_all_E2.v / mV
+            t_all_neurons_e2 = v_monitor_record_all_E2.t / ms
+
+            v_all_neurons_i2 = v_monitor_record_all_I2.v / mV
+            t_all_neurons_i2 = v_monitor_record_all_I2.t / ms
+
             results_dict["v_all_neurons_e2"] = v_all_neurons_e2
             results_dict["t_all_neurons_e2"] = t_all_neurons_e2
 
             results_dict["v_all_neurons_i2"] = v_all_neurons_i2
             results_dict["t_all_neurons_i2"] = t_all_neurons_i2
+
+    if params["brian2_standalone"]:
+        shutil.rmtree(project_dir)
+        device.reinit()
 
     return results_dict
 

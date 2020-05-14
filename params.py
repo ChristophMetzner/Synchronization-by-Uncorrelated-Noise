@@ -43,7 +43,7 @@ def get_params():
     params["net_delta_peak_I"] = -70.0
 
     # standalone mode for network sim
-    params["brian2_standalone"] = True
+    params["brian2_standalone"] = False
     params["brian2_device"] = "cpp_standalone"
     # integration method for (should be specified for brian2_rc3)
     params["net_integration_method"] = "heun"  # 'heun'
