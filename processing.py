@@ -77,24 +77,47 @@ def hilphase_2(y1, y2):
     phase_y1 = np.unwrap(np.angle(sig1_hill))
     phase_y2 = np.unwrap(np.angle(sig2_hill))
 
-    Inst_phase_diff = phase_y1 - phase_y2
-    avg_phase = np.average(Inst_phase_diff)
+    inst_phase_diff = phase_y1 - phase_y2
+    avg_phase = np.average(inst_phase_diff)
 
-    return Inst_phase_diff, avg_phase
+    return inst_phase_diff, avg_phase
 
 
-def phase_locking_value(signals):
+def local_order_parameter_over_time(signals):
+    """
+    Computes the local order parameter / phase synchronization over time according to Meng et al. 2018.
+
+    :param signals: array of signals of same length.
+    :return: array of local order parameter value for each time step.
+    """
+    signals = [s - np.mean(s) for s in signals]
+
+    phases = [np.angle(hilbert(s)) for s in signals]
+    complex_phases = [np.exp(1j * phase) for phase in phases]
+
+    avg = sum(complex_phases) / len(complex_phases)
+    phi = np.abs(avg)
+    return phi
+
+
+def phase_synchronization(signals):
+    """
+    Computes the average phase synchronization.
+
+    :param signals:
+    :return:
+    """
     # zero mean
     signals = [s - np.mean(s) for s in signals]
 
-    # compute analytical signal and take angle to get phase
+    # compute analytical signal by using Hilbert transformation
+    # get angle to get phase
+    # then transform to complex number so that we can average it
     phases = [np.angle(hilbert(s)) for s in signals]
-
-    # complex phase
-    complex_phase = [np.exp(1j * phase) for phase in phases]
+    complex_phases = [np.exp(1j * phase) for phase in phases]
 
     # take the average (sum up all complex phases and divide by number of phases)
-    avg = np.average(complex_phase)
+    avg = sum(complex_phases) / len(complex_phases)
 
     # take the length of the vector
     # it tells us about the consistency of the phases
