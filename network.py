@@ -268,15 +268,28 @@ def network_sim(signal, params: dict):
         poisson_strength_ = params["poisson_strengths"][0]
         rate_ = params["poisson_rates"][0]
 
-        P_E = PoissonGroup(200, rate_ * Hz)
-        P_I = PoissonGroup(200, rate_ * Hz)
+        # noise frequency ration between networks
+        p = 0.86
+
+        # noise strength of network 1
+        noise_strength_1 = poisson_strength_
+
+        P_E = PoissonGroup(params["poisson_size"], rate_ * Hz)
+        P_I = PoissonGroup(params["poisson_size"], rate_ * Hz)
         MP_E = SpikeMonitor(P_E)
         MP_I = SpikeMonitor(P_I)
 
-        S_pe = Synapses(P_E, E, on_pre=f"v+={poisson_strength_}*mV")
+        poisson_spike_input_e = (
+            "I_ext_e = (VT_e - EL_e) * gL_e * taum_e * noise_strength_2 / C_e : volt"
+        )
+        poisson_spike_input_i = (
+            "I_ext_i = (VT_i - EL_i) * gL_e * taum_i * noise_strength_2 / C_i : volt"
+        )
+
+        S_pe = Synapses(P_E, E, model=poisson_spike_input_e, on_pre="v += I_ext_e")
         S_pe.connect()
 
-        S_pi = Synapses(P_I, I, on_pre=f"v+={poisson_strength_}*mV")
+        S_pi = Synapses(P_I, I, model=poisson_spike_input_i, on_pre="v += I_ext_i")
         S_pi.connect()
 
         net.add(P_E, P_I, S_pe, S_pi, MP_E, MP_I)
@@ -290,15 +303,24 @@ def network_sim(signal, params: dict):
             poisson_strength_2 = params["poisson_strengths"][1]
             rate_2 = params["poisson_rates"][1]
 
-            P_E_2 = PoissonGroup(200, rate_2 * Hz)
-            P_I_2 = PoissonGroup(200, rate_2 * Hz)
+            P_E_2 = PoissonGroup(params["poisson_size"], rate_2 * Hz)
+            P_I_2 = PoissonGroup(params["poisson_size"], rate_2 * Hz)
             MP_E_2 = SpikeMonitor(P_E_2)
             MP_I_2 = SpikeMonitor(P_I_2)
 
-            S_pe_2 = Synapses(P_E_2, E2, on_pre=f"v+={poisson_strength_2}*mV")
+            # noise strength of network 2 depending on network 1 and p
+            noise_strength_2 = p * noise_strength_1
+            poisson_spike_input_e_2 = "I_ext_e = (VT_e - EL_e) * gL_e * taum_e * noise_strength_2 / C_e : volt"
+            poisson_spike_input_i_2 = "I_ext_i = (VT_i - EL_i) * gL_e * taum_i * noise_strength_2 / C_i : volt"
+
+            S_pe_2 = Synapses(
+                P_E_2, E2, model=poisson_spike_input_e_2, on_pre="v += I_ext_e"
+            )
             S_pe_2.connect()
 
-            S_pi_2 = Synapses(P_I_2, I2, on_pre=f"v+={poisson_strength_2}*mV")
+            S_pi_2 = Synapses(
+                P_I_2, I2, model=poisson_spike_input_i_2, on_pre="v += I_ext_i"
+            )
             S_pi_2.connect()
 
             net.add(P_E_2, P_I_2, S_pe_2, S_pi_2, MP_E_2, MP_I_2)
