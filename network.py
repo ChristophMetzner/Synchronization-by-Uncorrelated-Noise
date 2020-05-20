@@ -265,14 +265,8 @@ def network_sim(signal, params: dict):
     net = Network(E, I, rate_monitor_e, rate_monitor_i,)
 
     if params["ext_input_type"] == "poisson":
-        poisson_strength_ = params["poisson_strengths"][0]
+        noise_strength_1 = params["poisson_strengths"][0]
         rate_ = params["poisson_rates"][0]
-
-        # noise frequency ration between networks
-        p = 0.86
-
-        # noise strength of network 1
-        noise_strength_1 = poisson_strength_
 
         P_E = PoissonGroup(params["poisson_size"], rate_ * Hz)
         P_I = PoissonGroup(params["poisson_size"], rate_ * Hz)
@@ -280,10 +274,10 @@ def network_sim(signal, params: dict):
         MP_I = SpikeMonitor(P_I)
 
         poisson_spike_input_e = (
-            "I_ext_e = (VT_e - EL_e) * gL_e * taum_e * noise_strength_2 / C_e : volt"
+            "I_ext_e = (VT_e - EL_e) * gL_e * taum_e * noise_strength_1 / C_e : volt"
         )
         poisson_spike_input_i = (
-            "I_ext_i = (VT_i - EL_i) * gL_e * taum_i * noise_strength_2 / C_i : volt"
+            "I_ext_i = (VT_i - EL_i) * gL_e * taum_i * noise_strength_1 / C_i : volt"
         )
 
         S_pe = Synapses(P_E, E, model=poisson_spike_input_e, on_pre="v += I_ext_e")
@@ -294,13 +288,19 @@ def network_sim(signal, params: dict):
 
         net.add(P_E, P_I, S_pe, S_pi, MP_E, MP_I)
 
+    build_synapses_first_population(E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net)
+
     if N_pop > 1:
         rate_monitor_i2 = PopulationRateMonitor(I2, name="aeif_ratemon_i2")
         rate_monitor_e2 = PopulationRateMonitor(E2, name="aeif_ratemon_e2")
         net.add(E2, I2, rate_monitor_e2, rate_monitor_i2)
 
         if params["ext_input_type"] == "poisson":
-            poisson_strength_2 = params["poisson_strengths"][1]
+            # noise strength of network 2 depending on network 1 and p
+            noise_strength_2 = params["poisson_p"] * params["poisson_strengths"][0]
+
+            # lambda = mu / strength (see Meng et al. 2018)
+            # rate_2 = params["poisson_mean_input"] / noise_strength_2
             rate_2 = params["poisson_rates"][1]
 
             P_E_2 = PoissonGroup(params["poisson_size"], rate_2 * Hz)
@@ -308,8 +308,6 @@ def network_sim(signal, params: dict):
             MP_E_2 = SpikeMonitor(P_E_2)
             MP_I_2 = SpikeMonitor(P_I_2)
 
-            # noise strength of network 2 depending on network 1 and p
-            noise_strength_2 = p * noise_strength_1
             poisson_spike_input_e_2 = "I_ext_e = (VT_e - EL_e) * gL_e * taum_e * noise_strength_2 / C_e : volt"
             poisson_spike_input_i_2 = "I_ext_i = (VT_i - EL_i) * gL_e * taum_i * noise_strength_2 / C_i : volt"
 
@@ -325,18 +323,24 @@ def network_sim(signal, params: dict):
 
             net.add(P_E_2, P_I_2, S_pe_2, S_pi_2, MP_E_2, MP_I_2)
 
-        build_synapses_first_population(
-            E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net
-        )
         build_synapses_multiple_populations(
-            E, E2, I, I2, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net, params
-        )
-    else:
-        build_synapses_first_population(
-            E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net
+            E,
+            E2,
+            I,
+            I2,
+            K_etoe,
+            K_etoi,
+            K_itoe,
+            K_itoi,
+            K_ppee,
+            K_ppei,
+            N_e,
+            N_i,
+            net,
+            params,
         )
 
-    print("initialization time: {}s".format(time.time() - start_init))
+    print("Initialization time: {}s".format(time.time() - start_init))
 
     # initial distribution of the network simulation
     E.v = np.ones(len(E)) * params["net_delta_peak_E"] * mV
@@ -548,7 +552,7 @@ def network_sim(signal, params: dict):
 
 
 def build_synapses_multiple_populations(
-    E, E2, I, I2, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net, params
+    E, E2, I, I2, K_etoe, K_etoi, K_itoe, K_itoi, K_ppee, K_ppei, N_e, N_i, net, params
 ):
     syn_EE2 = Synapses(E2, E2, on_pre="g_ampa+=J_etoe")
     sparsity = float(K_etoe) / N_e
@@ -577,22 +581,30 @@ def build_synapses_multiple_populations(
     """
     Connections between populations
     """
+    sparsity = float(K_ppee) / N_e
     SynE1E2 = Synapses(E, E2, on_pre="g_ampa+=J_ppee")
+    assert 0 <= sparsity <= 1.0
     SynE1E2.connect(p=sparsity)
     SynE1E2.delay = "{} * ms".format(params["const_delay"])
     net.add(SynE1E2)
 
+    sparsity = float(K_ppee) / N_e
     SynE2E1 = Synapses(E2, E, on_pre="g_ampa+=J_ppee")
+    assert 0 <= sparsity <= 1.0
     SynE2E1.connect(p=sparsity)
     SynE2E1.delay = "{} * ms".format(params["const_delay"])
     net.add(SynE2E1)
 
+    sparsity = float(K_ppei) / N_e
     SynE1I2 = Synapses(E, I2, on_pre="g_ampa+=J_ppei")
+    assert 0 <= sparsity <= 1.0
     SynE1I2.connect(p=sparsity)
     SynE1I2.delay = "{} * ms".format(params["const_delay"])
     net.add(SynE1I2)
 
+    sparsity = float(K_ppei) / N_e
     SynE2I1 = Synapses(E2, I, on_pre="g_ampa+=J_ppei")
+    assert 0 <= sparsity <= 1.0
     SynE2I1.connect(p=sparsity)
     SynE2I1.delay = "{} * ms".format(params["const_delay"])
     net.add(SynE2I1)
