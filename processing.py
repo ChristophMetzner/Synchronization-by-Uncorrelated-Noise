@@ -83,7 +83,7 @@ def hilphase_2(y1, y2):
     return inst_phase_diff, avg_phase
 
 
-def local_order_parameter_over_time(signals):
+def order_parameter_over_time(signals):
     """
     Computes the local order parameter / phase synchronization over time according to Meng et al. 2018.
 

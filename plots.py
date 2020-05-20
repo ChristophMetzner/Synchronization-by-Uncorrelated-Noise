@@ -53,6 +53,22 @@ def noise(
     return fig, ax
 
 
+def poisson_input(model: dict):
+    if (
+        "poisson_input_t_e" in model["model_results"]["net"]
+        and "poisson_input_spikes_e" in model["model_results"]["net"]
+    ):
+        net = model["model_results"]["net"]
+        plt.title("Poisson Spike Train Input to E population")
+        plt.xlabel("Time in ms")
+        plt.ylabel("Neuron Index of Poisson Group")
+        plt.plot(
+            net["poisson_input_t_e"], net["poisson_input_spikes_e"], ".", c="black"
+        )
+    else:
+        return None
+
+
 def lfp(
     model: dict,
     title: str = "Summed Voltage",

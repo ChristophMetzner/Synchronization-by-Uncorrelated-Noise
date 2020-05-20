@@ -461,9 +461,6 @@ def network_sim(signal, params: dict):
         project_dir = cpp_default_dir + "/test" + str(os.getpid())
         device.build(directory=project_dir, compile=True, run=True, debug=False)
 
-    if MP_E:
-        plot(MP_E.t / ms, MP_E.i, ".")
-
     run_time = time.time() - start_time
     print("runtime: %1.1f" % run_time)
 
@@ -530,6 +527,13 @@ def network_sim(signal, params: dict):
 
         results_dict["v_all_neurons_i1"] = v_all_neurons_i1
         results_dict["t_all_neurons_1i"] = t_all_neurons_i1
+
+        poisson_input_t_e = MP_E.t / ms
+        spikes = MP_E.i * 1
+
+        if MP_E:
+            results_dict["poisson_input_t_e"] = poisson_input_t_e
+            results_dict["poisson_input_spikes_e"] = spikes
 
         if N_pop > 1:
             v_all_neurons_e2 = v_monitor_record_all_E2.v / mV
