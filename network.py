@@ -528,10 +528,10 @@ def network_sim(signal, params: dict):
         results_dict["v_all_neurons_i1"] = v_all_neurons_i1
         results_dict["t_all_neurons_1i"] = t_all_neurons_i1
 
-        poisson_input_t_e = MP_E.t / ms
-        spikes = MP_E.i * 1
-
         if MP_E:
+            poisson_input_t_e = MP_E.t / ms
+            spikes = MP_E.i * 1
+
             results_dict["poisson_input_t_e"] = poisson_input_t_e
             results_dict["poisson_input_spikes_e"] = spikes
 
