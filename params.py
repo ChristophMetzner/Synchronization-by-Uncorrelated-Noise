@@ -9,32 +9,33 @@ So far, only brian2 model parameters are included. FP parameters will be added l
 def get_params():
     params = dict()
 
-    # external input parameter
-    params["ext_input_enabled"] = True
-    params["ext_input_type"] = "ou"  # "ou", "poisson" is supported
-
     # params for poisson input
+    params["poisson_enabled"] = [False, False]
     params["poisson_rates"] = [50, 30]
-    params["poisson_strengths"] = [3.0, 3.0]
+    params["poisson_strength"] = 0.3
 
     # params for ou process #
+    params["ou_enabled"] = [True, True]
     params["ou_stationary"] = True  # if False --> ou process starts at X0
 
     # parameters for network simulation
     params["net_record_spikes"] = 1000  # 200 # number of neurons to record spikes from
     params["net_record_all_neurons"] = True  # False
-    params[
-        "net_record_all_neurons_dt"
-    ] = 1.0  # keep this high; otherwise great deal of memory, zero if not
+
+    # keep this high; otherwise great deal of memory, zero if not
+    params["net_record_all_neurons_dt"] = 1.0
     params["net_record_dt"] = 1.0  # [ ms]
-    params[
-        "net_w_refr"
-    ] = True  # clamp (True) or don't clamp (False) w during the refractory period
-    params["net_w_init_e"] = 0.0  # 20. # [pA]
-    params["net_w_init_i"] = 0.0  # 20. # [pA]
-    params[
-        "net_v_lower_bound"
-    ] = None  # -100. #if None --> NO lower bound, else value of lower bound e.g. -200 in [mV]
+
+    # clamp (True) or don't clamp (False) w during the refractory period
+    params["net_w_refr"] = True
+
+    # 20. # [pA]
+    params["net_w_init_e"] = 0.0
+    # 20. # [pA]
+    params["net_w_init_i"] = 0.0
+
+    # -100. #if None --> NO lower bound, else value of lower bound e.g. -200 in [mV]
+    params["net_v_lower_bound"] = None
 
     # initial conditions
     # the transient response of the network and the solution of the fp eq are in good agreement for the init: normal
@@ -100,25 +101,27 @@ def get_params():
 
     # for recurrency
     factor = 10.0
-    params["J_etoe"] = (
-            0.01 * factor
-    )  # [nS] synaptic strength E-E conns within population
-    params["J_etoi"] = (
-            0.05 * factor
-    )  # .25      # [nS] synaptic strength E-I conns within population
-    params["J_itoe"] = (
-            1.0 * factor
-    )  # [nS] synaptic strength I-E conns within population
-    params["J_itoi"] = (
-            0.3 * factor
-    )  # [nS] synaptic strength I-I conns within population
 
-    params[
-        "J_ppee"
-    ] = 0.2  # .1      # [nS] synaptic strength E-E conns between population
-    params[
-        "J_ppei"
-    ] = 0.1  # .1      # [nS] synaptic strength E-I conns between population
+    # [nS] synaptic strength E-E conns within population
+    params["J_etoe"] = 0.01 * factor
+
+    # [nS] synaptic strength E-I conns within population
+    # .25
+    params["J_etoi"] = 0.05 * factor
+
+    # [nS] synaptic strength I-E conns within population
+    params["J_itoe"] = 1.0 * factor
+
+    # [nS] synaptic strength I-I conns within population
+    params["J_itoi"] = 0.3 * factor
+
+    # [nS] synaptic strength E-E conns between population
+    # .1
+    params["J_ppee"] = 0.2
+
+    # [nS] synaptic strength E-I conns between population
+    # .1
+    params["J_ppei"] = 0.1
 
     params["K_etoe"] = 100  # number of E-E connections within population
     params["K_etoi"] = 100  # number of E-I connections within population

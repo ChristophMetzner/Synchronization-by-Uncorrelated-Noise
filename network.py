@@ -142,7 +142,7 @@ def network_sim(signal, params: dict):
 
     # TODO: use named subexpressions instead of string formatting
     model_eqs_e1 = f"""
-        dv/dt = %s %s {"+ mu_ext_e(t) + sigma_ext_e(t) * xi" if params["ext_input_type"] == "ou" else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
+        dv/dt = %s %s {"+ mu_ext_e(t) + sigma_ext_e(t) * xi" if params["ou_enabled"][0] else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
         I_syn_AMPA = g_ampa*(E_AMPA-v): amp # synaptic current
         dg_ampa/dt = -g_ampa/tau_AMPA : siemens # synaptic conductance
@@ -157,7 +157,7 @@ def network_sim(signal, params: dict):
     )
 
     model_eqs_i1 = f"""
-        dv/dt = %s %s {"+ mu_ext_i(t) + sigma_ext_i(t) * xi" if params["ext_input_type"] == "ou" else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
+        dv/dt = %s %s {"+ mu_ext_i(t) + sigma_ext_i(t) * xi" if params["ou_enabled"][0] else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
         I_syn_AMPA = g_ampa*(E_AMPA-v): amp # synaptic current
         dg_ampa/dt = -g_ampa/tau_AMPA : siemens # synaptic conductance
@@ -214,7 +214,7 @@ def network_sim(signal, params: dict):
         noise_e2 = "+ mu_ext_e2(t) + sigma_ext_e2(t) * xi"
 
         model_eqs_e2 = f"""
-        dv/dt = %s %s {noise_e2 if params["ext_input_type"] == "ou" else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
+        dv/dt = %s %s {noise_e2 if params["ou_enabled"][1] else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
         I_syn_AMPA = g_ampa*(E_AMPA-v): amp # synaptic current
         dg_ampa/dt = -g_ampa/tau_AMPA : siemens # synaptic conductance
@@ -229,7 +229,7 @@ def network_sim(signal, params: dict):
         )
 
         model_eqs_i2 = f"""
-        dv/dt = %s %s {"+ mu_ext_i2(t) + sigma_ext_i2(t) * xi" if params["ext_input_type"] == "ou" else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
+        dv/dt = %s %s {"+ mu_ext_i2(t) + sigma_ext_i2(t) * xi" if params["ou_enabled"][1] else ""} + I_syn_AMPA/C_e + I_syn_GABA/C_e : volt (unless refractory)
         %s
         I_syn_AMPA = g_ampa*(E_AMPA-v): amp # synaptic current
         dg_ampa/dt = -g_ampa/tau_AMPA : siemens # synaptic conductance
@@ -264,8 +264,11 @@ def network_sim(signal, params: dict):
 
     net = Network(E, I, rate_monitor_e, rate_monitor_i,)
 
-    if params["ext_input_type"] == "poisson":
-        noise_strength_1 = params["poisson_strengths"][0]
+    MP_E = None
+    MP_I = None
+
+    if params["poisson_enabled"][0]:
+        noise_strength_1 = params["poisson_strength"]
         rate_ = params["poisson_rates"][0]
 
         P_E = PoissonGroup(params["poisson_size"], rate_ * Hz)
@@ -295,9 +298,9 @@ def network_sim(signal, params: dict):
         rate_monitor_e2 = PopulationRateMonitor(E2, name="aeif_ratemon_e2")
         net.add(E2, I2, rate_monitor_e2, rate_monitor_i2)
 
-        if params["ext_input_type"] == "poisson":
+        if params["poisson_enabled"][1]:
             # noise strength of network 2 depending on network 1 and p
-            noise_strength_2 = params["poisson_p"] * params["poisson_strengths"][0]
+            noise_strength_2 = params["poisson_p"] * params["poisson_strength"]
 
             # lambda = mu / strength (see Meng et al. 2018)
             # rate_2 = params["poisson_mean_input"] / noise_strength_2
