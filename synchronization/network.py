@@ -271,8 +271,8 @@ def network_sim(signal, params: dict):
         noise_strength_1 = params["poisson_strength"]
         rate_ = params["poisson_rates"][0]
 
-        P_E = PoissonGroup(params["poisson_size"], rate_ * Hz)
-        P_I = PoissonGroup(params["poisson_size"], rate_ * Hz)
+        P_E = PoissonGroup(params["poisson_size"], rates=rate_ * Hz, clock=simclock)
+        P_I = PoissonGroup(params["poisson_size"], rates=rate_ * Hz, clock=simclock)
         MP_E = SpikeMonitor(P_E)
         MP_I = SpikeMonitor(P_I)
 
@@ -283,15 +283,15 @@ def network_sim(signal, params: dict):
             "I_ext_i = (VT_i - EL_i) * gL_e * taum_i * noise_strength_1 / C_i : volt"
         )
 
-        S_pe = Synapses(P_E, E, model=poisson_spike_input_e, on_pre="v += I_ext_e")
+        S_pe = Synapses(P_E, E, model=poisson_spike_input_e, on_pre="v += I_ext_e", clock=simclock)
         S_pe.connect()
 
-        S_pi = Synapses(P_I, I, model=poisson_spike_input_i, on_pre="v += I_ext_i")
+        S_pi = Synapses(P_I, I, model=poisson_spike_input_i, on_pre="v += I_ext_i", clock=simclock)
         S_pi.connect()
 
         net.add(P_E, P_I, S_pe, S_pi, MP_E, MP_I)
 
-    build_synapses_first_population(E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net)
+    build_synapses_first_population(E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net, simclock)
 
     if N_pop > 1:
         rate_monitor_i2 = PopulationRateMonitor(I2, name="aeif_ratemon_i2")
@@ -306,8 +306,12 @@ def network_sim(signal, params: dict):
             # rate_2 = params["poisson_mean_input"] / noise_strength_2
             rate_2 = params["poisson_rates"][1]
 
-            P_E_2 = PoissonGroup(params["poisson_size"], rate_2 * Hz)
-            P_I_2 = PoissonGroup(params["poisson_size"], rate_2 * Hz)
+            P_E_2 = PoissonGroup(
+                params["poisson_size"], rates=rate_2 * Hz, clock=simclock
+            )
+            P_I_2 = PoissonGroup(
+                params["poisson_size"], rates=rate_2 * Hz, clock=simclock
+            )
             MP_E_2 = SpikeMonitor(P_E_2)
             MP_I_2 = SpikeMonitor(P_I_2)
 
@@ -315,12 +319,12 @@ def network_sim(signal, params: dict):
             poisson_spike_input_i_2 = "I_ext_i = (VT_i - EL_i) * gL_e * taum_i * noise_strength_2 / C_i : volt"
 
             S_pe_2 = Synapses(
-                P_E_2, E2, model=poisson_spike_input_e_2, on_pre="v += I_ext_e"
+                P_E_2, E2, model=poisson_spike_input_e_2, on_pre="v += I_ext_e", clock=simclock
             )
             S_pe_2.connect()
 
             S_pi_2 = Synapses(
-                P_I_2, I2, model=poisson_spike_input_i_2, on_pre="v += I_ext_i"
+                P_I_2, I2, model=poisson_spike_input_i_2, on_pre="v += I_ext_i", clock=simclock
             )
             S_pi_2.connect()
 
@@ -341,6 +345,7 @@ def network_sim(signal, params: dict):
             N_i,
             net,
             params,
+            simclock
         )
 
     print("Initialization time: {}s".format(time.time() - start_init))
@@ -481,7 +486,7 @@ def network_sim(signal, params: dict):
         "r_e": net_rates_e,
         "r_i1": net_rates_i1,
         "t": time_r,
-        "dt_sim": dt_sim
+        "dt_sim": dt_sim,
     }
 
     if N_pop > 1:
@@ -560,27 +565,27 @@ def network_sim(signal, params: dict):
 
 
 def build_synapses_multiple_populations(
-    E, E2, I, I2, K_etoe, K_etoi, K_itoe, K_itoi, K_ppee, K_ppei, N_e, N_i, net, params
+    E, E2, I, I2, K_etoe, K_etoi, K_itoe, K_itoi, K_ppee, K_ppei, N_e, N_i, net, params, simclock
 ):
-    syn_EE2 = Synapses(E2, E2, on_pre="g_ampa+=J_etoe")
+    syn_EE2 = Synapses(E2, E2, on_pre="g_ampa+=J_etoe", clock=simclock)
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
     syn_EE2.connect(p=sparsity)
     net.add(syn_EE2)
 
-    syn_EI2 = Synapses(E2, I2, on_pre="g_ampa+=J_etoi")
+    syn_EI2 = Synapses(E2, I2, on_pre="g_ampa+=J_etoi", clock=simclock)
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
     syn_EI2.connect(p=sparsity)
     net.add(syn_EI2)
 
-    syn_IE2 = Synapses(I2, E2, on_pre="g_gaba+=J_itoe")
+    syn_IE2 = Synapses(I2, E2, on_pre="g_gaba+=J_itoe", clock=simclock)
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
     syn_IE2.connect(p=sparsity)
     net.add(syn_IE2)
 
-    synII2 = Synapses(I2, I2, on_pre="g_gaba+=J_itoi")
+    synII2 = Synapses(I2, I2, on_pre="g_gaba+=J_itoi", clock=simclock)
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
     synII2.connect(p=sparsity)
@@ -590,28 +595,28 @@ def build_synapses_multiple_populations(
     Connections between populations
     """
     sparsity = float(K_ppee) / N_e
-    SynE1E2 = Synapses(E, E2, on_pre="g_ampa+=J_ppee")
+    SynE1E2 = Synapses(E, E2, on_pre="g_ampa+=J_ppee", clock=simclock)
     assert 0 <= sparsity <= 1.0
     SynE1E2.connect(p=sparsity)
-    SynE1E2.delay = "{} * ms".format(params["const_delay"])
+    SynE1E2.delay = "{} * ms".format(params["const_delay"], clock=simclock)
     net.add(SynE1E2)
 
     sparsity = float(K_ppee) / N_e
-    SynE2E1 = Synapses(E2, E, on_pre="g_ampa+=J_ppee")
+    SynE2E1 = Synapses(E2, E, on_pre="g_ampa+=J_ppee", clock=simclock)
     assert 0 <= sparsity <= 1.0
     SynE2E1.connect(p=sparsity)
-    SynE2E1.delay = "{} * ms".format(params["const_delay"])
+    SynE2E1.delay = "{} * ms".format(params["const_delay"], clock=simclock)
     net.add(SynE2E1)
 
     sparsity = float(K_ppei) / N_e
-    SynE1I2 = Synapses(E, I2, on_pre="g_ampa+=J_ppei")
+    SynE1I2 = Synapses(E, I2, on_pre="g_ampa+=J_ppei", clock=simclock)
     assert 0 <= sparsity <= 1.0
     SynE1I2.connect(p=sparsity)
     SynE1I2.delay = "{} * ms".format(params["const_delay"])
     net.add(SynE1I2)
 
     sparsity = float(K_ppei) / N_e
-    SynE2I1 = Synapses(E2, I, on_pre="g_ampa+=J_ppei")
+    SynE2I1 = Synapses(E2, I, on_pre="g_ampa+=J_ppei", clock=simclock)
     assert 0 <= sparsity <= 1.0
     SynE2I1.connect(p=sparsity)
     SynE2I1.delay = "{} * ms".format(params["const_delay"])
@@ -619,27 +624,27 @@ def build_synapses_multiple_populations(
 
 
 def build_synapses_first_population(
-    E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net
+    E, I, K_etoe, K_etoi, K_itoe, K_itoi, N_e, N_i, net, simclock
 ):
-    synEE = Synapses(E, E, on_pre="g_ampa+=J_etoe")
+    synEE = Synapses(E, E, on_pre="g_ampa+=J_etoe", clock=simclock)
     sparsity = float(K_etoe) / N_e
     assert 0 <= sparsity <= 1.0
     synEE.connect(p=sparsity)
     net.add(synEE)
 
-    synEI = Synapses(E, I, on_pre="g_ampa+=J_etoi")
+    synEI = Synapses(E, I, on_pre="g_ampa+=J_etoi", clock=simclock)
     sparsity = float(K_etoi) / N_i
     assert 0 <= sparsity <= 1.0
     synEI.connect(p=sparsity)
     net.add(synEI)
 
-    syn_IE = Synapses(I, E, on_pre="g_gaba+=J_itoe")
+    syn_IE = Synapses(I, E, on_pre="g_gaba+=J_itoe", clock=simclock)
     sparsity = float(K_itoe) / N_e
     assert 0 <= sparsity <= 1.0
     syn_IE.connect(p=sparsity)
     net.add(syn_IE)
 
-    syn_II = Synapses(I, I, on_pre="g_gaba+=J_itoi")
+    syn_II = Synapses(I, I, on_pre="g_gaba+=J_itoi", clock=simclock)
     sparsity = float(K_itoi) / N_i
     assert 0 <= sparsity <= 1.0
     syn_II.connect(p=sparsity)
