@@ -9,6 +9,9 @@
 # IntelliJ
 .idea
 
+# VS Code
+.vscode
+
 # Brian2
 brian2_compile
 notebooks/output
