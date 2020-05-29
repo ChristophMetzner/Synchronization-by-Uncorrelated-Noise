@@ -42,14 +42,10 @@ def ou_x(runtime, dt, tau, mean, sigma_stat, X0, rands):
     return x
 
 
-def generate_ou_input(run_time, min_dt, stationary: bool, params: dict):
-    tau = params["ou_tau"]
-    sigma = params["ou_sigma"]
-    mu = params["ou_mean"]
+def generate_ou_input(run_time, min_dt, stationary: bool, X0, tau, sigma, mu):
     if stationary:
         X0 = mu
-    else:
-        X0 = params["ou_X0"]
+        
     rands = np.random.randn(int(run_time / min_dt))
     ou_trace = ou_x(run_time, min_dt, tau, mu, sigma, X0, rands)
     return ou_trace

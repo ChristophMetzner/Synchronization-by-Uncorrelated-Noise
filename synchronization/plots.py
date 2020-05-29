@@ -53,16 +53,12 @@ def noise(
 
 
 def poisson_input(model: dict):
-    if (
-        "poisson_input_t_e" in model["model_results"]["net"]
-        and "poisson_input_spikes_e" in model["model_results"]["net"]
-    ):
-        net = model["model_results"]["net"]
+    if "poisson_input_t_e" in model and "poisson_input_spikes_e" in model:
         plt.title("Poisson Spike Train Input to E population")
         plt.xlabel("Time in ms")
         plt.ylabel("Neuron Index of Poisson Group")
         plt.plot(
-            net["poisson_input_t_e"], net["poisson_input_spikes_e"], ".", c="black"
+            model["poisson_input_t_e"], model["poisson_input_spikes_e"], ".", c="black"
         )
     else:
         return None
@@ -78,7 +74,7 @@ def lfp(
     skip: int = None,
     population: int = 1,
 ):
-    duration = duration if duration else model["params"]["runtime"]
+    duration = duration if duration else model["runtime"]
 
     lfp1, lfp2 = processing.lfp(model, duration, skip, population=population)
 
@@ -124,7 +120,7 @@ def psd(
     """
     print("Generate PSD plot ...")
 
-    duration = duration if duration else model["params"]["runtime"]
+    duration = duration if duration else model["runtime"]
     if excitatory:
         key = "excitatory"
     else:
@@ -186,12 +182,12 @@ def raster(
         ax = fig.add_subplot(111)
 
     if population == 1:
-        s_e = model["model_results"]["net"]["net_spikes_e"]
-        s_i = model["model_results"]["net"]["net_spikes_i1"]
+        s_e = model["net_spikes_e"]
+        s_i = model["net_spikes_i1"]
 
     else:
-        s_e = model["model_results"]["net"]["net_spikes_e2"]
-        s_i = model["model_results"]["net"]["net_spikes_i2"]
+        s_e = model["net_spikes_e2"]
+        s_i = model["net_spikes_i2"]
 
     ax.set_title(title if title else "Raster")
     ax.set_xlabel("Time in ms")
@@ -218,7 +214,7 @@ def raster(
 
 def lfp_nets(model: dict, single_net: bool = False):
     dt = 1.0
-    duration = model["params"]["runtime"]
+    duration = model["runtime"]
 
     lfp1 = processing.lfp_single_net(model)
 
@@ -252,10 +248,10 @@ def population_rates(model: dict):
     """
     fig, axs = plt.subplots(2, 2, figsize=(20, 10), sharey="col")
 
-    N_pop = model["params"]["N_pop"]
+    N_pop = model["N_pop"]
 
-    r_e = model["model_results"]["net"]["r_e"]
-    r_i1 = model["model_results"]["net"]["r_i1"]
+    r_e = model["r_e"]
+    r_i1 = model["r_i1"]
 
     axs[0, 0].plot(r_e, c="black")
     axs[0, 0].set_title("Population 1 - Excitatory")
@@ -264,8 +260,8 @@ def population_rates(model: dict):
     axs[1, 0].set_title("Population 1 - Inhibitory")
 
     if N_pop > 1:
-        r_e2 = model["model_results"]["net"]["r_e2"]
-        r_i2 = model["model_results"]["net"]["r_i2"]
+        r_e2 = model["r_e2"]
+        r_i2 = model["r_i2"]
 
         axs[0, 1].plot(r_e2, c="black")
         axs[0, 1].set_title("Population 2 - Excitatory")
@@ -289,7 +285,7 @@ def all_psd(models: List[Dict], n_cols, n_rows):
         else:
             ax.set_title(f"mean = {title}", fontsize=10)
 
-            duration = data["params"]["runtime"]
+            duration = data["runtime"]
             dt = 1.0
 
             lfp1, lfp2 = processing.lfp(model=data, duration=duration)
@@ -317,12 +313,24 @@ def all_psd(models: List[Dict], n_cols, n_rows):
     return fig, axs
 
 
-def ou_noise_by_params(params: dict, fig_size: Tuple = None):
+def ou_noise_by_params(model: dict, fig_size: Tuple = None):
     mean = generate_ou_input(
-        params["runtime"], params["min_dt"], params["ou_stationary"], params["ou_mu"]
+        model["runtime"],
+        model["min_dt"],
+        model["ou_stationary"],
+        model["ou_mu_X0"],
+        model["ou_mu_tau"],
+        model["ou_mu_sigma"],
+        model["ou_mu_mean"],
     )
     sigma = generate_ou_input(
-        params["runtime"], params["min_dt"], params["ou_stationary"], params["ou_sigma"]
+        model["runtime"],
+        model["min_dt"],
+        model["ou_stationary"],
+        model["ou_sigma_X0"],
+        model["ou_sigma_tau"],
+        model["ou_sigma_sigma"],
+        model["ou_sigma_mean"],
     )
     return noise(mean, sigma, save=False, fig_size=fig_size)
 
@@ -358,7 +366,7 @@ def heat_map(
 def band_power(model):
     lfp = processing.lfp_single_net(model)
 
-    runtime_ = model["params"]["runtime"]
+    runtime_ = model["runtime"]
     dt = 1.0
     timepoints = int((runtime_ / dt) / 2)
     fs = 1.0 / dt
@@ -383,9 +391,9 @@ def _prepare_data(metric: str, models: [dict], x: str, y: str):
         # x: mean
         # y: sigma
         # z: max_amplitude
-        mean_ = model["params"]["ou_mu"]["ou_mean"]
-        sigma_ = model["params"]["ou_mu"]["ou_sigma"]
-        tau_ = model["params"]["ou_mu"]["ou_tau"]
+        mean_ = model["ou_mu_mean"]
+        sigma_ = model["ou_mu_sigma"]
+        tau_ = model["ou_mu_tau"]
 
         max_amplitude, peak_freq = band_power(model)
 

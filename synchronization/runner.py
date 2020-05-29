@@ -32,10 +32,16 @@ def run(
     p["ou_stationary"] = True
 
     # noise params for mu
-    p["ou_mu"] = {"ou_X0": 0.0, "ou_mean": 3.0, "ou_sigma": 0.5, "ou_tau": 1.0}
+    p["ou_mu_X0"] = 0.0
+    p["ou_mu_mean"] = 3.0
+    p["ou_mu_sigma"] = 0.5
+    p["ou_mu_tau"] = 1.0
 
     # noise params for sigma
-    p["ou_sigma"] = {"ou_X0": 0.0, "ou_mean": 1.0, "ou_sigma": 0.2, "ou_tau": 1.0}
+    p["ou_sigma_X0"] = 0.0
+    p["ou_sigma_mean"] = 1.0
+    p["ou_sigma_sigma"] = 0.2
+    p["ou_sigma_tau"] = 1.0
 
     if modified_params:
         # Update params with modified_params
@@ -53,17 +59,41 @@ def run(
 
     # mu = const, sigma = OU process
     mu_ext1 = generate_ou_input(
-        p["runtime"], p["min_dt"], p["ou_stationary"], p["ou_mu"]
+        p["runtime"],
+        p["min_dt"],
+        p["ou_stationary"],
+        p["ou_mu_X0"],
+        p["ou_mu_tau"],
+        p["ou_mu_sigma"],
+        p["ou_mu_mean"],
     )
     mu_ext2 = generate_ou_input(
-        p["runtime"], p["min_dt"], p["ou_stationary"], p["ou_mu"]
+        p["runtime"],
+        p["min_dt"],
+        p["ou_stationary"],
+        p["ou_mu_X0"],
+        p["ou_mu_tau"],
+        p["ou_mu_sigma"],
+        p["ou_mu_mean"],
     )
 
     sigma_ext1 = generate_ou_input(
-        p["runtime"], p["min_dt"], p["ou_stationary"], p["ou_sigma"]
+        p["runtime"],
+        p["min_dt"],
+        p["ou_stationary"],
+        p["ou_sigma_X0"],
+        p["ou_sigma_tau"],
+        p["ou_sigma_sigma"],
+        p["ou_sigma_mean"],
     )
     sigma_ext2 = generate_ou_input(
-        p["runtime"], p["min_dt"], p["ou_stationary"], p["ou_sigma"]
+        p["runtime"],
+        p["min_dt"],
+        p["ou_stationary"],
+        p["ou_sigma_X0"],
+        p["ou_sigma_tau"],
+        p["ou_sigma_sigma"],
+        p["ou_sigma_mean"],
     )
 
     # collect ext input for model wrappers
@@ -75,28 +105,28 @@ def run(
         "input_sigma_1": sigma_ext1,
         "input_mean_2": mu_ext2,
         "input_sigma_2": sigma_ext2,
-        "model_results": dict(),
-        # save parameter set for later analysis
-        "params": p,
     }
 
+    results.update(p)
+
     # ext_input = interpolate_input(ext_input0, params, 'net')
-    results["model_results"]["net"] = net.network_sim(ext_input0, p)
-
-    if experiment_name:
-        try:
-            os.mkdir(f"{constants.MODELS_PATH}/" + experiment_name)
-        except FileExistsError:
-            # ignore
-            pass
-
-    base_path = (
-        f"{constants.MODELS_PATH}/{experiment_name}"
-        if experiment_name
-        else constants.MODELS_PATH
-    )
+    network_results = net.network_sim(ext_input0, p)
+    results.update(network_results)
 
     if file_name:
+        if experiment_name:
+            try:
+                os.mkdir(f"{constants.MODELS_PATH}/" + experiment_name)
+            except FileExistsError:
+                # ignore
+                pass
+
+        base_path = (
+            f"{constants.MODELS_PATH}/{experiment_name}"
+            if experiment_name
+            else constants.MODELS_PATH
+        )
+
         with open(f"{base_path}/{file_name}.pkl", "wb") as handle:
             pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 

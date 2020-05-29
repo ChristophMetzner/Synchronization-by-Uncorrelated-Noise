@@ -68,9 +68,8 @@ def get_params():
 
     # AMPA synapse (excitatory)
     params["tau_AMPA"] = 3.0  # [ms]
-    params[
-        "E_AMPA"
-    ] = 0.0  # [mV] Reversal potential of AMPA synapse, usually set to 0 mV.
+    # [mV] Reversal potential of AMPA synapse, usually set to 0 mV.
+    params["E_AMPA"] = 0.0
 
     # Inhibitory cells
     params["C_inh1"] = 200.0  # [pF]
@@ -89,10 +88,11 @@ def get_params():
 
     # GABA synapse (inhibitory)
     # Neuronal Dynamics (https://neuronaldynamics.epfl.ch/online/Ch3.S1.html#SS1.p3) suggests 6 ms.
-    params["tau_GABA"] = 6.0  # [ms] # 9.0 starting point
-    params[
-        "E_GABA"
-    ] = -70.0  # [mV] Reversal potential of GABA synapse , usually set to -70 to -75mV
+    # [ms] # 9.0 starting point
+    params["tau_GABA"] = 6.0
+
+    # [mV] Reversal potential of GABA synapse , usually set to -70 to -75mV
+    params["E_GABA"] = -70.0
 
     # Network size
     params["N_pop"] = 1  # number of populations 1 or 2
@@ -140,6 +140,7 @@ def get_params():
 
     # for plotting
     # colors[modelname] = color
-    params["color"] = {"net": "b"}
-    params["lw"] = {"net": "1"}
+    # TODO: do we need this?
+    # params["color"] = {"net": "b"}
+    # params["lw"] = {"net": "1"}
     return params

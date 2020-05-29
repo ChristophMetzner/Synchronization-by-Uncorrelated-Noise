@@ -9,6 +9,7 @@ from synchronization import runner
 from itertools import product
 from mopet import mopet
 
+
 class Experiment:
     """ Base Experiment."""
 
@@ -173,10 +174,9 @@ class MopetExampleExperiment:
 
         ex = mopet.Exploration(run_network, params)
         ex.run()
-        ex.load_results()
+        ex.load_results(all=True)
 
-        print(ex.results)
-        print(ex.df)
+        return ex.df, ex.results
 
 
 def run_network(params) -> dict:
@@ -186,8 +186,11 @@ def run_network(params) -> dict:
     :param params:
     :return: dict
     """
-    model = runner.run(modified_params=params)
-    return {
-        "r_e": model["model_results"]["net"]["r_e"],
-        "r_i1": model["model_results"]["net"]["r_i1"],
-    }
+    results = runner.run(modified_params=params)
+
+    # Remove types that are not supported yet by Mopet
+    remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
+    print(f"Removing keys {remove} containing NoneType from dictionary to avoid conflicts with Mopet")
+    for k in remove: del results[k]
+
+    return results

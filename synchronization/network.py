@@ -476,11 +476,12 @@ def network_sim(signal, params: dict):
 
     # for smoothing function net_rates do: helpers.smooth_trace(net_rates, int(rates_dt / dt_sim))
     # smooth out our hyper-resolution rate trace manually cause brian2 can't do it
-    results_dict = {
+    results = {
         "brian_version": 2,
         "r_e": net_rates_e,
         "r_i1": net_rates_i1,
         "t": time_r,
+        "dt_sim": dt_sim
     }
 
     if N_pop > 1:
@@ -490,8 +491,8 @@ def network_sim(signal, params: dict):
         net_rates_i2 = rate_monitor_i2.smooth_rate(window="flat", width=10.0 * ms) / Hz
         net_t_i2 = rate_monitor_i2.t / ms
 
-        results_dict["r_e2"] = net_rates_e2
-        results_dict["r_i2"] = net_rates_i2
+        results["r_e2"] = net_rates_e2
+        results["r_i2"] = net_rates_i2
 
     if record_spikes > 0:
         # multiply by 1 like this to ensure brian extracts the results before we delete the compile directory
@@ -503,8 +504,8 @@ def network_sim(signal, params: dict):
         i, t = net_spikes_i1
         net_spikes_i1 = [i * 1, t * 1]
 
-        results_dict["net_spikes_e"] = net_spikes_e
-        results_dict["net_spikes_i1"] = net_spikes_i1
+        results["net_spikes_e"] = net_spikes_e
+        results["net_spikes_i1"] = net_spikes_i1
 
         if N_pop > 1:
             net_spikes_e2 = spike_monitor_E2.it
@@ -515,8 +516,8 @@ def network_sim(signal, params: dict):
             i, t = net_spikes_i2
             net_spikes_i2 = [i * 1, t * 1]
 
-            results_dict["net_spikes_e2"] = net_spikes_e2
-            results_dict["net_spikes_i2"] = net_spikes_i2
+            results["net_spikes_e2"] = net_spikes_e2
+            results["net_spikes_i2"] = net_spikes_i2
 
     if record_all_v_at_times:
         v_all_neurons_e = v_monitor_record_all_E.v / mV
@@ -525,18 +526,18 @@ def network_sim(signal, params: dict):
         v_all_neurons_i1 = v_monitor_record_all_I1.v / mV
         t_all_neurons_i1 = v_monitor_record_all_I1.t / ms
 
-        results_dict["v_all_neurons_e"] = v_all_neurons_e
-        results_dict["t_all_neurons_e"] = t_all_neurons_e
+        results["v_all_neurons_e"] = v_all_neurons_e
+        results["t_all_neurons_e"] = t_all_neurons_e
 
-        results_dict["v_all_neurons_i1"] = v_all_neurons_i1
-        results_dict["t_all_neurons_1i"] = t_all_neurons_i1
+        results["v_all_neurons_i1"] = v_all_neurons_i1
+        results["t_all_neurons_1i"] = t_all_neurons_i1
 
         if MP_E:
             poisson_input_t_e = MP_E.t / ms
             spikes = MP_E.i * 1
 
-            results_dict["poisson_input_t_e"] = poisson_input_t_e
-            results_dict["poisson_input_spikes_e"] = spikes
+            results["poisson_input_t_e"] = poisson_input_t_e
+            results["poisson_input_spikes_e"] = spikes
 
         if N_pop > 1:
             v_all_neurons_e2 = v_monitor_record_all_E2.v / mV
@@ -545,17 +546,17 @@ def network_sim(signal, params: dict):
             v_all_neurons_i2 = v_monitor_record_all_I2.v / mV
             t_all_neurons_i2 = v_monitor_record_all_I2.t / ms
 
-            results_dict["v_all_neurons_e2"] = v_all_neurons_e2
-            results_dict["t_all_neurons_e2"] = t_all_neurons_e2
+            results["v_all_neurons_e2"] = v_all_neurons_e2
+            results["t_all_neurons_e2"] = t_all_neurons_e2
 
-            results_dict["v_all_neurons_i2"] = v_all_neurons_i2
-            results_dict["t_all_neurons_i2"] = t_all_neurons_i2
+            results["v_all_neurons_i2"] = v_all_neurons_i2
+            results["t_all_neurons_i2"] = t_all_neurons_i2
 
     if params["brian2_standalone"]:
         shutil.rmtree(project_dir)
         device.reinit()
 
-    return results_dict
+    return results
 
 
 def build_synapses_multiple_populations(
