@@ -7,6 +7,7 @@ from synchronization import params
 from synchronization import network as net
 from synchronization import constants
 from synchronization.utils import generate_ou_input, update
+from synchronization import processing
 
 
 def run(
@@ -129,5 +130,32 @@ def run(
 
         with open(f"{base_path}/{file_name}.pkl", "wb") as handle:
             pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    return results
+
+
+def run_in_mopet(params) -> dict:
+    """
+    Run method wrapper that runs network in Mopet.
+
+    :param params:
+    :return: dict
+    """
+    results = run(modified_params=params)
+
+    # Aggregation
+    print("Starting Aggregation ...")
+    max_amplitude, peak_freq = processing.band_power(results)
+    results["max_amplitude"] = max_amplitude
+    results["peak_freq"] = peak_freq
+
+    max_amplitude, peak_freq = processing.band_power(results, network=2)
+    results["max_amplitude_2"] = max_amplitude
+    results["peak_freq_2"] = peak_freq
+
+    # Remove types that are not supported yet by Mopet
+    remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
+    # print(f"Removing keys {remove} containing NoneType from dictionary to avoid conflicts with Mopet")
+    for k in remove: del results[k]
 
     return results

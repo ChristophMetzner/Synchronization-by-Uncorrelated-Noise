@@ -172,25 +172,8 @@ class MopetExampleExperiment:
     def run(self):
         params = {"J_etoe": np.arange(1, 3, 1)}
 
-        ex = mopet.Exploration(run_network, params)
+        ex = mopet.Exploration(runner.run_in_mopet, params)
         ex.run()
         ex.load_results(all=True)
 
         return ex.df, ex.results
-
-
-def run_network(params) -> dict:
-    """
-    Wrapper run method for Mopet.
-
-    :param params:
-    :return: dict
-    """
-    results = runner.run(modified_params=params)
-
-    # Remove types that are not supported yet by Mopet
-    remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
-    print(f"Removing keys {remove} containing NoneType from dictionary to avoid conflicts with Mopet")
-    for k in remove: del results[k]
-
-    return results

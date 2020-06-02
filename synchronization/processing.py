@@ -2,6 +2,7 @@ import numpy as np
 
 from typing import Tuple
 from scipy.signal import hilbert
+from matplotlib import mlab
 
 
 def lfp(
@@ -49,6 +50,27 @@ def lfp_nets(model):
 
 def _lfp(v, N):
     return np.sum(v, axis=0) / N
+
+
+def band_power(model, network: int = 1):
+    lfp = lfp_single_net(model, population=network)
+
+    runtime_ = model["runtime"]
+    dt = 1.0
+    timepoints = int((runtime_ / dt) / 2)
+    fs = 1.0 / dt
+
+    psd, freqs = mlab.psd(
+        lfp, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
+    )
+    psd[0] = 0.0
+    freqs = freqs * 1000
+    freqs = [int(freq) for freq in freqs]
+
+    max_amplitude = psd.max()
+    peak_freq = freqs[psd.argmax()]
+
+    return max_amplitude, peak_freq
 
 
 def hilphase(y1, y2):

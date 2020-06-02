@@ -11,8 +11,10 @@ def get_params():
 
     # params for poisson input
     params["poisson_enabled"] = [False, False]
-    params["poisson_rates"] = [50, 30]
-    params["poisson_strength"] = 0.3
+    params["poisson_mean_input"] = 200,
+    params["poisson_size"] = 200,
+    params["poisson_variance"] = 0.9,
+    params["poisson_p"] = 0.83,
 
     # params for ou process #
     params["ou_enabled"] = [True, True]

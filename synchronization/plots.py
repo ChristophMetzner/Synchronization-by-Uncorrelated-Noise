@@ -4,12 +4,13 @@ import matplotlib.patches as mpatches
 import seaborn as sns
 import pandas as pd
 
+from typing import Tuple, List, Dict
+from matplotlib import mlab
+
 from synchronization import constants
 from synchronization import processing
 from synchronization.utils import generate_ou_input
 
-from typing import Tuple, List, Dict
-from matplotlib import mlab
 
 # FIG_SIZE = [20, 15]
 FIG_SIZE = [10, 6]
@@ -54,11 +55,16 @@ def noise(
 
 def poisson_input(model: dict):
     if "poisson_input_t_e" in model and "poisson_input_spikes_e" in model:
+        plt.figure(figsize=(10, 8))
         plt.title("Poisson Spike Train Input to E population")
         plt.xlabel("Time in ms")
         plt.ylabel("Neuron Index of Poisson Group")
         plt.plot(
-            model["poisson_input_t_e"], model["poisson_input_spikes_e"], ".", c="black"
+            model["poisson_input_t_e"],
+            model["poisson_input_spikes_e"],
+            ".",
+            c="grey",
+            linewidth=0.5,
         )
     else:
         return None
@@ -118,7 +124,6 @@ def psd(
     """
     Plots the Power Spectral Density.
     """
-    print("Generate PSD plot ...")
 
     duration = duration if duration else model["runtime"]
     if excitatory:
@@ -128,7 +133,8 @@ def psd(
 
     lfp1, lfp2 = processing.lfp(model, population=population)
 
-    timepoints = int((duration / dt) / 2)
+    granularity = 1.0
+    timepoints = int((duration / dt / granularity))
     fs = 1.0 / dt
 
     psd1, freqs = mlab.psd(
@@ -138,6 +144,7 @@ def psd(
         lfp2, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
     )
 
+    # TODO: why do we set it to 0? Remove unwanted artificats?
     psd1[0] = 0.0
     psd2[0] = 0.0
 
@@ -147,8 +154,8 @@ def psd(
     ax.set_title(title if title else "PSD")
     ax.set_xlabel("Frequency")
     ax.set_ylabel("Density")
-    ax.plot(freqs * 1000, psd1, "0.25", linewidth=3.0, c="darkgray")
-    ax.plot(freqs * 1000, psd2, "0.75", linewidth=3.0, c="dimgray")
+    ax.plot(freqs * 1000, psd1, "0.75", linewidth=1.5, c="darkgray")
+    ax.plot(freqs * 1000, psd2, "0.75", linewidth=1.5, c="dimgray")
 
     plt.legend(
         handles=[
@@ -189,12 +196,21 @@ def raster(
         s_e = model["net_spikes_e2"]
         s_i = model["net_spikes_i2"]
 
+    if s_e[0].size == 0 and s_i[0].size == 0:
+        print("0 size array of spikes, cannot create raster plot.")
+        return
+
     ax.set_title(title if title else "Raster")
     ax.set_xlabel("Time in ms")
     ax.set_ylabel("Neuron index")
-    ax.plot(s_e[1] * 1000, s_e[0], "k.", c="dimgrey", markersize="4.0")
+
+    ax.plot(s_e[1] * 1000, s_e[0], "k.", c="dimgrey", markersize="2.0")
     ax.plot(
-        s_i[1] * 1000, s_i[0] + (s_e[0].max() + 1), "k.", c="black", markersize="4.0"
+        s_i[1] * 1000,
+        s_i[0] + (s_e[0].max() + 1 if s_e[0].size != 0 else 0),
+        "k.",
+        c="black",
+        markersize="4.0",
     )
 
     plt.legend(
@@ -270,11 +286,17 @@ def population_rates(model: dict):
         axs[1, 1].set_title("Population 2 - Inhibitory")
 
 
-def all_psd(models: List[Dict], n_cols, n_rows):
+def all_psd(
+    models: List[Dict],
+    n_cols: int,
+    n_rows: int,
+    single_network: bool = False,
+    figsize=(20, 5),
+):
     models = list(models)
 
-    # TODO: use ration and define columns and rows depending on length of models
-    fig, axs = plt.subplots(n_cols, n_rows, figsize=(20, 5), sharex=True)
+    # TODO: use ratio and define columns and rows depending on length of models
+    fig, axs = plt.subplots(n_cols, n_rows, figsize=figsize, sharex=False)
 
     for i, ax in enumerate(axs.reshape(-1)):
         try:
@@ -283,12 +305,15 @@ def all_psd(models: List[Dict], n_cols, n_rows):
             # ignore
             pass
         else:
-            ax.set_title(f"mean = {title}", fontsize=10)
+            ax.set_title(title, fontsize=10)
 
             duration = data["runtime"]
             dt = 1.0
 
-            lfp1, lfp2 = processing.lfp(model=data, duration=duration)
+            if single_network:
+                lfp1, lfp2 = processing.lfp(model=data)
+            else:
+                lfp1, lfp2 = processing.lfp_nets(model=data)
 
             timepoints = int((duration / dt) / 2)
             fs = 1.0 / dt
@@ -296,6 +321,7 @@ def all_psd(models: List[Dict], n_cols, n_rows):
             psd1, freqs = mlab.psd(
                 lfp1, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
             )
+
             psd2, _ = mlab.psd(
                 lfp2, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
             )
@@ -305,8 +331,8 @@ def all_psd(models: List[Dict], n_cols, n_rows):
 
             ax.set_xlabel("Frequency")
             ax.set_ylabel("Density")
-            ax.plot(freqs * 1000, psd1, "0.25", linewidth=1.0, c="black")
-            ax.plot(freqs * 1000, psd2, "0.75", linewidth=1.0, c="dimgray")
+            ax.plot(freqs * 1000, psd1, "0.25", linewidth=2.0, c="blue")
+            ax.plot(freqs * 1000, psd2, "0.75", linewidth=2.0, c="green")
             ax.set_xlim([0, 80])
 
     plt.tight_layout()
@@ -363,27 +389,6 @@ def heat_map(
     return fig, ax, df
 
 
-def band_power(model):
-    lfp = processing.lfp_single_net(model)
-
-    runtime_ = model["runtime"]
-    dt = 1.0
-    timepoints = int((runtime_ / dt) / 2)
-    fs = 1.0 / dt
-
-    psd, freqs = mlab.psd(
-        lfp, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
-    )
-    psd[0] = 0.0
-    freqs = freqs * 1000
-    freqs = [int(freq) for freq in freqs]
-
-    max_amplitude = psd.max()
-    peak_freq = freqs[psd.argmax()]
-
-    return max_amplitude, peak_freq
-
-
 def _prepare_data(metric: str, models: [dict], x: str, y: str):
     data = {x: [], y: [], metric: []}
 
@@ -395,7 +400,7 @@ def _prepare_data(metric: str, models: [dict], x: str, y: str):
         sigma_ = model["ou_mu_sigma"]
         tau_ = model["ou_mu_tau"]
 
-        max_amplitude, peak_freq = band_power(model)
+        max_amplitude, peak_freq = processing.band_power(model)
 
         if x == "tau":
             data[x].append(tau_)
