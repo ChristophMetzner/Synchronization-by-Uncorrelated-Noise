@@ -559,7 +559,7 @@ def network_sim(signal, params: dict):
         results["t_all_neurons_e"] = t_all_neurons_e
 
         results["v_all_neurons_i1"] = v_all_neurons_i1
-        results["t_all_neurons_1i"] = t_all_neurons_i1
+        results["t_all_neurons_i1"] = t_all_neurons_i1
 
         if MP_E:
             poisson_input_t_e = MP_E.t / ms

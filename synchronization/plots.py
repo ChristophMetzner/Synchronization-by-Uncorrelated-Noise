@@ -118,20 +118,17 @@ def psd(
     folder: str = None,
     save: bool = False,
     population: int = 1,
-    excitatory: bool = False,
+    groups: str = "both",
     fig_size: tuple = None,
 ):
     """
     Plots the Power Spectral Density.
     """
-
     duration = duration if duration else model["runtime"]
-    if excitatory:
-        key = "excitatory"
-    else:
-        key = "inhibitory"
+    key = groups
 
-    lfp1, lfp2 = processing.lfp(model, population=population)
+    # skip first 100 ms to remove artifcats from calibration phase
+    lfp1, lfp2 = processing.lfp(model, population=population, skip=100)
 
     granularity = 1.0
     timepoints = int((duration / dt / granularity))
@@ -154,8 +151,16 @@ def psd(
     ax.set_title(title if title else "PSD")
     ax.set_xlabel("Frequency")
     ax.set_ylabel("Density")
-    ax.plot(freqs * 1000, psd1, "0.75", linewidth=1.5, c="darkgray")
-    ax.plot(freqs * 1000, psd2, "0.75", linewidth=1.5, c="dimgray")
+
+    if groups == "inhibitory":
+        ax.plot(freqs * 1000, psd1, "0.75", linewidth=1.5, c="darkgray")
+
+    elif groups == "excitatory":
+        ax.plot(freqs * 1000, psd2, "0.75", linewidth=1.5, c="dimgray")
+
+    else:
+        ax.plot(freqs * 1000, psd1, "0.75", linewidth=1.5, c="darkgray")
+        ax.plot(freqs * 1000, psd2, "0.75", linewidth=1.5, c="dimgray")
 
     plt.legend(
         handles=[
@@ -228,11 +233,11 @@ def raster(
     return fig, ax
 
 
-def lfp_nets(model: dict, single_net: bool = False):
+def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
     dt = 1.0
     duration = model["runtime"]
 
-    lfp1 = processing.lfp_single_net(model)
+    lfp1 = processing.lfp_single_net(model, skip=skip)
 
     t = np.linspace(0, duration, int(duration / dt))
 
@@ -246,7 +251,7 @@ def lfp_nets(model: dict, single_net: bool = False):
     handles = [mpatches.Patch(color="black", label="Network 1")]
 
     if not single_net:
-        lfp2 = processing.lfp_single_net(model, population=2)
+        lfp2 = processing.lfp_single_net(model, population=2, skip=skip)
         ax.plot(t, lfp2, "0.75", color="darkgrey")
         handles.append(mpatches.Patch(color="darkgrey", label="Network 2"))
 
@@ -256,7 +261,7 @@ def lfp_nets(model: dict, single_net: bool = False):
     return ax
 
 
-def population_rates(model: dict):
+def population_rates(model: dict, skip: int = None):
     """
     Plots the smoothed population rates for excitatory and inhibitory groups of both populations.
 
@@ -266,8 +271,8 @@ def population_rates(model: dict):
 
     N_pop = model["N_pop"]
 
-    r_e = model["r_e"]
-    r_i1 = model["r_i1"]
+    r_e = model["r_e"][skip:]
+    r_i1 = model["r_i1"][skip:]
 
     axs[0, 0].plot(r_e, c="black")
     axs[0, 0].set_title("Population 1 - Excitatory")
@@ -276,8 +281,8 @@ def population_rates(model: dict):
     axs[1, 0].set_title("Population 1 - Inhibitory")
 
     if N_pop > 1:
-        r_e2 = model["r_e2"]
-        r_i2 = model["r_i2"]
+        r_e2 = model["r_e2"][skip:]
+        r_i2 = model["r_i2"][skip:]
 
         axs[0, 1].plot(r_e2, c="black")
         axs[0, 1].set_title("Population 2 - Excitatory")
@@ -311,9 +316,9 @@ def all_psd(
             dt = 1.0
 
             if single_network:
-                lfp1, lfp2 = processing.lfp(model=data)
+                lfp1, lfp2 = processing.lfp(model=data, skip=100)
             else:
-                lfp1, lfp2 = processing.lfp_nets(model=data)
+                lfp1, lfp2 = processing.lfp_nets(model=data, skip=100)
 
             timepoints = int((duration / dt) / 2)
             fs = 1.0 / dt

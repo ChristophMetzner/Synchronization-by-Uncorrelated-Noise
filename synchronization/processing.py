@@ -29,23 +29,26 @@ def lfp(
         return lfp1, lfp2
 
 
-def lfp_single_net(model, population: int = 1):
+def lfp_single_net(model, population: int = 1, skip: int = None):
     N_e = model["N_e"]
     N_i = model["N_i"]
 
     if population == 1:
-        v_e = model["v_all_neurons_e"]
-        v_i = model["v_all_neurons_i1"]
+        v_e = model["v_all_neurons_e"][skip:]
+        v_i = model["v_all_neurons_i1"][skip:]
     else:
-        v_e = model["v_all_neurons_e2"]
-        v_i = model["v_all_neurons_i2"]
+        v_e = model["v_all_neurons_e2"][skip:]
+        v_i = model["v_all_neurons_i2"][skip:]
 
     # TODO: verify correctness of averaging the average!
     return (np.sum(v_e, axis=0) / N_e + np.sum(v_i, axis=0) / N_i) / 2
 
 
-def lfp_nets(model):
-    return lfp_single_net(model, population=1), lfp_single_net(model, population=2)
+def lfp_nets(model, skip: int = None):
+    return (
+        lfp_single_net(model, population=1, skip=skip),
+        lfp_single_net(model, population=2, skip=skip),
+    )
 
 
 def _lfp(v, N):
