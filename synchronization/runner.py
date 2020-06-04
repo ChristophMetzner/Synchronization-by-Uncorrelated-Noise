@@ -32,17 +32,17 @@ def run(
     # if False --> ou process starts at X0
     p["ou_stationary"] = True
 
-    # noise params for mu
-    p["ou_mu_X0"] = 0.0
-    p["ou_mu_mean"] = 3.0
-    p["ou_mu_sigma"] = 0.5
-    p["ou_mu_tau"] = 1.0
+    # noise params for OU mu
+    p["ou_mu_X0"] = [0.0, 0.0]
+    p["ou_mu_mean"] = [3.0, 3.0]
+    p["ou_mu_sigma"] = [0.5, 0.5]
+    p["ou_mu_tau"] = [1.0, 1.0]
 
-    # noise params for sigma
-    p["ou_sigma_X0"] = 0.0
-    p["ou_sigma_mean"] = 1.0
-    p["ou_sigma_sigma"] = 0.2
-    p["ou_sigma_tau"] = 1.0
+    # noise params for OU sigma
+    p["ou_sigma_X0"] = [0.0, 0.0]
+    p["ou_sigma_mean"] = [1.0, 1.0]
+    p["ou_sigma_sigma"] = [0.2, 0.2]
+    p["ou_sigma_tau"] = [1.0, 1.0]
 
     if modified_params:
         # Update params with modified_params
@@ -63,38 +63,38 @@ def run(
         p["runtime"],
         p["min_dt"],
         p["ou_stationary"],
-        p["ou_mu_X0"],
-        p["ou_mu_tau"],
-        p["ou_mu_sigma"],
-        p["ou_mu_mean"],
+        p["ou_mu_X0"][0],
+        p["ou_mu_tau"][0],
+        p["ou_mu_sigma"][0],
+        p["ou_mu_mean"][0],
     )
     mu_ext2 = generate_ou_input(
         p["runtime"],
         p["min_dt"],
         p["ou_stationary"],
-        p["ou_mu_X0"],
-        p["ou_mu_tau"],
-        p["ou_mu_sigma"],
-        p["ou_mu_mean"],
+        p["ou_mu_X0"][1],
+        p["ou_mu_tau"][1],
+        p["ou_mu_sigma"][1],
+        p["ou_mu_mean"][1],
     )
 
     sigma_ext1 = generate_ou_input(
         p["runtime"],
         p["min_dt"],
         p["ou_stationary"],
-        p["ou_sigma_X0"],
-        p["ou_sigma_tau"],
-        p["ou_sigma_sigma"],
-        p["ou_sigma_mean"],
+        p["ou_sigma_X0"][0],
+        p["ou_sigma_tau"][0],
+        p["ou_sigma_sigma"][0],
+        p["ou_sigma_mean"][0],
     )
     sigma_ext2 = generate_ou_input(
         p["runtime"],
         p["min_dt"],
         p["ou_stationary"],
-        p["ou_sigma_X0"],
-        p["ou_sigma_tau"],
-        p["ou_sigma_sigma"],
-        p["ou_sigma_mean"],
+        p["ou_sigma_X0"][1],
+        p["ou_sigma_tau"][1],
+        p["ou_sigma_sigma"][1],
+        p["ou_sigma_mean"][1],
     )
 
     # collect ext input for model wrappers

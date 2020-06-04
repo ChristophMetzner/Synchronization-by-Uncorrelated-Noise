@@ -349,19 +349,19 @@ def ou_noise_by_params(model: dict, fig_size: Tuple = None):
         model["runtime"],
         model["min_dt"],
         model["ou_stationary"],
-        model["ou_mu_X0"],
-        model["ou_mu_tau"],
-        model["ou_mu_sigma"],
-        model["ou_mu_mean"],
+        model["ou_mu_X0"][0],
+        model["ou_mu_tau"][0],
+        model["ou_mu_sigma"][0],
+        model["ou_mu_mean"][0],
     )
     sigma = generate_ou_input(
         model["runtime"],
         model["min_dt"],
         model["ou_stationary"],
-        model["ou_sigma_X0"],
-        model["ou_sigma_tau"],
-        model["ou_sigma_sigma"],
-        model["ou_sigma_mean"],
+        model["ou_sigma_X0"][0],
+        model["ou_sigma_tau"][0],
+        model["ou_sigma_sigma"][0],
+        model["ou_sigma_mean"][0],
     )
     return noise(mean, sigma, save=False, fig_size=fig_size)
 
