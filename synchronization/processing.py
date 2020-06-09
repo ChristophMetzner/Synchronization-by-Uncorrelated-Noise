@@ -94,17 +94,31 @@ def phase(signal):
     return np.unwrap(np.angle(hil))
 
 
-def hilphase_2(y1, y2):
+def mean_phase_coherence(y1, y2) -> float:
+    """
+    Calculates the mean phase coherence.
+
+    R = | 1/N sum e^i(phi(t_j) - phi(t_k)) |
+
+    Implements equation (21) from http://www.scholarpedia.org/article/Measures_of_neuronal_signal_synchrony.
+    """
     sig1_hill = hilbert(y1)
     sig2_hill = hilbert(y2)
 
+    # get angle and unwrap to remove discontinuities
     phase_y1 = np.unwrap(np.angle(sig1_hill))
     phase_y2 = np.unwrap(np.angle(sig2_hill))
 
+    # calculate phase difference
     inst_phase_diff = phase_y1 - phase_y2
-    avg_phase = np.average(inst_phase_diff)
 
-    return inst_phase_diff, avg_phase
+    # complex form by projecting onto unit circle
+    complex_phase_diff = [np.exp(1j * phase) for phase in inst_phase_diff]
+
+    # absolute value of average of complex phase differences.
+    phase_coherence_index = np.abs(sum(complex_phase_diff) / len(complex_phase_diff))
+
+    return phase_coherence_index
 
 
 def order_parameter_over_time(signals):
@@ -116,7 +130,7 @@ def order_parameter_over_time(signals):
     """
     signals = [s - np.mean(s) for s in signals]
 
-    phases = [np.angle(hilbert(s)) for s in signals]
+    phases = [np.unwrap(np.angle(hilbert(s))) for s in signals]
     complex_phases = [np.exp(1j * phase) for phase in phases]
 
     avg = sum(complex_phases) / len(complex_phases)
@@ -137,7 +151,7 @@ def phase_synchronization(signals):
     # compute analytical signal by using Hilbert transformation
     # get angle to get phase
     # then transform to complex number so that we can average it
-    phases = [np.angle(hilbert(s)) for s in signals]
+    phases = [np.unwrap(np.angle(hilbert(s))) for s in signals]
     complex_phases = [np.exp(1j * phase) for phase in phases]
 
     # take the average (sum up all complex phases and divide by number of phases)

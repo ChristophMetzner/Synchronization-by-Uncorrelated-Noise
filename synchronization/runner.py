@@ -25,7 +25,7 @@ def run(
     p = params.get_params()
 
     p["runtime"] = 500.0
-    p["net_dt"] = 0.05
+    p["net_dt"] = 0.05  # ms
     p["min_dt"] = p["net_dt"]
     p["t_ref"] = 0.0
 
@@ -153,9 +153,16 @@ def run_in_mopet(params) -> dict:
     results["max_amplitude_2"] = max_amplitude
     results["peak_freq_2"] = peak_freq
 
+    lfps = processing.lfp_nets(results)
+    global_order_parameter = processing.order_parameter_over_time(lfps)
+    total_value = np.mean(global_order_parameter)
+    results["phase_synchronization_over_time"] = global_order_parameter
+    results["phase_synchronization"] = total_value
+
     # Remove types that are not supported yet by Mopet
     remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
     # print(f"Removing keys {remove} containing NoneType from dictionary to avoid conflicts with Mopet")
-    for k in remove: del results[k]
+    for k in remove:
+        del results[k]
 
     return results

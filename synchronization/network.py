@@ -312,6 +312,7 @@ def network_sim(signal, params: dict):
 
         if params["poisson_enabled"][1]:
             # dv_2 = p * dv_1
+            poisson_strength_1 = params["poisson_variance"] / params["poisson_mean_input"]
             noise_strength_2 = params["poisson_p"] * poisson_strength_1
 
             # lamda_2 = mu / dv_2 / #neurons
