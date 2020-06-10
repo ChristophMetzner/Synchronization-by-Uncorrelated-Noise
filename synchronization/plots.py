@@ -238,7 +238,10 @@ def raster(
 
 def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
     dt = 1.0
-    duration = model["runtime"] - skip
+    duration = model["runtime"]
+    
+    if skip:
+        duration -= skip
 
     lfp1 = processing.lfp_single_net(model, skip=skip)
 
