@@ -120,15 +120,18 @@ def psd(
     population: int = 1,
     groups: str = "both",
     fig_size: tuple = None,
+    skip: int = 100,
 ):
     """
     Plots the Power Spectral Density.
     """
     duration = duration if duration else model["runtime"]
+    if skip:
+        duration -= skip
+
     key = groups
 
-    # skip first 100 ms to remove artifcats from calibration phase
-    lfp1, lfp2 = processing.lfp(model, population=population, skip=100)
+    lfp1, lfp2 = processing.lfp(model, population=population, skip=skip)
 
     granularity = 1.0
     timepoints = int((duration / dt / granularity))
@@ -152,10 +155,10 @@ def psd(
     ax.set_xlabel("Frequency")
     ax.set_ylabel("Density")
 
-    if groups == "inhibitory":
+    if groups == "excitatory":
         ax.plot(freqs * 1000, psd1, "0.75", linewidth=1.5, c="darkgray")
 
-    elif groups == "excitatory":
+    elif groups == "inhibitory":
         ax.plot(freqs * 1000, psd2, "0.75", linewidth=1.5, c="dimgray")
 
     else:
@@ -235,7 +238,7 @@ def raster(
 
 def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
     dt = 1.0
-    duration = model["runtime"]
+    duration = model["runtime"] - skip
 
     lfp1 = processing.lfp_single_net(model, skip=skip)
 
@@ -364,6 +367,25 @@ def ou_noise_by_params(model: dict, fig_size: Tuple = None):
         model["ou_sigma_mean"][0],
     )
     return noise(mean, sigma, save=False, fig_size=fig_size)
+
+
+def heat_map_pivoted(
+    pivot_table,
+    extent,
+    title: str = "",
+    colorbar: str = None,
+    xlabel: str = "ratio p",
+    ylabel: str = "noise variance",
+):
+    plt.imshow(
+        pivot_table, origin="lower", aspect="auto", extent=extent,
+    )
+    plt.title(title)
+    if colorbar:
+        plt.colorbar(label=colorbar)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.show()
 
 
 def heat_map(

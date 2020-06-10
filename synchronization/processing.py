@@ -15,15 +15,15 @@ def lfp(
     N_i = model["N_i"]
 
     if population == 1:
-        v_e = model["v_all_neurons_e"][:skip][:duration]
-        v_i = model["v_all_neurons_i1"][:skip][:duration]
+        v_e = model["v_all_neurons_e"][:, skip:][:duration]
+        v_i = model["v_all_neurons_i1"][:, skip:][:duration]
         lfp1 = _lfp(v_e, N_e)
         lfp2 = _lfp(v_i, N_i)
         return lfp1, lfp2
 
     elif population == 2:
-        v_e = model["v_all_neurons_e2"][:skip][:duration]
-        v_i = model["v_all_neurons_i2"][:skip][:duration]
+        v_e = model["v_all_neurons_e2"][:, skip:][:duration]
+        v_i = model["v_all_neurons_i2"][:, skip:][:duration]
         lfp1 = _lfp(v_e, N_e)
         lfp2 = _lfp(v_i, N_i)
         return lfp1, lfp2
@@ -34,11 +34,11 @@ def lfp_single_net(model, population: int = 1, skip: int = None):
     N_i = model["N_i"]
 
     if population == 1:
-        v_e = model["v_all_neurons_e"][skip:]
-        v_i = model["v_all_neurons_i1"][skip:]
+        v_e = model["v_all_neurons_e"][:, skip:]
+        v_i = model["v_all_neurons_i1"][:, skip:]
     else:
-        v_e = model["v_all_neurons_e2"][skip:]
-        v_i = model["v_all_neurons_i2"][skip:]
+        v_e = model["v_all_neurons_e2"][:, skip:]
+        v_i = model["v_all_neurons_i2"][:, skip:]
 
     # TODO: verify correctness of averaging the average!
     return (np.sum(v_e, axis=0) / N_e + np.sum(v_i, axis=0) / N_i) / 2

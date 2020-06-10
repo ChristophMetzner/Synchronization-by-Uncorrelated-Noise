@@ -156,8 +156,26 @@ def run_in_mopet(params) -> dict:
     lfps = processing.lfp_nets(results)
     global_order_parameter = processing.order_parameter_over_time(lfps)
     total_value = np.mean(global_order_parameter)
+
+    neurons_net_1 = np.vstack((
+        results['v_all_neurons_e'],
+        results['v_all_neurons_i1']
+    ))
+
+    neurons_net_2 = np.vstack((
+        results['v_all_neurons_e2'],
+        results['v_all_neurons_i2']
+    ))
+
+    plv_net_1 = np.mean(processing.order_parameter_over_time(neurons_net_1))
+    plv_net_2 = np.mean(processing.order_parameter_over_time(neurons_net_2))
+
     results["phase_synchronization_over_time"] = global_order_parameter
     results["phase_synchronization"] = total_value
+    results["plv_net_1"] = plv_net_1
+    results["plv_net_2"] = plv_net_2
+
+    # TODO: calculate within phase synchronization!
 
     # Remove types that are not supported yet by Mopet
     remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
