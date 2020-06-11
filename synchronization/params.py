@@ -11,10 +11,10 @@ def get_params():
 
     # params for poisson input
     params["poisson_enabled"] = [False, False]
-    params["poisson_mean_input"] = 200,
-    params["poisson_size"] = 200,
-    params["poisson_variance"] = 0.9,
-    params["poisson_p"] = 0.83,
+    params["poisson_mean_input"] = 200
+    params["poisson_size"] = 200
+    params["poisson_variance"] = 0.9
+    params["poisson_p"] = 0.83
 
     # params for ou process #
     params["ou_enabled"] = [True, True]
@@ -54,8 +54,8 @@ def get_params():
     # neuron model parameters (AdEX)
 
     # Excitatory cells
-    params["C_exc"] = 200.0  # [pF]
-    params["gL_exc"] = 10.0  # [nS]
+    params["C_exc"] = 200.0  # [pF] Capacitance
+    params["gL_exc"] = 10.0  # [nS] Conductance
     params["taum_exc"] = params["C_exc"] / params["gL_exc"]  # [ms]
     params["EL_exc"] = -65.0  # [mV] # reversal potential for membrane potential v
     params["Ew_exc"] = -80.0  # [mV] # reversal potential for adaptation param w
@@ -125,14 +125,15 @@ def get_params():
     # .1
     params["J_ppei"] = 0.1
 
-    params["K_etoe"] = 100  # number of E-E connections within population
-    params["K_etoi"] = 100  # number of E-I connections within population
-    params["K_itoe"] = 100  # number of I-E connections within population
-    params["K_itoi"] = 100  # number of I-I connections within population
+    # connectivity inside populations E <-> I
+    params["p_etoe"] = 0.4
+    params["p_etoi"] = 0.4
+    params["p_itoe"] = 0.1
+    params["p_itoi"] = 0.1
 
-    # TODO: reasoning for choosing 10?
-    params["K_ppee"] = 10  # number of E-E connections between population
-    params["K_ppei"] = 10  # number of E-I connections between population
+    # connectivity between populations
+    params["p_ppee"] = 0.01
+    params["p_ppei"] = 0.01
 
     # initial value for the mean adaptation current
     params["wm_init"] = 0.0  # [pA]
