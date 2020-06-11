@@ -18,6 +18,38 @@ FIG_SIZE_QUADRATIC = [8, 6]
 FIG_SIZE_PSD = [8, 3]
 
 
+def plot_results(model):
+    """
+    Plots all relevant figures.
+
+    * PSD
+    * LFP
+    * Raster
+
+    """
+    psd(model, title="PSD of 1st network", population=1, fig_size=(7, 2))
+    psd(model, title="PSD of 2nd network", population=2, fig_size=(7, 2))
+    lfp_nets(model, skip=100)
+
+    # raster(
+    #     title="Raster of 1st network",
+    #     model=model,
+    #     fig_size=(10, 5),
+    #     save=True,
+    #     key="stoch_weak_PING",
+    # )
+    # raster(title="Raster of 2nd network", model=model, population=2)
+    raster(title="250-300 ms of network 1", model=model, x_left=250, x_right=300)
+    raster(
+        title="250-300 ms of network 2",
+        model=model,
+        x_left=250,
+        x_right=300,
+        population=2,
+    )
+    # population_rates(model, skip=2000)
+
+
 def noise(
     mean,
     sigma,
@@ -239,7 +271,7 @@ def raster(
 def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
     dt = 1.0
     duration = model["runtime"]
-    
+
     if skip:
         duration -= skip
 

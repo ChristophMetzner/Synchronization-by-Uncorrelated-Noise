@@ -39,7 +39,6 @@ def network_sim(signal, params: dict):
     t_ref_e = params["t_ref_exc"] * ms
     tau_AMPA = params["tau_AMPA"] * ms
     E_AMPA = params["E_AMPA"] * mV
-        
 
     # Inhibitory cells
     C_i = params["C_inh1"] * pF
@@ -57,7 +56,7 @@ def network_sim(signal, params: dict):
     t_ref_i = params["t_ref_inh1"] * ms
     tau_GABA = params["tau_GABA"] * ms
     E_GABA = params["E_GABA"] * mV
-    
+
     # general parameters
     dt_sim = params["net_dt"] * ms
     net_w_init_e = params["net_w_init_e"] * pA
@@ -267,9 +266,6 @@ def network_sim(signal, params: dict):
 
     net = Network(E, I, rate_monitor_e, rate_monitor_i,)
 
-    MP_E = None
-    MP_I = None
-
     if params["poisson_enabled"][0]:
         # dv_1 = sigma^2 / mu
         poisson_strength_1 = params["poisson_variance"] / params["poisson_mean_input"]
@@ -280,29 +276,23 @@ def network_sim(signal, params: dict):
         )
         print("Poisson rate for network 1: ", rate_)
 
-        P_E = PoissonGroup(params["poisson_size"], rates=rate_ * Hz, clock=simclock)
-        P_I = PoissonGroup(params["poisson_size"], rates=rate_ * Hz, clock=simclock)
-        MP_E = SpikeMonitor(P_E)
-        MP_I = SpikeMonitor(P_I)
-
-        poisson_spike_input_e = (
-            "I_ext_e = ((VT_e - EL_e) * poisson_strength_1 * taum_e) / R_e / C_e: volt"
-        )
-        poisson_spike_input_i = (
-            "I_ext_i = ((VT_i - EL_i) * poisson_strength_1 * taum_i) / R_i / C_i : volt"
+        P_E = PoissonInput(
+            target=E,
+            target_var="v",
+            N=params["poisson_size"],
+            rate=rate_ * Hz,
+            weight="((VT_e - EL_e) * poisson_strength_1 * taum_e) / R_e / C_e",
         )
 
-        S_pe = Synapses(
-            P_E, E, model=poisson_spike_input_e, on_pre="v += I_ext_e", clock=simclock
+        P_I = PoissonInput(
+            target=I,
+            target_var="v",
+            N=params["poisson_size"],
+            rate=rate_ * Hz,
+            weight="((VT_i - EL_i) * poisson_strength_1 * taum_i) / R_i / C_i",
         )
-        S_pe.connect()
 
-        S_pi = Synapses(
-            P_I, I, model=poisson_spike_input_i, on_pre="v += I_ext_i", clock=simclock
-        )
-        S_pi.connect()
-
-        net.add(P_E, P_I, S_pe, S_pi, MP_E, MP_I)
+        net.add(P_E, P_I)
 
     build_synapses_first_population(
         E, I, p_etoe, p_etoi, p_itoe, p_itoi, N_e, N_i, net, simclock
@@ -315,7 +305,9 @@ def network_sim(signal, params: dict):
 
         if params["poisson_enabled"][1]:
             # dv_2 = p * dv_1
-            poisson_strength_1 = params["poisson_variance"] / params["poisson_mean_input"]
+            poisson_strength_1 = (
+                params["poisson_variance"] / params["poisson_mean_input"]
+            )
             noise_strength_2 = params["poisson_p"] * poisson_strength_1
 
             # lamda_2 = mu / dv_2 / #neurons
@@ -326,37 +318,23 @@ def network_sim(signal, params: dict):
             )
             print("Poisson rate for network 2: ", rate_2)
 
-            P_E_2 = PoissonGroup(
-                params["poisson_size"], rates=rate_2 * Hz, clock=simclock
+            P_E_2 = PoissonInput(
+                target=E2,
+                target_var="v",
+                N=params["poisson_size"],
+                rate=rate_ * Hz,
+                weight="((VT_e - EL_e) * noise_strength_2 * taum_e) / R_e / C_e",
             )
-            P_I_2 = PoissonGroup(
-                params["poisson_size"], rates=rate_2 * Hz, clock=simclock
+
+            P_I_2 = PoissonInput(
+                target=I2,
+                target_var="v",
+                N=params["poisson_size"],
+                rate=rate_ * Hz,
+                weight="((VT_i - EL_i) * noise_strength_2 * taum_i) / R_i / C_i",
             )
-            MP_E_2 = SpikeMonitor(P_E_2)
-            MP_I_2 = SpikeMonitor(P_I_2)
 
-            poisson_spike_input_e_2 = "I_ext_e = ((VT_e - EL_e) * noise_strength_2 * taum_e) / R_e / C_e : volt"
-            poisson_spike_input_i_2 = "I_ext_i = ((VT_i - EL_i) * noise_strength_2 * taum_i) / R_i / C_i : volt"
-
-            S_pe_2 = Synapses(
-                P_E_2,
-                E2,
-                model=poisson_spike_input_e_2,
-                on_pre="v += I_ext_e",
-                clock=simclock,
-            )
-            S_pe_2.connect()
-
-            S_pi_2 = Synapses(
-                P_I_2,
-                I2,
-                model=poisson_spike_input_i_2,
-                on_pre="v += I_ext_i",
-                clock=simclock,
-            )
-            S_pi_2.connect()
-
-            net.add(P_E_2, P_I_2, S_pe_2, S_pi_2, MP_E_2, MP_I_2)
+            net.add(P_E_2, P_I_2)
 
         build_synapses_multiple_populations(
             E,
@@ -564,13 +542,6 @@ def network_sim(signal, params: dict):
 
         results["v_all_neurons_i1"] = v_all_neurons_i1
         results["t_all_neurons_i1"] = t_all_neurons_i1
-
-        if MP_E:
-            poisson_input_t_e = MP_E.t / ms
-            spikes = MP_E.i * 1
-
-            results["poisson_input_t_e"] = poisson_input_t_e
-            results["poisson_input_spikes_e"] = spikes
 
         if N_pop > 1:
             v_all_neurons_e2 = v_monitor_record_all_E2.v / mV
