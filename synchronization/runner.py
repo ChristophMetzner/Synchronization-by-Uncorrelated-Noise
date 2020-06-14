@@ -153,19 +153,18 @@ def run_in_mopet(params) -> dict:
     results["max_amplitude_2"] = max_amplitude
     results["peak_freq_2"] = peak_freq
 
+    # freq diff as useful feature
+    results["freq_diff"] = abs(results["peak_freq"] - results["peak_freq_2"])
+
     lfps = processing.lfp_nets(results)
     global_order_parameter = processing.order_parameter_over_time(lfps)
     total_value = np.mean(global_order_parameter)
 
-    neurons_net_1 = np.vstack((
-        results['v_all_neurons_e'],
-        results['v_all_neurons_i1']
-    ))
+    neurons_net_1 = np.vstack((results["v_all_neurons_e"], results["v_all_neurons_i1"]))
 
-    neurons_net_2 = np.vstack((
-        results['v_all_neurons_e2'],
-        results['v_all_neurons_i2']
-    ))
+    neurons_net_2 = np.vstack(
+        (results["v_all_neurons_e2"], results["v_all_neurons_i2"])
+    )
 
     plv_net_1 = np.mean(processing.order_parameter_over_time(neurons_net_1))
     plv_net_2 = np.mean(processing.order_parameter_over_time(neurons_net_2))

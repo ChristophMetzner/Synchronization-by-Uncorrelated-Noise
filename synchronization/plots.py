@@ -19,7 +19,12 @@ FIG_SIZE_QUADRATIC = [8, 6]
 FIG_SIZE_PSD = [8, 3]
 
 
-def plot_exploration(ex: mopet.Exploration, param_X: str, param_Y: str):
+def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = None):
+    if not param_X or not param_Y:
+        axis_names = list(ex.explore_params.keys())
+        param_X = axis_names[0]
+        param_Y = axis_names[1]
+
     heat_map_vis(
         df=ex.df,
         value="peak_freq",
@@ -477,10 +482,10 @@ def heat_map_vis(
             values=value, index=param_X, columns=param_Y, aggfunc="first"
         ),
         extent=[
-            min(df[param_Y]),
-            max(df[param_Y]),
             min(df[param_X]),
             max(df[param_X]),
+            min(df[param_Y]),
+            max(df[param_Y]),
         ],
         title=title,
         colorbar=colorbar,
