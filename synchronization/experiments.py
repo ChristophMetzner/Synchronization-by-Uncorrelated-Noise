@@ -177,3 +177,44 @@ class MopetExampleExperiment:
         ex.load_results(all=True)
 
         return ex.df, ex.results
+
+
+def synaptic_weight_exploration():
+    """
+    Parameter Exploration for Synaptic Weights.
+    """
+    default_params = {
+        "runtime": 1000.0,
+        "J_itoi": 3.0,
+        "J_etoe": 0.4,
+        "J_etoi": 0.9,
+        "J_itoe": 7.0,
+        "N_e": 1000,
+        "N_i": 250,
+        "ou_enabled": [False, False],
+        "poisson_enabled": [True, True],
+        "poisson_variance": 1.0,
+        "poisson_p": 0.875,
+        "poisson_size": 800,
+        "poisson_mean_input": 200,
+        "J_ppee": 0.0,
+        "J_ppei": 0.0,
+        "const_delay": 0.2,
+        "N_pop": 2,
+        "p_etoe": 0.1,
+        "p_etoi": 0.4,
+        "p_itoe": 0.1,
+        "p_itoi": 0.4,
+    }
+
+    params = {"J_itoe": np.arange(1, 5, 0.2), "J_etoi": np.arange(1, 5, 0.2)}
+
+    ex = mopet.Exploration(
+        runner.run_in_mopet,
+        explore_params=params,
+        default_params=default_params,
+        exploration_name="synaptic_weights",
+        hdf_filename=f"{constants.MODELS_PATH}/exploration.h5",
+    )
+
+    ex.run()

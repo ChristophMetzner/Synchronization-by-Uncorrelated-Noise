@@ -10,12 +10,69 @@ from matplotlib import mlab
 from synchronization import constants
 from synchronization import processing
 from synchronization.utils import generate_ou_input
+from mopet import mopet
 
 
 # FIG_SIZE = [20, 15]
 FIG_SIZE = [10, 6]
 FIG_SIZE_QUADRATIC = [8, 6]
 FIG_SIZE_PSD = [8, 3]
+
+
+def plot_exploration(ex: mopet.Exploration, param_X: str, param_Y: str):
+    heat_map_vis(
+        df=ex.df,
+        value="peak_freq",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Dominant Frequency of Network 1",
+        colorbar="Peak Frequency of Network 1",
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="peak_freq_2",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Dominant Frequency of Network 2",
+        colorbar="Peak Frequency of Network 2",
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_1",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Within Phase Synchronization - Network 1",
+        colorbar="Kuramoto Order Parameter",
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_2",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Within Phase Synchronization - Network 2",
+        colorbar="Kuramoto Order Parameter",
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="phase_synchronization",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Phase Synchronization",
+        colorbar="Kuramoto Order Parameter",
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="freq_diff",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Dominant Frequency Difference",
+        colorbar="Absolute Difference",
+    )
 
 
 def plot_results(model):
@@ -404,22 +461,49 @@ def ou_noise_by_params(model: dict, fig_size: Tuple = None):
     return noise(mean, sigma, save=False, fig_size=fig_size)
 
 
+def heat_map_vis(
+    df: pd.DataFrame,
+    param_X: str,
+    param_Y: str,
+    value: str,
+    title: str = "",
+    colorbar: str = "",
+):
+    """
+    Minimal interace to plot heat map based on DataFrame input.
+    """
+    heat_map_pivoted(
+        pivot_table=df.pivot_table(
+            values=value, index=param_X, columns=param_Y, aggfunc="first"
+        ),
+        extent=[
+            min(df[param_Y]),
+            max(df[param_Y]),
+            min(df[param_X]),
+            max(df[param_X]),
+        ],
+        title=title,
+        colorbar=colorbar,
+    )
+
+
 def heat_map_pivoted(
     pivot_table,
     extent,
     title: str = "",
     colorbar: str = None,
-    xlabel: str = "ratio p",
-    ylabel: str = "noise variance",
+    xlabel: str = None,
+    ylabel: str = None,
 ):
     plt.imshow(
         pivot_table, origin="lower", aspect="auto", extent=extent,
+        cmap=plt.get_cmap("Reds")
     )
     plt.title(title)
     if colorbar:
         plt.colorbar(label=colorbar)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.xlabel(xlabel if xlabel else pivot_table.index.name)
+    plt.ylabel(ylabel if ylabel else pivot_table.columns.name)
     plt.show()
 
 
