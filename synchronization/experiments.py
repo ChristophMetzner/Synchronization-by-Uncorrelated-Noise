@@ -207,13 +207,13 @@ def synaptic_weight_exploration():
         "p_itoi": 0.4,
     }
 
-    params = {"J_itoe": np.arange(1, 5, 0.2), "J_etoi": np.arange(1, 5, 0.2)}
+    params = {"J_itoe": np.arange(5, 10, 0.2), "J_etoi": np.arange(5, 10, 0.2)}
 
     ex = mopet.Exploration(
         runner.run_in_mopet,
         explore_params=params,
         default_params=default_params,
-        exploration_name="synaptic_weights",
+        exploration_name="synaptic_weights_3",
         hdf_filename=f"{constants.MODELS_PATH}/exploration.h5",
     )
 

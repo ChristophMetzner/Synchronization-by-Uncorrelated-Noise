@@ -20,6 +20,15 @@ FIG_SIZE_PSD = [8, 3]
 
 
 def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = None):
+    """Plots 2 dimensional maps to visualize parameter exploration.
+
+    :param ex: mopet exploration
+    :type ex: mopet.Exploration
+    :param param_X: param for x axis, defaults to None
+    :type param_X: str, optional
+    :param param_Y: param for y axis, defaults to None
+    :type param_Y: str, optional
+    """
     if not param_X or not param_Y:
         axis_names = list(ex.explore_params.keys())
         param_X = axis_names[0]
@@ -72,35 +81,38 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
 
     heat_map_vis(
         df=ex.df,
-        value="freq_diff",
+        value="freq_ratio",
         param_X=param_X,
         param_Y=param_Y,
-        title="Dominant Frequency Difference",
-        colorbar="Absolute Difference",
+        title="Dominant Frequency Ratio",
+        colorbar="Ratio",
     )
 
 
-def plot_results(model):
+def plot_results(model, full_raster: bool = False, pop_rates: bool = False):
     """
-    Plots all relevant figures.
+    Plots all relevant figures needed to understand network behavior.
 
-    * PSD
-    * LFP
-    * Raster
+    * Power Spectral Density (PSD)
+    * Local Field Potential (LFP)
+    * Spike Raster
+    * Population Rates
 
     """
     psd(model, title="PSD of 1st network", population=1, fig_size=(7, 2))
     psd(model, title="PSD of 2nd network", population=2, fig_size=(7, 2))
     lfp_nets(model, skip=100)
 
-    # raster(
-    #     title="Raster of 1st network",
-    #     model=model,
-    #     fig_size=(10, 5),
-    #     save=True,
-    #     key="stoch_weak_PING",
-    # )
-    # raster(title="Raster of 2nd network", model=model, population=2)
+    if full_raster:
+        raster(
+            title="Raster of 1st network",
+            model=model,
+            fig_size=(10, 5),
+            save=True,
+            key="stoch_weak_PING",
+        )
+        raster(title="Raster of 2nd network", model=model, population=2)
+
     raster(title="250-300 ms of network 1", model=model, x_left=250, x_right=300)
     raster(
         title="250-300 ms of network 2",
@@ -109,7 +121,9 @@ def plot_results(model):
         x_right=300,
         population=2,
     )
-    # population_rates(model, skip=2000)
+
+    if pop_rates:
+        population_rates(model, skip=2000)
 
 
 def noise(
@@ -501,8 +515,11 @@ def heat_map_pivoted(
     ylabel: str = None,
 ):
     plt.imshow(
-        pivot_table, origin="lower", aspect="auto", extent=extent,
-        cmap=plt.get_cmap("Reds")
+        pivot_table,
+        origin="lower",
+        aspect="auto",
+        extent=extent,
+        cmap=plt.get_cmap("Reds"),
     )
     plt.title(title)
     if colorbar:
