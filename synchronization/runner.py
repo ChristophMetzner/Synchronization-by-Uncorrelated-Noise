@@ -153,8 +153,14 @@ def run_in_mopet(params) -> dict:
     results["max_amplitude_2"] = max_amplitude
     results["peak_freq_2"] = peak_freq
 
-    # freq diff as useful feature
     results["freq_diff"] = abs(results["peak_freq"] - results["peak_freq_2"])
+
+    if results["peak_freq"] >= results["peak_freq_2"]:
+        ratio = results["peak_freq_2"] / results["peak_freq"]
+    else:
+        ratio = results["peak_freq"] / results["peak_freq_2"]
+
+    results["freq_ratio"] = ratio
 
     lfps = processing.lfp_nets(results)
     global_order_parameter = processing.order_parameter_over_time(lfps)
