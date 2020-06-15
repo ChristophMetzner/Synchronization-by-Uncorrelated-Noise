@@ -271,16 +271,15 @@ def network_sim(signal, params: dict):
         poisson_strength_1 = params["poisson_variance"] / params["poisson_mean_input"]
 
         # lambda_1 = mu / dv_1 / #neurons
-        rate_ = (
-            params["poisson_mean_input"] / poisson_strength_1 / params["poisson_size"]
-        )
-        print("Poisson rate for network 1: ", rate_)
+        group_rate_ = params["poisson_mean_input"] / poisson_strength_1
+        neuron_rate_ = group_rate_ / params["poisson_size"]
+        print(f"Net 1 - poisson rate {group_rate_} - single neuron {neuron_rate_}")
 
         P_E = PoissonInput(
             target=E,
             target_var="v",
             N=params["poisson_size"],
-            rate=rate_ * Hz,
+            rate=neuron_rate_ * Hz,
             weight="((VT_e - EL_e) * poisson_strength_1 * taum_e) / R_e / C_e",
         )
 
@@ -288,7 +287,7 @@ def network_sim(signal, params: dict):
             target=I,
             target_var="v",
             N=params["poisson_size"],
-            rate=rate_ * Hz,
+            rate=neuron_rate_ * Hz,
             weight="((VT_i - EL_i) * poisson_strength_1 * taum_i) / R_i / C_i",
         )
 
@@ -308,30 +307,30 @@ def network_sim(signal, params: dict):
             poisson_strength_1 = (
                 params["poisson_variance"] / params["poisson_mean_input"]
             )
-            noise_strength_2 = params["poisson_p"] * poisson_strength_1
+            poisson_strength_2 = params["poisson_p"] * poisson_strength_1
 
-            # lamda_2 = mu / dv_2 / #neurons
+            # lambda_2 = mu / dv_2 / #neurons
             rate_2 = (
                 params["poisson_mean_input"]
-                / poisson_strength_1
+                / poisson_strength_2
                 / params["poisson_size"]
             )
-            print("Poisson rate for network 2: ", rate_2)
+            print("Poisson single neuron rate for net 2: ", rate_2)
 
             P_E_2 = PoissonInput(
                 target=E2,
                 target_var="v",
                 N=params["poisson_size"],
-                rate=rate_ * Hz,
-                weight="((VT_e - EL_e) * noise_strength_2 * taum_e) / R_e / C_e",
+                rate=rate_2 * Hz,
+                weight="((VT_e - EL_e) * poisson_strength_2 * taum_e) / R_e / C_e",
             )
 
             P_I_2 = PoissonInput(
                 target=I2,
                 target_var="v",
                 N=params["poisson_size"],
-                rate=rate_ * Hz,
-                weight="((VT_i - EL_i) * noise_strength_2 * taum_i) / R_i / C_i",
+                rate=rate_2 * Hz,
+                weight="((VT_i - EL_i) * poisson_strength_2 * taum_i) / R_i / C_i",
             )
 
             net.add(P_E_2, P_I_2)
