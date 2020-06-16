@@ -218,3 +218,34 @@ def synaptic_weight_exploration():
     )
 
     ex.run()
+
+
+def mean_noise_exploration():
+    default_params = {
+        "runtime": 1000.0,
+        "J_itoi": 3.0,
+        "J_etoe": 0.4,
+        "J_etoi": 0.9,
+        "J_itoe": 7.0,
+        "ou_enabled": [False, False],
+        "poisson_enabled": [True, True],
+        "poisson_variance": 1.0,
+        "poisson_p": 0.875,
+        "poisson_size": 800,
+        "J_ppee": 2.0,
+        "J_ppei": 2.0,
+        "const_delay": 0.2,
+        "N_pop": 2
+    }
+
+    params = {"poisson_variance": [0.3, 0.5, 0.7, 1.0, 1.5, 2.0], "poisson_mean_input": np.arange(50, 210, 10)}
+
+    ex = mopet.Exploration(
+        runner.run_in_mopet,
+        explore_params=params,
+        default_params=default_params,
+        exploration_name="mean_noise_input",
+        hdf_filename=f"{constants.MODELS_PATH}/exploration.h5",
+    )
+
+    ex.run()
