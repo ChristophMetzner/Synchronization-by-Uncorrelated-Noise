@@ -41,6 +41,7 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Dominant Frequency of Network 1",
         colorbar="Peak Frequency of Network 1",
+        vmin=0.
     )
 
     heat_map_vis(
@@ -50,6 +51,7 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Dominant Frequency of Network 2",
         colorbar="Peak Frequency of Network 2",
+        vmin=0.
     )
 
     heat_map_vis(
@@ -59,6 +61,8 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Within Phase Synchronization - Network 1",
         colorbar="Kuramoto Order Parameter",
+        vmin=0.,
+        vmax=1.
     )
 
     heat_map_vis(
@@ -68,6 +72,8 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Within Phase Synchronization - Network 2",
         colorbar="Kuramoto Order Parameter",
+        vmin=0.,
+        vmax=1.
     )
 
     heat_map_vis(
@@ -77,6 +83,8 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Phase Synchronization",
         colorbar="Kuramoto Order Parameter",
+        vmin=0.,
+        vmax=1.
     )
 
     heat_map_vis(
@@ -86,6 +94,8 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Dominant Frequency Ratio",
         colorbar="Ratio",
+        vmin=0.,
+        vmax=1.
     )
 
 
@@ -487,6 +497,7 @@ def heat_map_vis(
     value: str,
     title: str = "",
     colorbar: str = "",
+    **kwargs
 ):
     """
     Minimal interace to plot heat map based on DataFrame input.
@@ -503,6 +514,7 @@ def heat_map_vis(
         ],
         title=title,
         colorbar=colorbar,
+        **kwargs
     )
 
 
@@ -513,6 +525,7 @@ def heat_map_pivoted(
     colorbar: str = None,
     xlabel: str = None,
     ylabel: str = None,
+    **kwargs
 ):
     plt.imshow(
         pivot_table,
@@ -520,6 +533,7 @@ def heat_map_pivoted(
         aspect="auto",
         extent=extent,
         cmap=plt.get_cmap("Reds"),
+        **kwargs
     )
     plt.title(title)
     if colorbar:
