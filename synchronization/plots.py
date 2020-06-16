@@ -19,7 +19,13 @@ FIG_SIZE_QUADRATIC = [8, 6]
 FIG_SIZE_PSD = [8, 3]
 
 
-def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = None):
+def plot_exploration(
+    ex: mopet.Exploration,
+    param_X: str = None,
+    param_Y: str = None,
+    vmax_phase=1.0,
+    vmin_phase=0.0,
+):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
     :param ex: mopet exploration
@@ -41,7 +47,7 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Dominant Frequency of Network 1",
         colorbar="Peak Frequency of Network 1",
-        vmin=0.
+        vmin=0.0,
     )
 
     heat_map_vis(
@@ -51,7 +57,7 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Dominant Frequency of Network 2",
         colorbar="Peak Frequency of Network 2",
-        vmin=0.
+        vmin=0.0,
     )
 
     heat_map_vis(
@@ -61,8 +67,8 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Within Phase Synchronization - Network 1",
         colorbar="Kuramoto Order Parameter",
-        vmin=0.,
-        vmax=1.
+        vmin=vmin_phase,
+        vmax=vmax_phase,
     )
 
     heat_map_vis(
@@ -72,8 +78,8 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Within Phase Synchronization - Network 2",
         colorbar="Kuramoto Order Parameter",
-        vmin=0.,
-        vmax=1.
+        vmin=vmin_phase,
+        vmax=vmax_phase,
     )
 
     heat_map_vis(
@@ -83,20 +89,21 @@ def plot_exploration(ex: mopet.Exploration, param_X: str = None, param_Y: str = 
         param_Y=param_Y,
         title="Phase Synchronization",
         colorbar="Kuramoto Order Parameter",
-        vmin=0.,
-        vmax=1.
+        vmin=vmin_phase,
+        vmax=vmax_phase,
     )
 
-    heat_map_vis(
-        df=ex.df,
-        value="freq_ratio",
-        param_X=param_X,
-        param_Y=param_Y,
-        title="Dominant Frequency Ratio",
-        colorbar="Ratio",
-        vmin=0.,
-        vmax=1.
-    )
+    if "freq_ratio" in ex.df.columns:
+        heat_map_vis(
+            df=ex.df,
+            value="freq_ratio",
+            param_X=param_X,
+            param_Y=param_Y,
+            title="Dominant Frequency Ratio",
+            colorbar="Ratio",
+            vmin=0.0,
+            vmax=1.0,
+        )
 
 
 def plot_results(model, full_raster: bool = False, pop_rates: bool = False):
@@ -497,7 +504,7 @@ def heat_map_vis(
     value: str,
     title: str = "",
     colorbar: str = "",
-    **kwargs
+    **kwargs,
 ):
     """
     Minimal interace to plot heat map based on DataFrame input.
@@ -514,7 +521,7 @@ def heat_map_vis(
         ],
         title=title,
         colorbar=colorbar,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -525,7 +532,7 @@ def heat_map_pivoted(
     colorbar: str = None,
     xlabel: str = None,
     ylabel: str = None,
-    **kwargs
+    **kwargs,
 ):
     plt.imshow(
         pivot_table,
@@ -533,7 +540,7 @@ def heat_map_pivoted(
         aspect="auto",
         extent=extent,
         cmap=plt.get_cmap("Reds"),
-        **kwargs
+        **kwargs,
     )
     plt.title(title)
     if colorbar:
