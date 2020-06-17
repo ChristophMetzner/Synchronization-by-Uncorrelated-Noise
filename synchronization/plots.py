@@ -40,13 +40,25 @@ def plot_exploration(
         param_X = axis_names[0]
         param_Y = axis_names[1]
 
+    # TODO: plot heat maps in grid!
+
     heat_map_vis(
         df=ex.df,
         value="peak_freq",
         param_X=param_X,
         param_Y=param_Y,
         title="Dominant Frequency of Network 1",
-        colorbar="Peak Frequency of Network 1",
+        colorbar="Peak Frequency",
+        vmin=0.0,
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="max_amplitude",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Bandpower of Dominant Frequency of Network 1",
+        colorbar="Bandpower",
         vmin=0.0,
     )
 
@@ -56,7 +68,17 @@ def plot_exploration(
         param_X=param_X,
         param_Y=param_Y,
         title="Dominant Frequency of Network 2",
-        colorbar="Peak Frequency of Network 2",
+        colorbar="Peak Frequency",
+        vmin=0.0,
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="max_amplitude_2",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Bandpower of Dominant Frequency of Network 2",
+        colorbar="Bandpower",
         vmin=0.0,
     )
 

@@ -55,8 +55,8 @@ def _lfp(v, N):
     return np.sum(v, axis=0) / N
 
 
-def band_power(model, network: int = 1):
-    lfp = lfp_single_net(model, population=network)
+def band_power(model, network: int = 1, skip: int = None):
+    lfp = lfp_single_net(model, population=network, skip=skip)
 
     runtime_ = model["runtime"]
     dt = 1.0

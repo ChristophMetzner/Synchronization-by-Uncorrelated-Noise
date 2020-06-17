@@ -143,33 +143,41 @@ def run_in_mopet(params) -> dict:
     """
     results = run(modified_params=params)
 
+    skip = 200
+
     # Aggregation
     print("Starting Aggregation ...")
-    max_amplitude, peak_freq = processing.band_power(results)
+    
+    max_amplitude, peak_freq = processing.band_power(results, skip=skip)
     results["max_amplitude"] = max_amplitude
     results["peak_freq"] = peak_freq
 
-    max_amplitude, peak_freq = processing.band_power(results, network=2)
+    max_amplitude, peak_freq = processing.band_power(results, network=2, skip=skip)
     results["max_amplitude_2"] = max_amplitude
     results["peak_freq_2"] = peak_freq
 
     results["freq_diff"] = abs(results["peak_freq"] - results["peak_freq_2"])
 
-    if results["peak_freq"] >= results["peak_freq_2"]:
-        ratio = results["peak_freq_2"] / results["peak_freq"]
-    else:
-        ratio = results["peak_freq"] / results["peak_freq_2"]
+    ratio = 0
+    if results["peak_freq"] > 0 and results["peak_freq_2"] > 0:
+        if results["peak_freq"] >= results["peak_freq_2"]:
+            ratio = results["peak_freq_2"] / results["peak_freq"]
+        else:
+            ratio = results["peak_freq"] / results["peak_freq_2"]
 
     results["freq_ratio"] = ratio
 
-    lfps = processing.lfp_nets(results)
+    lfps = processing.lfp_nets(results, skip=skip)
+
+    # TODO: band pass filter the result, we only want to keep gamma frequency (30-80 Hz)!
     global_order_parameter = processing.order_parameter_over_time(lfps)
     total_value = np.mean(global_order_parameter)
 
-    neurons_net_1 = np.vstack((results["v_all_neurons_e"], results["v_all_neurons_i1"]))
-
+    neurons_net_1 = np.vstack(
+        (results["v_all_neurons_e"][:, 200:], results["v_all_neurons_i1"][:, 200:])
+    )
     neurons_net_2 = np.vstack(
-        (results["v_all_neurons_e2"], results["v_all_neurons_i2"])
+        (results["v_all_neurons_e2"][:, 200:], results["v_all_neurons_i2"][:, 200:])
     )
 
     plv_net_1 = np.mean(processing.order_parameter_over_time(neurons_net_1))
@@ -180,7 +188,7 @@ def run_in_mopet(params) -> dict:
     results["plv_net_1"] = plv_net_1
     results["plv_net_2"] = plv_net_2
 
-    # TODO: calculate within phase synchronization!
+    print("Finished aggregation.")
 
     # Remove types that are not supported yet by Mopet
     remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
