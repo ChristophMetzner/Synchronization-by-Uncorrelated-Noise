@@ -40,7 +40,7 @@ def plot_exploration(
         param_X = axis_names[0]
         param_Y = axis_names[1]
 
-    # TODO: plot heat maps in grid!
+    fig, axs = plt.subplots(2, 4, figsize=(30, 10))
 
     heat_map_vis(
         df=ex.df,
@@ -50,6 +50,7 @@ def plot_exploration(
         title="Dominant Frequency of Network 1",
         colorbar="Peak Frequency",
         vmin=0.0,
+        ax=axs[0, 0],
     )
 
     heat_map_vis(
@@ -60,6 +61,7 @@ def plot_exploration(
         title="Bandpower of Dominant Frequency of Network 1",
         colorbar="Bandpower",
         vmin=0.0,
+        ax=axs[0, 1],
     )
 
     heat_map_vis(
@@ -70,6 +72,7 @@ def plot_exploration(
         title="Dominant Frequency of Network 2",
         colorbar="Peak Frequency",
         vmin=0.0,
+        ax=axs[1, 0],
     )
 
     heat_map_vis(
@@ -80,6 +83,7 @@ def plot_exploration(
         title="Bandpower of Dominant Frequency of Network 2",
         colorbar="Bandpower",
         vmin=0.0,
+        ax=axs[1, 1],
     )
 
     heat_map_vis(
@@ -91,6 +95,7 @@ def plot_exploration(
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
+        ax=axs[0, 2],
     )
 
     heat_map_vis(
@@ -102,6 +107,7 @@ def plot_exploration(
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
+        ax=axs[1, 2],
     )
 
     heat_map_vis(
@@ -113,6 +119,7 @@ def plot_exploration(
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
+        ax=axs[0, 3],
     )
 
     if "freq_ratio" in ex.df.columns:
@@ -125,7 +132,10 @@ def plot_exploration(
             colorbar="Ratio",
             vmin=0.0,
             vmax=1.0,
+            ax=axs[1, 3],
         )
+    else:
+        axs[1, 3].set_axis_off()
 
 
 def plot_results(model, full_raster: bool = False, pop_rates: bool = False):
@@ -143,22 +153,32 @@ def plot_results(model, full_raster: bool = False, pop_rates: bool = False):
     lfp_nets(model, skip=100)
 
     if full_raster:
+        fig, axs = plt.subplots(1, 2, figsize=(20, 5))
         raster(
             title="Raster of 1st network",
             model=model,
             fig_size=(10, 5),
             save=True,
             key="stoch_weak_PING",
+            ax=[0],
         )
-        raster(title="Raster of 2nd network", model=model, population=2)
+        raster(title="Raster of 2nd network", model=model, population=2, ax=[1])
 
-    raster(title="250-300 ms of network 1", model=model, x_left=250, x_right=300)
+    fig, axs = plt.subplots(1, 2, figsize=(20, 5))
+    raster(
+        title="250-300 ms of network 1",
+        model=model,
+        x_left=250,
+        x_right=300,
+        ax=axs[0],
+    )
     raster(
         title="250-300 ms of network 2",
         model=model,
         x_left=250,
         x_right=300,
         population=2,
+        ax=axs[1],
     )
 
     if pop_rates:
@@ -526,6 +546,7 @@ def heat_map_vis(
     value: str,
     title: str = "",
     colorbar: str = "",
+    ax=None,
     **kwargs,
 ):
     """
@@ -543,6 +564,7 @@ def heat_map_vis(
         ],
         title=title,
         colorbar=colorbar,
+        ax=ax,
         **kwargs,
     )
 
@@ -554,9 +576,15 @@ def heat_map_pivoted(
     colorbar: str = None,
     xlabel: str = None,
     ylabel: str = None,
+    ax=None,
     **kwargs,
 ):
-    plt.imshow(
+    if not ax:
+        fig, ax = plt.subplots()
+
+    ax.set_title(title)
+
+    im = ax.imshow(
         pivot_table,
         origin="lower",
         aspect="auto",
@@ -564,12 +592,15 @@ def heat_map_pivoted(
         cmap=plt.get_cmap("Reds"),
         **kwargs,
     )
-    plt.title(title)
+
     if colorbar:
-        plt.colorbar(label=colorbar)
-    plt.xlabel(xlabel if xlabel else pivot_table.index.name)
-    plt.ylabel(ylabel if ylabel else pivot_table.columns.name)
-    plt.show()
+        plt.colorbar(im, label=colorbar, ax=ax)
+
+    ax.set_xlabel(xlabel if xlabel else pivot_table.index.name)
+    ax.set_ylabel(ylabel if ylabel else pivot_table.columns.name)
+
+    if not ax:
+        plt.show()
 
 
 def heat_map(
