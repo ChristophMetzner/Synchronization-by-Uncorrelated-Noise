@@ -160,9 +160,9 @@ def plot_results(model, full_raster: bool = False, pop_rates: bool = False):
             fig_size=(10, 5),
             save=True,
             key="stoch_weak_PING",
-            ax=[0],
+            ax=axs[0],
         )
-        raster(title="Raster of 2nd network", model=model, population=2, ax=[1])
+        raster(title="Raster of 2nd network", model=model, population=2, ax=axs[1])
 
     fig, axs = plt.subplots(1, 2, figsize=(20, 5))
     raster(
