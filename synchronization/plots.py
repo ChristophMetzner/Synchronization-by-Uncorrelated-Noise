@@ -571,7 +571,7 @@ def heat_map_vis(
 
 def heat_map_pivoted(
     pivot_table,
-    extent,
+    extent = None ,
     title: str = "",
     colorbar: str = None,
     xlabel: str = None,
