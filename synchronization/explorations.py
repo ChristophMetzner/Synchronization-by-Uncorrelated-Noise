@@ -6,7 +6,7 @@ from synchronization import runner, constants
 
 def synaptic_weight_exploration(remote: bool = True):
     default_params = {
-        "runtime": 1000.0,
+        "runtime": 5000.0,
         "J_itoi": 3.0,
         "J_etoe": 0.4,
         "J_etoi": 0.9,
@@ -36,7 +36,7 @@ def synaptic_weight_exploration(remote: bool = True):
         explore_params=params,
         default_params=default_params,
         exploration_name="synaptic_weights",
-        hdf_filename=f"{constants.get_base_path(remote)}/exploration.h5",
+        hdf_filename=f"{constants.get_base_path(remote)}/synaptic_weights.h5",
     )
 
     ex.run()
@@ -44,7 +44,7 @@ def synaptic_weight_exploration(remote: bool = True):
 
 def mean_noise_exploration(remote: bool = True):
     default_params = {
-        "runtime": 3000.0,
+        "runtime": 5000.0,
         "J_itoi": 3.0,
         "J_etoe": 0.4,
         "J_etoi": 0.9,
@@ -69,8 +69,8 @@ def mean_noise_exploration(remote: bool = True):
         runner.run_in_mopet,
         explore_params=params,
         default_params=default_params,
-        exploration_name="mean_noise_input_3",
-        hdf_filename=f"{constants.get_base_path(remote)}/exploration.h5",
+        exploration_name="mean_noise_input_4",
+        hdf_filename=f"{constants.get_base_path(remote)}/mean_noise_input.h5",
     )
 
     ex.run()
@@ -78,11 +78,11 @@ def mean_noise_exploration(remote: bool = True):
 
 def poisson_strength_and_ratio(remote: bool = True):
     default_params = {
+        "runtime": 5000,
         "J_itoi": 5.0,
         "J_etoe": 0.6,
         "J_etoi": 1.2,
         "J_itoe": 7.0,
-        "runtime": 1000.0,
         "N_e": 1000,
         "N_i": 250,
         "ou_enabled": [False, False],
@@ -116,3 +116,7 @@ def poisson_strength_and_ratio(remote: bool = True):
     )
 
     ex.run()
+
+
+# List of all relevant explorations.
+explorations = [synaptic_weight_exploration, mean_noise_exploration, poisson_strength_and_ratio]
