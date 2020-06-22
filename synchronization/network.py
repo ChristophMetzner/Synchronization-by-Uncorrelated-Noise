@@ -17,7 +17,7 @@ def network_sim(signal, params: dict):
             "main", "srand(" + str(int(time.time()) + os.getpid()) + ");"
         )
     else:
-        prefs.codegen.target = "cython"
+        prefs.codegen.target = params["brian2_codegen_target"]
 
     # stripe on brian units within the copied dict for the simulation so that brian can work with them
 

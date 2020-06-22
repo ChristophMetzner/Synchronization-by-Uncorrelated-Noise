@@ -48,6 +48,8 @@ def get_params():
     # standalone mode for network sim
     params["brian2_standalone"] = False
     params["brian2_device"] = "cpp_standalone"
+    # Set to numpy if problems with cython occur
+    params["brian2_codegen_target"] = "cython"
     # integration method for (should be specified for brian2_rc3)
     params["net_integration_method"] = "heun"  # 'heun'
 
