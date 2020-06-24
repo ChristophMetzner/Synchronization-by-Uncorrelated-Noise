@@ -3,6 +3,8 @@ import numpy as np
 from typing import Tuple
 from scipy.signal import hilbert
 from matplotlib import mlab
+from scipy.signal.filter_design import butter
+from scipy.signal.signaltools import filtfilt
 
 
 def lfp(
@@ -40,7 +42,7 @@ def lfp_single_net(model, population: int = 1, skip: int = None):
         v_e = model["v_all_neurons_e2"][:, skip:]
         v_i = model["v_all_neurons_i2"][:, skip:]
 
-    # TODO: verify correctness of averaging the average!
+    # TODO: should we average once instead of two times?
     return (np.sum(v_e, axis=0) / N_e + np.sum(v_i, axis=0) / N_i) / 2
 
 
@@ -55,16 +57,17 @@ def _lfp(v, N):
     return np.sum(v, axis=0) / N
 
 
-def band_power(model, network: int = 1, skip: int = None):
+def band_power(model, network: int = 1, granularity: int = 1, skip: int = None):
     lfp = lfp_single_net(model, population=network, skip=skip)
 
-    runtime_ = model["runtime"]
+    runtime_ = model["runtime"] - skip if skip else model["runtime"]
+    
     dt = 1.0
-    timepoints = int((runtime_ / dt) / 2)
+    timepoints = int((runtime_ / dt) / granularity)
     fs = 1.0 / dt
 
     psd, freqs = mlab.psd(
-        lfp, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
+        lfp, NFFT=timepoints, Fs=fs, noverlap=0, window=mlab.window_none
     )
     psd[0] = 0.0
     freqs = freqs * 1000
@@ -91,7 +94,7 @@ def hilphase(y1, y2):
 
 def phase(signal):
     hil = hilbert(signal)
-    return np.unwrap(np.angle(hil))
+    return np.angle(hil)
 
 
 def mean_phase_coherence(y1, y2) -> float:
@@ -164,3 +167,32 @@ def phase_synchronization(signals):
 
     # mean of phi as it is currently phi over time
     return np.mean(phi)
+
+
+def filter(signal, fs:int = 1000, lowcut: int = 10, highcut: int = 80, order: int = 2):
+    """Applies Band Pass Filter to `signal`.
+
+    :param signal: [description]
+    :type signal: [type]
+    :param fs: [description], defaults to 1000
+    :type fs: int, optional
+    :param lowcut: [description], defaults to 10
+    :type lowcut: int, optional
+    :param highcut: [description], defaults to 80
+    :type highcut: int, optional
+    :param order: [description], defaults to 2
+    :type order: int, optional
+    :return: [description]
+    :rtype: [type]
+    """
+    b, a = butter(order, [lowcut, highcut], btype='bandpass', fs=fs)
+    filtered = filtfilt(b, a, signal)
+    return filtered
+
+
+def phase_locking(signals):
+    """ 
+    # TODO: Compute phase locking!
+    """
+    # std deviation of phase differences
+    raise NotImplementedError

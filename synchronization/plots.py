@@ -12,7 +12,6 @@ from synchronization import processing
 from synchronization.utils import generate_ou_input
 from mopet import mopet
 
-
 # FIG_SIZE = [20, 15]
 FIG_SIZE = [10, 6]
 FIG_SIZE_QUADRATIC = [8, 6]
@@ -28,6 +27,8 @@ def plot_exploration(
 ):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
+    :param vmin_phase:
+    :param vmax_phase:
     :param ex: mopet exploration
     :type ex: mopet.Exploration
     :param param_X: param for x axis, defaults to None
@@ -287,6 +288,7 @@ def psd(
     population: int = 1,
     groups: str = "both",
     fig_size: tuple = None,
+    granularity: float = 1.0,
     skip: int = 100,
 ):
     """
@@ -300,18 +302,20 @@ def psd(
 
     lfp1, lfp2 = processing.lfp(model, population=population, skip=skip)
 
-    granularity = 1.0
-    timepoints = int((duration / dt / granularity))
+    # number of data points used in each block for the FTT.
+    # Set to number of data points in the input signal.
+    NFFT = int((duration / dt / granularity))
+
+    # Calculating the Sampling frequency.
+    # As our time unit is here ms and step size of 1 ms, a fs of 1.0 is the best we can do.
     fs = 1.0 / dt
 
-    psd1, freqs = mlab.psd(
-        lfp1, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
-    )
-    psd2, _ = mlab.psd(
-        lfp2, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
-    )
+    # NFFT: length of each segment, set here to 1.0.
+    # Thus each segment is exactly one data point
+    psd1, freqs = mlab.psd(lfp1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
+    psd2, _ = mlab.psd(lfp2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
 
-    # TODO: why do we set it to 0? Remove unwanted artificats?
+    # TODO: why do we set it to 0? Remove unwanted artifacts?
     psd1[0] = 0.0
     psd2[0] = 0.0
 
@@ -323,6 +327,7 @@ def psd(
     ax.set_ylabel("Density")
 
     if groups == "excitatory":
+        # We multiply by 1000 to get from ms to s.
         ax.plot(freqs * 1000, psd1, "0.75", linewidth=1.5, c="darkgray")
 
     elif groups == "inhibitory":
@@ -571,7 +576,7 @@ def heat_map_vis(
 
 def heat_map_pivoted(
     pivot_table,
-    extent = None ,
+    extent=None,
     title: str = "",
     colorbar: str = None,
     xlabel: str = None,

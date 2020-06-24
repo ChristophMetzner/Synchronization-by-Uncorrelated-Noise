@@ -142,10 +142,21 @@ def run_in_mopet(params) -> dict:
     :return: dict
     """
     results = run(modified_params=params)
+    results = post_processing(results)
 
+    # Remove types that are not supported yet by Mopet
+    remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
+    # print(f"Removing keys {remove} containing NoneType from dictionary to avoid conflicts with Mopet")
+    for k in remove:
+        del results[k]
+
+    return results
+
+
+def post_processing(results):
+    # skip first 200 ms
     skip = 200
 
-    # Aggregation
     print("Starting Aggregation ...")
     
     max_amplitude, peak_freq = processing.band_power(results, skip=skip)
@@ -168,9 +179,8 @@ def run_in_mopet(params) -> dict:
     results["freq_ratio"] = ratio
 
     lfps = processing.lfp_nets(results, skip=skip)
-
-    # TODO: band pass filter the result, we only want to keep gamma frequency (30-80 Hz)!
-    global_order_parameter = processing.order_parameter_over_time(lfps)
+    f_lfps = processing.filter(lfps, lowcut=30, highcut=80)
+    global_order_parameter = processing.order_parameter_over_time(f_lfps)
     total_value = np.mean(global_order_parameter)
 
     neurons_net_1 = np.vstack(
@@ -180,8 +190,11 @@ def run_in_mopet(params) -> dict:
         (results["v_all_neurons_e2"][:, 200:], results["v_all_neurons_i2"][:, 200:])
     )
 
-    plv_net_1 = np.mean(processing.order_parameter_over_time(neurons_net_1))
-    plv_net_2 = np.mean(processing.order_parameter_over_time(neurons_net_2))
+    f_neurons_net_1 = [processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_1]
+    f_neurons_net_2 = [processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_2]
+
+    plv_net_1 = np.mean(processing.order_parameter_over_time(f_neurons_net_1))
+    plv_net_2 = np.mean(processing.order_parameter_over_time(f_neurons_net_2))
 
     results["phase_synchronization_over_time"] = global_order_parameter
     results["phase_synchronization"] = total_value
@@ -189,11 +202,5 @@ def run_in_mopet(params) -> dict:
     results["plv_net_2"] = plv_net_2
 
     print("Finished aggregation.")
-
-    # Remove types that are not supported yet by Mopet
-    remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
-    # print(f"Removing keys {remove} containing NoneType from dictionary to avoid conflicts with Mopet")
-    for k in remove:
-        del results[k]
 
     return results
