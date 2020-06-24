@@ -153,12 +153,12 @@ def run_in_mopet(params) -> dict:
     return results
 
 
-def post_processing(results):
+def post_processing(results: dict) -> dict:
     # skip first 200 ms
     skip = 200
 
     print("Starting Aggregation ...")
-    
+
     max_amplitude, peak_freq = processing.band_power(results, skip=skip)
     results["max_amplitude"] = max_amplitude
     results["peak_freq"] = peak_freq
@@ -190,8 +190,12 @@ def post_processing(results):
         (results["v_all_neurons_e2"][:, 200:], results["v_all_neurons_i2"][:, 200:])
     )
 
-    f_neurons_net_1 = [processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_1]
-    f_neurons_net_2 = [processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_2]
+    f_neurons_net_1 = [
+        processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_1
+    ]
+    f_neurons_net_2 = [
+        processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_2
+    ]
 
     plv_net_1 = np.mean(processing.order_parameter_over_time(f_neurons_net_1))
     plv_net_2 = np.mean(processing.order_parameter_over_time(f_neurons_net_2))

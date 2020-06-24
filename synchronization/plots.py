@@ -22,8 +22,9 @@ def plot_exploration(
     ex: mopet.Exploration,
     param_X: str = None,
     param_Y: str = None,
-    vmax_phase=1.0,
-    vmin_phase=0.0,
+    vmax_phase: float = 1.0,
+    vmin_phase: float = 0.0,
+    vmax_freq: int = 80
 ):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
@@ -51,6 +52,7 @@ def plot_exploration(
         title="Dominant Frequency of Network 1",
         colorbar="Peak Frequency",
         vmin=0.0,
+        vmax=vmax_freq,
         ax=axs[0, 0],
     )
 
@@ -73,6 +75,7 @@ def plot_exploration(
         title="Dominant Frequency of Network 2",
         colorbar="Peak Frequency",
         vmin=0.0,
+        vmax=vmax_freq,
         ax=axs[1, 0],
     )
 
