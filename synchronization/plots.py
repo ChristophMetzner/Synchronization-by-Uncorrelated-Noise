@@ -24,7 +24,7 @@ def plot_exploration(
     param_Y: str = None,
     vmax_phase: float = 1.0,
     vmin_phase: float = 0.0,
-    vmax_freq: int = 80
+    vmax_freq: int = 120
 ):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
