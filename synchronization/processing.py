@@ -31,7 +31,21 @@ def lfp(
         return lfp1, lfp2
 
 
-def lfp_single_net(model, population: int = 1, skip: int = None):
+def lfp_single_net(model: dict, population: int = 1, skip: int = None):
+    """ Calculates local field potential (LFP) of a single network.
+
+    LFP is approximated by taking the average over the membrane voltages of all neurons in the network.
+    LFP := 1/N sum(neurons_v)
+
+    :param model: model
+    :type model: dict
+    :param population: specifies network, defaults to 1
+    :type population: int, optional
+    :param skip: skips the first x ms, defaults to None
+    :type skip: int, optional
+    :return: lfp over time.
+    :rtype: ndarray
+    """
     N_e = model["N_e"]
     N_i = model["N_i"]
 
@@ -42,8 +56,8 @@ def lfp_single_net(model, population: int = 1, skip: int = None):
         v_e = model["v_all_neurons_e2"][:, skip:]
         v_i = model["v_all_neurons_i2"][:, skip:]
 
-    # TODO: should we average once instead of two times?
-    return (np.sum(v_e, axis=0) / N_e + np.sum(v_i, axis=0) / N_i) / 2
+    neurons = np.vstack((v_e, v_i))
+    return np.sum(neurons, axis=0) / (N_i + N_e)
 
 
 def lfp_nets(model, skip: int = None):
@@ -53,7 +67,16 @@ def lfp_nets(model, skip: int = None):
     )
 
 
-def _lfp(v, N):
+def _lfp(v, N: int) -> np.ndarray:
+    """Calculates local field potential of `N` neurons `v`.
+
+    :param v: array of membrane voltage over time of `N` neurons.
+    :type v: ndarray
+    :param N: Number of neurons.
+    :type N: int
+    :return: local field potential.
+    :rtype: np.ndarray
+    """
     return np.sum(v, axis=0) / N
 
 
@@ -61,7 +84,7 @@ def band_power(model, network: int = 1, granularity: int = 1, skip: int = None):
     lfp = lfp_single_net(model, population=network, skip=skip)
 
     runtime_ = model["runtime"] - skip if skip else model["runtime"]
-    
+
     dt = 1.0
     timepoints = int((runtime_ / dt) / granularity)
     fs = 1.0 / dt
@@ -77,6 +100,23 @@ def band_power(model, network: int = 1, granularity: int = 1, skip: int = None):
     peak_freq = freqs[psd.argmax()]
 
     return max_amplitude, peak_freq
+
+
+def band_power_raw(signal):
+    dt = 1.0
+    NFFT = len(signal)
+    fs = 1.0 / dt
+
+    psd, freqs = mlab.psd(signal, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
+
+    psd[0] = 0.0
+    freqs = freqs * 1000
+    freqs = [int(freq) for freq in freqs]
+
+    max_amplitude = psd.max()
+    peak_freq = freqs[psd.argmax()]
+
+    return psd, freqs, max_amplitude, peak_freq
 
 
 def hilphase(y1, y2):
@@ -169,7 +209,7 @@ def phase_synchronization(signals):
     return np.mean(phi)
 
 
-def filter(signal, fs:int = 1000, lowcut: int = 10, highcut: int = 80, order: int = 2):
+def filter(signal, fs: int = 1000, lowcut: int = 10, highcut: int = 80, order: int = 2):
     """Applies Band Pass Filter to `signal`.
 
     :param signal: [description]
@@ -185,7 +225,7 @@ def filter(signal, fs:int = 1000, lowcut: int = 10, highcut: int = 80, order: in
     :return: [description]
     :rtype: [type]
     """
-    b, a = butter(order, [lowcut, highcut], btype='bandpass', fs=fs)
+    b, a = butter(order, [lowcut, highcut], btype="bandpass", fs=fs)
     filtered = filtfilt(b, a, signal)
     return filtered
 

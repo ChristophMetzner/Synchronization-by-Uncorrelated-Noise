@@ -24,7 +24,7 @@ def plot_exploration(
     param_Y: str = None,
     vmax_phase: float = 1.0,
     vmin_phase: float = 0.0,
-    vmax_freq: int = 120
+    vmax_freq: int = 120,
 ):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
@@ -142,7 +142,9 @@ def plot_exploration(
         axs[1, 3].set_axis_off()
 
 
-def plot_results(model, full_raster: bool = False, pop_rates: bool = False):
+def plot_results(
+    model, full_raster: bool = False, pop_rates: bool = False, raster_right: int = None
+):
     """
     Plots all relevant figures needed to understand network behavior.
 
@@ -152,21 +154,30 @@ def plot_results(model, full_raster: bool = False, pop_rates: bool = False):
     * Population Rates
 
     """
-    psd(model, title="PSD of 1st network", population=1, fig_size=(7, 2))
-    psd(model, title="PSD of 2nd network", population=2, fig_size=(7, 2))
+    psd(model, title="PSD of 1st network", population=1, fig_size=(8, 3))
+    psd(model, title="PSD of 2nd network", population=2, fig_size=(8, 3))
+
     lfp_nets(model, skip=100)
 
     if full_raster:
-        fig, axs = plt.subplots(1, 2, figsize=(20, 5))
+        fig, axs = plt.subplots(1, 2, figsize=(40, 15))
         raster(
             title="Raster of 1st network",
             model=model,
-            fig_size=(10, 5),
             save=True,
             key="stoch_weak_PING",
             ax=axs[0],
+            x_right=raster_right,
+            N_e=200,
         )
-        raster(title="Raster of 2nd network", model=model, population=2, ax=axs[1])
+        raster(
+            title="Raster of 2nd network",
+            model=model,
+            population=2,
+            ax=axs[1],
+            x_right=raster_right,
+            N_e=200,
+        )
 
     fig, axs = plt.subplots(1, 2, figsize=(20, 5))
     raster(
@@ -318,6 +329,9 @@ def psd(
     psd1, freqs = mlab.psd(lfp1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
     psd2, _ = mlab.psd(lfp2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
 
+    # We multiply by 1000 to get from ms to s.
+    freqs = freqs * 1000
+
     # TODO: why do we set it to 0? Remove unwanted artifacts?
     psd1[0] = 0.0
     psd2[0] = 0.0
@@ -326,19 +340,18 @@ def psd(
 
     ax = fig.add_subplot(111)
     ax.set_title(title if title else "PSD")
-    ax.set_xlabel("Frequency")
+    ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("Density")
 
     if groups == "excitatory":
-        # We multiply by 1000 to get from ms to s.
-        ax.plot(freqs * 1000, psd1, "0.75", linewidth=1.5, c="darkgray")
+        ax.plot(freqs, psd1, "0.75", linewidth=2.5, c="darkgray")
 
     elif groups == "inhibitory":
-        ax.plot(freqs * 1000, psd2, "0.75", linewidth=1.5, c="dimgray")
+        ax.plot(freqs, psd2, "0.75", linewidth=2.5, c="dimgray")
 
     else:
-        ax.plot(freqs * 1000, psd1, "0.75", linewidth=1.5, c="darkgray")
-        ax.plot(freqs * 1000, psd2, "0.75", linewidth=1.5, c="dimgray")
+        ax.plot(freqs, psd1, "0.75", linewidth=2.5, c="darkgray")
+        ax.plot(freqs, psd2, "0.75", linewidth=2.5, c="dimgray")
 
     plt.legend(
         handles=[
@@ -347,7 +360,8 @@ def psd(
         ]
     )
 
-    ax.set_xlim([0, 80])
+    ax.set_xlim([0, 120])
+    ax.set_xticks(range(0, 130, 10))
 
     _save_to_file("psd", save, key, folder)
 
@@ -364,6 +378,8 @@ def raster(
     folder: str = None,
     population: int = 1,
     fig_size: Tuple = None,
+    N_e: int = None,
+    N_i: int = None,
     ax=None,
 ):
     fig = None
@@ -372,12 +388,12 @@ def raster(
         ax = fig.add_subplot(111)
 
     if population == 1:
-        s_e = model["net_spikes_e"]
-        s_i = model["net_spikes_i1"]
+        s_e = model["net_spikes_e"][:N_e]
+        s_i = model["net_spikes_i1"][:N_i]
 
     else:
-        s_e = model["net_spikes_e2"]
-        s_i = model["net_spikes_i2"]
+        s_e = model["net_spikes_e2"][:N_e]
+        s_i = model["net_spikes_i2"][:N_i]
 
     if s_e[0].size == 0 and s_i[0].size == 0:
         print("0 size array of spikes, cannot create raster plot.")
@@ -404,7 +420,7 @@ def raster(
     )
 
     # TODO: plot complete time axis, currently only x-ticks for available data is plotted
-    ax.set_xlim(left=x_left, right=x_right)
+    ax.set_xlim(left=x_left if x_left else 0, right=x_right)
 
     plt.tight_layout()
     _save_to_file("raster", save=save, key=key, folder=folder)
@@ -422,7 +438,7 @@ def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
 
     t = np.linspace(0, duration, int(duration / dt))
 
-    fig = plt.figure(figsize=FIG_SIZE)
+    fig = plt.figure(figsize=(20, 8))
     ax = fig.add_subplot(111)
     ax.set_title("LFP of network" if single_net else "LFP of both networks")
     ax.set_xlabel("Elapsed Time in ms")
@@ -562,7 +578,7 @@ def heat_map_vis(
     """
     heat_map_pivoted(
         pivot_table=df.pivot_table(
-            values=value, index=param_X, columns=param_Y, aggfunc="first"
+            values=value, index=param_Y, columns=param_X, aggfunc="first"
         ),
         extent=[
             min(df[param_X]),
@@ -598,14 +614,15 @@ def heat_map_pivoted(
         aspect="auto",
         extent=extent,
         cmap=plt.get_cmap("Reds"),
+        # interpolation="bilinear",
         **kwargs,
     )
 
     if colorbar:
         plt.colorbar(im, label=colorbar, ax=ax)
 
-    ax.set_xlabel(xlabel if xlabel else pivot_table.index.name)
-    ax.set_ylabel(ylabel if ylabel else pivot_table.columns.name)
+    ax.set_xlabel(xlabel if xlabel else pivot_table.columns.name)
+    ax.set_ylabel(ylabel if ylabel else pivot_table.index.name)
 
     if not ax:
         plt.show()
