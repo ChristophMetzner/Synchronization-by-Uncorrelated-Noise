@@ -64,6 +64,7 @@ def plot_exploration(
         title="Bandpower of Dominant Frequency of Network 1",
         colorbar="Bandpower",
         vmin=0.0,
+        vmax=1000,
         ax=axs[0, 1],
     )
 
@@ -87,6 +88,7 @@ def plot_exploration(
         title="Bandpower of Dominant Frequency of Network 2",
         colorbar="Bandpower",
         vmin=0.0,
+        vmax=1000,
         ax=axs[1, 1],
     )
 
