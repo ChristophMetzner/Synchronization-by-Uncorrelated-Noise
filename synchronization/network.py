@@ -87,7 +87,7 @@ def network_sim(signal, params: dict):
 
     # what is recorded during the simulation
     record_spikes = params["net_record_spikes"]
-    record_all_v_at_times = True if params["net_record_all_neurons"] else False
+    record_all_v_at_times = params["net_record_all_neurons"]
 
     # simulation time step
     simclock = Clock(dt_sim)
@@ -274,24 +274,26 @@ def network_sim(signal, params: dict):
         group_rate_ = params["poisson_mean_input"] / poisson_strength_1
         neuron_rate_ = group_rate_ / params["poisson_size"]
         print(f"Net 1 - poisson rate {group_rate_} - single neuron {neuron_rate_}")
+        print(f"Poisson strength: {poisson_strength_1}")
 
         P_E = PoissonInput(
             target=E,
             target_var="v",
             N=params["poisson_size"],
             rate=neuron_rate_ * Hz,
-            weight="((VT_e - EL_e) * poisson_strength_1 * taum_e) / R_e / C_e",
+            weight="((VT_e - Vr_e) * poisson_strength_1 * taum_e) / R_e / C_e",
         )
+        net.add(P_E)
 
-        P_I = PoissonInput(
-            target=I,
-            target_var="v",
-            N=params["poisson_size"],
-            rate=neuron_rate_ * Hz,
-            weight="((VT_i - EL_i) * poisson_strength_1 * taum_i) / R_i / C_i",
-        )
-
-        net.add(P_E, P_I)
+        if params["poisson_enabled_I"]:
+            P_I = PoissonInput(
+                target=I,
+                target_var="v",
+                N=params["poisson_size"],
+                rate=neuron_rate_ * Hz,
+                weight="((VT_i - Vr_i) * poisson_strength_1 * taum_i) / R_i / C_i",
+            )
+            net.add(P_I)
 
     build_synapses_first_population(
         E, I, p_etoe, p_etoi, p_itoe, p_itoi, N_e, N_i, net, simclock
@@ -307,33 +309,41 @@ def network_sim(signal, params: dict):
             poisson_strength_1 = (
                 params["poisson_variance"] / params["poisson_mean_input"]
             )
-            poisson_strength_2 = params["poisson_p"] * poisson_strength_1
+
+            # second network gets higher strength which leads to lower rate.
+            # dv_2
+            # poisson_strength_2 = poisson_strength_1 * params["poisson_p"]
 
             # lambda_2 = mu / dv_2 / #neurons
-            rate_2 = (
-                params["poisson_mean_input"]
-                / poisson_strength_2
-                / params["poisson_size"]
-            )
-            print("Poisson single neuron rate for net 2: ", rate_2)
+            # rate_2 = (
+            #     params["poisson_mean_input"]
+            #     / poisson_strength_2
+            #     / params["poisson_size"]
+            # )
+
+            # rate of 2nd network is fraction of 1st network.
+            rate_2 = neuron_rate_ * params["poisson_p"]
+
+            print(f"Net 2 - rate for single neuron {rate_2}")
 
             P_E_2 = PoissonInput(
                 target=E2,
                 target_var="v",
                 N=params["poisson_size"],
                 rate=rate_2 * Hz,
-                weight="((VT_e - EL_e) * poisson_strength_2 * taum_e) / R_e / C_e",
+                weight="((VT_e - Vr_e) * poisson_strength_1 * taum_e) / R_e / C_e",
             )
+            net.add(P_E_2)
 
-            P_I_2 = PoissonInput(
-                target=I2,
-                target_var="v",
-                N=params["poisson_size"],
-                rate=rate_2 * Hz,
-                weight="((VT_i - EL_i) * poisson_strength_2 * taum_i) / R_i / C_i",
-            )
-
-            net.add(P_E_2, P_I_2)
+            if params["poisson_enabled_I"]:
+                P_I_2 = PoissonInput(
+                    target=I2,
+                    target_var="v",
+                    N=params["poisson_size"],
+                    rate=rate_2 * Hz,
+                    weight="((VT_i - Vr_i) * poisson_strength_1 * taum_i) / R_i / C_i",
+                )
+                net.add(P_I_2)
 
         build_synapses_multiple_populations(
             E,
@@ -489,7 +499,9 @@ def network_sim(signal, params: dict):
     results = {
         "brian_version": 2,
         "r_e": net_rates_e,
+        "r_e_t": net_t_e,
         "r_i1": net_rates_i1,
+        "r_i1_t": net_t_i1,
         "t": time_r,
         "dt_sim": dt_sim,
     }
@@ -502,7 +514,9 @@ def network_sim(signal, params: dict):
         net_t_i2 = rate_monitor_i2.t / ms
 
         results["r_e2"] = net_rates_e2
+        results["r_e2_t"] = net_t_e2
         results["r_i2"] = net_rates_i2
+        results["r_i2_t"] = net_t_i2
 
     if record_spikes > 0:
         # multiply by 1 like this to ensure brian extracts the results before we delete the compile directory
