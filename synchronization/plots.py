@@ -17,6 +17,12 @@ FIG_SIZE = [10, 6]
 FIG_SIZE_QUADRATIC = [8, 6]
 FIG_SIZE_PSD = [8, 3]
 
+# Colors
+c_exc = "r"
+c_inh = "cornflowerblue"
+c_net_1 = "midnightblue"
+c_net_2 = "crimson"
+
 
 def plot_exploration(
     ex: mopet.Exploration,
@@ -25,6 +31,7 @@ def plot_exploration(
     vmax_phase: float = 1.0,
     vmin_phase: float = 0.0,
     vmax_freq: int = 120,
+    vmin_ratio: int = 0,
 ):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
@@ -136,7 +143,7 @@ def plot_exploration(
             param_Y=param_Y,
             title="Dominant Frequency Ratio",
             colorbar="Ratio",
-            vmin=0.0,
+            vmin=vmin_ratio,
             vmax=1.0,
             ax=axs[1, 3],
         )
@@ -145,7 +152,11 @@ def plot_exploration(
 
 
 def plot_results(
-    model, full_raster: bool = False, pop_rates: bool = False, raster_right: int = None
+    model,
+    full_raster: bool = False,
+    pop_rates: bool = False,
+    raster_right: int = None,
+    xlim_psd: int = 120,
 ):
     """
     Plots all relevant figures needed to understand network behavior.
@@ -156,8 +167,8 @@ def plot_results(
     * Population Rates
 
     """
-    psd(model, title="PSD of 1st network", population=1, fig_size=(8, 3))
-    psd(model, title="PSD of 2nd network", population=2, fig_size=(8, 3))
+    psd(model, title="PSD of 1st network", population=1, fig_size=(8, 3), xlim=xlim_psd)
+    psd(model, title="PSD of 2nd network", population=2, fig_size=(8, 3), xlim=xlim_psd)
 
     lfp_nets(model, skip=100)
 
@@ -238,6 +249,7 @@ def noise(
 
 
 def poisson_input(model: dict):
+    # TODO: can be removed?
     if "poisson_input_t_e" in model and "poisson_input_spikes_e" in model:
         plt.figure(figsize=(10, 8))
         plt.title("Poisson Spike Train Input to E population")
@@ -277,8 +289,8 @@ def lfp(
     ax.set_xlabel("Elapsed Time in ms")
     ax.set_ylabel("Voltage")
 
-    ax.plot(t, lfp1, "0.75", c="black")
-    ax.plot(t, lfp2, "0.25", c="darkgrey")
+    ax.plot(t, lfp1, "0.75", c=c_inh)
+    ax.plot(t, lfp2, "0.25", c=c_exc)
 
     plt.legend(
         handles=[
@@ -306,6 +318,7 @@ def psd(
     fig_size: tuple = None,
     granularity: float = 1.0,
     skip: int = 100,
+    xlim: int = 120,
 ):
     """
     Plots the Power Spectral Density.
@@ -320,6 +333,7 @@ def psd(
 
     # number of data points used in each block for the FTT.
     # Set to number of data points in the input signal.
+
     NFFT = int((duration / dt / granularity))
 
     # Calculating the Sampling frequency.
@@ -334,36 +348,35 @@ def psd(
     # We multiply by 1000 to get from ms to s.
     freqs = freqs * 1000
 
-    # TODO: why do we set it to 0? Remove unwanted artifacts?
+    # Remove unwanted power at 0 Hz
     psd1[0] = 0.0
     psd2[0] = 0.0
 
     fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
-
     ax = fig.add_subplot(111)
     ax.set_title(title if title else "PSD")
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("Density")
 
     if groups == "excitatory":
-        ax.plot(freqs, psd1, "0.75", linewidth=2.5, c="darkgray")
+        ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
 
     elif groups == "inhibitory":
-        ax.plot(freqs, psd2, "0.75", linewidth=2.5, c="dimgray")
+        ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
 
     else:
-        ax.plot(freqs, psd1, "0.75", linewidth=2.5, c="darkgray")
-        ax.plot(freqs, psd2, "0.75", linewidth=2.5, c="dimgray")
+        ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
+        ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
 
     plt.legend(
         handles=[
-            mpatches.Patch(color="darkgray", label="Excitatory Group"),
-            mpatches.Patch(color="dimgray", label="Inhibitory Group"),
+            mpatches.Patch(color=c_exc, label="Excitatory Group"),
+            mpatches.Patch(color=c_inh, label="Inhibitory Group"),
         ]
     )
 
-    ax.set_xlim([0, 120])
-    ax.set_xticks(range(0, 130, 10))
+    ax.set_xlim([0, xlim])
+    ax.set_xticks(range(0, xlim + 10, 10))
 
     _save_to_file("psd", save, key, folder)
 
@@ -405,12 +418,12 @@ def raster(
     ax.set_xlabel("Time in ms")
     ax.set_ylabel("Neuron index")
 
-    ax.plot(s_e[1] * 1000, s_e[0], "k.", c="dimgrey", markersize="2.0")
+    ax.plot(s_e[1] * 1000, s_e[0], "k.", c=c_exc, markersize="2.0")
     ax.plot(
         s_i[1] * 1000,
         s_i[0] + (s_e[0].max() + 1 if s_e[0].size != 0 else 0),
         "k.",
-        c="black",
+        c=c_inh,
         markersize="4.0",
     )
 
@@ -440,19 +453,19 @@ def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
 
     t = np.linspace(0, duration, int(duration / dt))
 
-    fig = plt.figure(figsize=(20, 8))
+    fig = plt.figure(figsize=(20, 5))
     ax = fig.add_subplot(111)
     ax.set_title("LFP of network" if single_net else "LFP of both networks")
     ax.set_xlabel("Elapsed Time in ms")
     ax.set_ylabel("Voltage")
-    ax.plot(t, lfp1, "0.75", color="black")
+    ax.plot(t, lfp1, "0.75", color=c_net_1)
 
-    handles = [mpatches.Patch(color="black", label="Network 1")]
+    handles = [mpatches.Patch(color=c_net_1, label="Network 1")]
 
     if not single_net:
         lfp2 = processing.lfp_single_net(model, population=2, skip=skip)
-        ax.plot(t, lfp2, "0.75", color="darkgrey")
-        handles.append(mpatches.Patch(color="darkgrey", label="Network 2"))
+        ax.plot(t, lfp2, "0.75", color=c_net_2)
+        handles.append(mpatches.Patch(color=c_net_2, label="Network 2"))
 
     plt.legend(handles=handles)
     plt.tight_layout()
@@ -473,21 +486,41 @@ def population_rates(model: dict, skip: int = None):
     r_e = model["r_e"][skip:]
     r_i1 = model["r_i1"][skip:]
 
-    axs[0, 0].plot(r_e, c="black")
+    if "r_e_t" in model:
+        axs[0, 0].plot(model["r_e_t"][skip:], r_e, c=c_exc)
+    else:
+        axs[0, 0].plot(r_e, c=c_exc)
     axs[0, 0].set_title("Population 1 - Excitatory")
+    axs[0, 0].set_xlabel("Time in ms")
+    axs[0, 0].set_ylabel("Firing Rate")
 
-    axs[1, 0].plot(r_i1, c="grey")
+    if "r_i1_t" in model:
+        axs[1, 0].plot(model["r_i1_t"][skip:], r_i1, c=c_inh)
+    else:
+        axs[1, 0].plot(r_i1, c=c_inh)
     axs[1, 0].set_title("Population 1 - Inhibitory")
+    axs[1, 0].set_xlabel("Time in ms")
+    axs[1, 0].set_ylabel("Firing Rate")
 
     if N_pop > 1:
         r_e2 = model["r_e2"][skip:]
         r_i2 = model["r_i2"][skip:]
 
-        axs[0, 1].plot(r_e2, c="black")
+        if "r_e2_t" in model:
+            axs[0, 1].plot(model["r_e2_t"][skip:], r_e2, c=c_exc)
+        else:
+            axs[0, 1].plot(r_e2, c=c_exc)
         axs[0, 1].set_title("Population 2 - Excitatory")
+        axs[0, 1].set_xlabel("Time in ms")
+        axs[0, 1].set_ylabel("Firing Rate")
 
-        axs[1, 1].plot(r_i2, c="grey")
+        if "r_i2_t" in model:
+            axs[1, 1].plot(model["r_i2_t"][skip:], r_i2, c=c_inh)
+        else:
+            axs[1, 1].plot(r_i2, c=c_inh)
         axs[1, 1].set_title("Population 2 - Inhibitory")
+        axs[1, 1].set_xlabel("Time in ms")
+        axs[1, 1].set_ylabel("Firing Rate")
 
 
 def all_psd(
@@ -615,7 +648,7 @@ def heat_map_pivoted(
         origin="lower",
         aspect="auto",
         extent=extent,
-        cmap=plt.get_cmap("Reds"),
+        cmap=plt.get_cmap("PuBu"),
         # interpolation="bilinear",
         **kwargs,
     )

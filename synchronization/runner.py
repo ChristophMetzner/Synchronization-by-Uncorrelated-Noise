@@ -157,8 +157,6 @@ def post_processing(results: dict) -> dict:
     # skip first 200 ms
     skip = 200
 
-    print("Starting Aggregation ...")
-
     max_amplitude, peak_freq = processing.band_power(results, skip=skip)
     results["max_amplitude"] = max_amplitude
     results["peak_freq"] = peak_freq
@@ -204,7 +202,5 @@ def post_processing(results: dict) -> dict:
     results["phase_synchronization"] = total_value
     results["plv_net_1"] = plv_net_1
     results["plv_net_2"] = plv_net_2
-
-    print("Finished aggregation.")
 
     return results
