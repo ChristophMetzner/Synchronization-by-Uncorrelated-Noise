@@ -19,7 +19,8 @@ FIG_SIZE_PSD = [8, 3]
 
 # Colors
 c_exc = "r"
-c_inh = "cornflowerblue"
+# c_inh = "cornflowerblue"
+c_inh = "midnightblue"
 c_net_1 = "midnightblue"
 c_net_2 = "crimson"
 
@@ -157,6 +158,8 @@ def plot_results(
     pop_rates: bool = False,
     raster_right: int = None,
     xlim_psd: int = 120,
+    excerpt_x_left: int = 250,
+    excerpt_x_right: int = 300
 ):
     """
     Plots all relevant figures needed to understand network behavior.
@@ -194,17 +197,17 @@ def plot_results(
 
     fig, axs = plt.subplots(1, 2, figsize=(20, 5))
     raster(
-        title="250-300 ms of network 1",
+        title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 1",
         model=model,
-        x_left=250,
-        x_right=300,
+        x_left=excerpt_x_left,
+        x_right=excerpt_x_right,
         ax=axs[0],
     )
     raster(
-        title="250-300 ms of network 2",
+        title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 2",
         model=model,
-        x_left=250,
-        x_right=300,
+        x_left=excerpt_x_left,
+        x_right=excerpt_x_right,
         population=2,
         ax=axs[1],
     )
@@ -333,7 +336,6 @@ def psd(
 
     # number of data points used in each block for the FTT.
     # Set to number of data points in the input signal.
-
     NFFT = int((duration / dt / granularity))
 
     # Calculating the Sampling frequency.

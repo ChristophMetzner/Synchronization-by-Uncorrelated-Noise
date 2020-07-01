@@ -157,6 +157,10 @@ def post_processing(results: dict) -> dict:
     # skip first 200 ms
     skip = 200
 
+    # low and high cut frequency for filter
+    lowcut = 30
+    highcut = 80
+
     max_amplitude, peak_freq = processing.band_power(results, skip=skip)
     results["max_amplitude"] = max_amplitude
     results["peak_freq"] = peak_freq
@@ -177,7 +181,7 @@ def post_processing(results: dict) -> dict:
     results["freq_ratio"] = ratio
 
     lfps = processing.lfp_nets(results, skip=skip)
-    f_lfps = processing.filter(lfps, lowcut=30, highcut=80)
+    f_lfps = processing.filter(lfps, lowcut=lowcut, highcut=highcut)
     global_order_parameter = processing.order_parameter_over_time(f_lfps)
     total_value = np.mean(global_order_parameter)
 
@@ -189,10 +193,10 @@ def post_processing(results: dict) -> dict:
     )
 
     f_neurons_net_1 = [
-        processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_1
+        processing.filter(n, lowcut=lowcut, highcut=highcut) for n in neurons_net_1
     ]
     f_neurons_net_2 = [
-        processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_2
+        processing.filter(n, lowcut=lowcut, highcut=highcut) for n in neurons_net_2
     ]
 
     plv_net_1 = np.mean(processing.order_parameter_over_time(f_neurons_net_1))

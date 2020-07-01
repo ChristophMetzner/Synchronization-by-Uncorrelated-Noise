@@ -21,9 +21,8 @@ def network_sim(signal, params: dict):
 
     # stripe on brian units within the copied dict for the simulation so that brian can work with them
 
-    # Neuron group specific parameters
-
-    # Excitatory cells
+    ### Neuron group specific parameters
+    ### Excitatory cells
     C_e = params["C_exc"] * pF
     gL_e = params["gL_exc"] * nS
     R_e = 1 / gL_e
@@ -40,7 +39,7 @@ def network_sim(signal, params: dict):
     tau_AMPA = params["tau_AMPA"] * ms
     E_AMPA = params["E_AMPA"] * mV
 
-    # Inhibitory cells
+    ### Inhibitory cells
     C_i = params["C_inh1"] * pF
     gL_i = params["gL_inh1"] * nS
     R_i = 1 / gL_i
@@ -57,7 +56,7 @@ def network_sim(signal, params: dict):
     tau_GABA = params["tau_GABA"] * ms
     E_GABA = params["E_GABA"] * mV
 
-    # general parameters
+    ### General parameters
     dt_sim = params["net_dt"] * ms
     net_w_init_e = params["net_w_init_e"] * pA
     net_w_init_i = params["net_w_init_i"] * pA
@@ -365,15 +364,24 @@ def network_sim(signal, params: dict):
 
     print("Initialization time: {}s".format(time.time() - start_init))
 
-    # initial distribution of the network simulation
-    E.v = np.ones(len(E)) * params["net_delta_peak_E"] * mV
-    I.v = np.ones(len(I)) * params["net_delta_peak_I"] * mV
+    # Initial distribution of the network simulation
+    if params["net_random_membrane_voltage"]:
+        # Borrowed from https://brian2.readthedocs.io/en/stable/examples/frompapers.Stimberg_et_al_2018.example_1_COBA.html
+        E.v = "EL_e + rand() * (VT_e - EL_e)"
+        I.v = "EL_i + rand() * (VT_i - EL_i)"
+    else:
+        E.v = np.ones(len(E)) * params["net_delta_peak_E"] * mV
+        I.v = np.ones(len(I)) * params["net_delta_peak_I"] * mV
 
     if N_pop > 1:
-        E2.v = np.ones(len(E2)) * params["net_delta_peak_E"] * mV
-        I2.v = np.ones(len(I2)) * params["net_delta_peak_I"] * mV
+        if params["net_random_membrane_voltage"]:
+            E2.v = "EL_e + rand() * (VT_e - EL_e)"
+            I2.v = "EL_i + rand() * (VT_i - EL_i)"
+        else:
+            E2.v = np.ones(len(E2)) * params["net_delta_peak_E"] * mV
+            I2.v = np.ones(len(I2)) * params["net_delta_peak_I"] * mV
 
-    # initial distribution of w_mean
+    # Initial distribution of w_mean
     if have_adap_e:
         # standard deviation of w_mean is set to 0.1
         E.w = 0.1 * np.random.randn(len(E)) * pA + net_w_init_e

@@ -48,7 +48,10 @@ def get_params():
     # note for uniform distribution: by default the uniform initial distribution is set on the interval [Vr, Vcut]
     params["net_delta_peak_E"] = -70.0
     params["net_delta_peak_I"] = -70.0
+    # Adds randomness to initial mebmrane voltage of neurons.
+    params["net_random_membrane_voltage"] = True
 
+    ### Brian2 specific parameters
     # standalone mode for network sim
     params["brian2_standalone"] = False
     params["brian2_device"] = "cpp_standalone"
@@ -57,7 +60,7 @@ def get_params():
     # integration method for (should be specified for brian2_rc3)
     params["net_integration_method"] = "heun"  # 'heun'
 
-    # neuron model parameters (AdEX)
+    ### Neuron Model Parameters (AdEX)
 
     # Excitatory cells
     params["C_exc"] = 200.0  # [pF] Capacitance
@@ -69,9 +72,9 @@ def get_params():
     params["deltaT_exc"] = 1.5  # [mV]
     params["Vcut_exc"] = -40.0  # [mV]
     params["tauw_exc"] = 200.0  # [ms]
-    params["a_exc"] = 4.0  # [nS]              subthreshold adaptation param
+    params["a_exc"] = 4.0  # [nS]               subthreshold adaptation param
     params["b_exc"] = 40.0  # [pA]              spike-frequency adaptation param
-    params["Vr_exc"] = -70.0  # [mV]
+    params["Vr_exc"] = -70.0  # [mV]            reset voltage
     params["t_ref_exc"] = 1.0  # [ms]
 
     # AMPA synapse (excitatory)
@@ -91,7 +94,7 @@ def get_params():
     params["tauw_inh1"] = 200.0  # [ms]
     params["a_inh1"] = 0.0  # [nS]              subthreshold adaptation param
     params["b_inh1"] = 0.0  # [pA]              spike-frequency adaptation param
-    params["Vr_inh1"] = -70.0  # [mV]
+    params["Vr_inh1"] = -70.0  # [mV]           reset voltage
     params["t_ref_inh1"] = 1.0  # [ms]
 
     # GABA synapse (inhibitory)
@@ -103,7 +106,8 @@ def get_params():
     params["E_GABA"] = -70.0
 
     # Network size
-    params["N_pop"] = 1  # number of populations 1 or 2
+    # number of populations 1 or 2
+    params["N_pop"] = 1
     params["N_e"] = 1000
     params["N_i"] = 250
 
