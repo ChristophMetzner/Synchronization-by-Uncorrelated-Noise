@@ -210,20 +210,19 @@ def phase_synchronization(signals):
 
 
 def filter(signal, fs: int = 1000, lowcut: int = 10, highcut: int = 80, order: int = 2):
-    """Applies Band Pass Filter to `signal`.
+    """ Applies Band Pass Filter to `signal`.
 
-    :param signal: [description]
-    :type signal: [type]
-    :param fs: [description], defaults to 1000
+    :param signal: input signal
+    :param fs: sampling frequency, defaults to 1000
     :type fs: int, optional
-    :param lowcut: [description], defaults to 10
+    :param lowcut: lowcut frequency, defaults to 10
     :type lowcut: int, optional
-    :param highcut: [description], defaults to 80
+    :param highcut: lowcut frequency, defaults to 80
     :type highcut: int, optional
-    :param order: [description], defaults to 2
+    :param order: butter filter order, defaults to 2
     :type order: int, optional
-    :return: [description]
-    :rtype: [type]
+    :return: filtered signal.
+    :rtype: ndarray
     """
     b, a = butter(order, [lowcut, highcut], btype="bandpass", fs=fs)
     filtered = filtfilt(b, a, signal)

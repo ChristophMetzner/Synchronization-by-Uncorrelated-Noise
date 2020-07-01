@@ -45,12 +45,49 @@ def plot_exploration(
     :param param_Y: param for y axis, defaults to None
     :type param_Y: str, optional
     """
+
+    if len(ex.explore_params.keys()) == 1:
+        param = list(ex.explore_params.keys())[0]
+
+        metric = "freq_ratio"
+        fig, ax = plt.subplots(figsize=(6, 3))
+        ax.plot(ex.df[param], ex.df[metric], c=c_inh, marker=".")
+        ax.set_title("Frequency Ratio", fontsize=16)
+        ax.set_xlabel(param, fontsize=16)
+        ax.set_ylim(0, 1)
+        ax.set_ylabel("Dom Freq Ratio")
+
+        fig, ax = plt.subplots(figsize=(6, 3))
+        ax.plot(ex.df[param], ex.df["phase_synchronization"], linewidth=2.0, marker=".")
+        ax.plot(ex.df[param], ex.df["plv_net_1_e"], linewidth=2.0, marker=".")
+        ax.plot(ex.df[param], ex.df["plv_net_1_i"], linewidth=2.0, marker=".")
+        ax.plot(ex.df[param], ex.df["plv_net_2_e"], linewidth=2.0, marker=".")
+        ax.plot(ex.df[param], ex.df["plv_net_2_i"], linewidth=2.0, marker=".")
+
+        plt.legend(
+            [
+                "Frequency Ratio",
+                "Inter Network",
+                "Net 1 - Excitatory",
+                "Net 1 - Inhibitory",
+                "Net 2 - Excitatory",
+                "Net 2 - Inhibitory",
+            ]
+        )
+
+        ax.set_title("Phase Synchronization", fontsize=16)
+        ax.set_xlabel(param, fontsize=16)
+        ax.set_ylim(0, 1)
+        ax.set_ylabel("Kuramoto Order Parameter")
+
+        return
+
     if not param_X or not param_Y:
         axis_names = list(ex.explore_params.keys())
         param_X = axis_names[0]
         param_Y = axis_names[1]
 
-    fig, axs = plt.subplots(2, 4, figsize=(30, 10))
+    fig, axs = plt.subplots(3, 4, figsize=(40, 20))
 
     heat_map_vis(
         df=ex.df,
@@ -100,12 +137,24 @@ def plot_exploration(
         ax=axs[1, 1],
     )
 
+    # heat_map_vis(
+    #     df=ex.df,
+    #     value="plv_net_1",
+    #     param_X=param_X,
+    #     param_Y=param_Y,
+    #     title="Within Phase Synchronization - Network 1",
+    #     colorbar="Kuramoto Order Parameter",
+    #     vmin=vmin_phase,
+    #     vmax=vmax_phase,
+    #     ax=axs[0, 2],
+    # )
+
     heat_map_vis(
         df=ex.df,
-        value="plv_net_1",
+        value="plv_net_1_e",
         param_X=param_X,
         param_Y=param_Y,
-        title="Within Phase Synchronization - Network 1",
+        title="Within Phase Synchronization - Network 1 - Excitatory",
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
@@ -114,14 +163,50 @@ def plot_exploration(
 
     heat_map_vis(
         df=ex.df,
-        value="plv_net_2",
+        value="plv_net_1_i",
         param_X=param_X,
         param_Y=param_Y,
-        title="Within Phase Synchronization - Network 2",
+        title="Within Phase Synchronization - Network 1 - Inhibitory",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs[0, 3],
+    )
+
+    # heat_map_vis(
+    #     df=ex.df,
+    #     value="plv_net_2",
+    #     param_X=param_X,
+    #     param_Y=param_Y,
+    #     title="Within Phase Synchronization - Network 2",
+    #     colorbar="Kuramoto Order Parameter",
+    #     vmin=vmin_phase,
+    #     vmax=vmax_phase,
+    #     ax=axs[1, 2],
+    # )
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_2_e",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Within Phase Synchronization - Net 2 - Excitatory",
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
         ax=axs[1, 2],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_2_i",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Within Phase Synchronization - Net 2 - Inhibitory",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs[1, 3],
     )
 
     heat_map_vis(
@@ -133,7 +218,7 @@ def plot_exploration(
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
-        ax=axs[0, 3],
+        ax=axs[2, 0],
     )
 
     if "freq_ratio" in ex.df.columns:
@@ -146,10 +231,14 @@ def plot_exploration(
             colorbar="Ratio",
             vmin=vmin_ratio,
             vmax=1.0,
-            ax=axs[1, 3],
+            ax=axs[2, 1],
         )
     else:
-        axs[1, 3].set_axis_off()
+        axs[2, 1].set_axis_off()
+
+    # no content
+    axs[2, 2].set_axis_off()
+    axs[2, 3].set_axis_off()
 
 
 def plot_results(

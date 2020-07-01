@@ -185,26 +185,43 @@ def post_processing(results: dict) -> dict:
     global_order_parameter = processing.order_parameter_over_time(f_lfps)
     total_value = np.mean(global_order_parameter)
 
-    neurons_net_1 = np.vstack(
-        (results["v_all_neurons_e"][:, 200:], results["v_all_neurons_i1"][:, 200:])
-    )
-    neurons_net_2 = np.vstack(
-        (results["v_all_neurons_e2"][:, 200:], results["v_all_neurons_i2"][:, 200:])
-    )
-
-    f_neurons_net_1 = [
-        processing.filter(n, lowcut=lowcut, highcut=highcut) for n in neurons_net_1
+    neurons_net_1_e = [
+        processing.filter(n, lowcut=lowcut, highcut=highcut)
+        for n in results["v_all_neurons_e"][:, skip:]
     ]
-    f_neurons_net_2 = [
-        processing.filter(n, lowcut=lowcut, highcut=highcut) for n in neurons_net_2
+    neurons_net_1_i = [
+        processing.filter(n, lowcut=lowcut, highcut=highcut)
+        for n in results["v_all_neurons_i1"][:, skip:]
+    ]
+    neurons_net_2_e = [
+        processing.filter(n, lowcut=lowcut, highcut=highcut)
+        for n in results["v_all_neurons_e2"][:, skip:]
+    ]
+    neurons_net_2_i = [
+        processing.filter(n, lowcut=lowcut, highcut=highcut)
+        for n in results["v_all_neurons_i2"][:, skip:]
     ]
 
-    plv_net_1 = np.mean(processing.order_parameter_over_time(f_neurons_net_1))
-    plv_net_2 = np.mean(processing.order_parameter_over_time(f_neurons_net_2))
+    neurons_net_1 = np.vstack((neurons_net_1_e, neurons_net_1_i))
+    neurons_net_2 = np.vstack((neurons_net_2_e, neurons_net_2_i))
+
+    plv_net_1 = np.mean(processing.order_parameter_over_time(neurons_net_1))
+    plv_net_1_e = np.mean(processing.order_parameter_over_time(neurons_net_1_e))
+    plv_net_1_i = np.mean(processing.order_parameter_over_time(neurons_net_1_i))
+
+    plv_net_2 = np.mean(processing.order_parameter_over_time(neurons_net_2))
+    plv_net_2_e = np.mean(processing.order_parameter_over_time(neurons_net_2_e))
+    plv_net_2_i = np.mean(processing.order_parameter_over_time(neurons_net_2_i))
 
     results["phase_synchronization_over_time"] = global_order_parameter
     results["phase_synchronization"] = total_value
+
     results["plv_net_1"] = plv_net_1
+    results["plv_net_1_e"] = plv_net_1_e
+    results["plv_net_1_i"] = plv_net_1_i
+
     results["plv_net_2"] = plv_net_2
+    results["plv_net_2_e"] = plv_net_2_e
+    results["plv_net_2_i"] = plv_net_2_i
 
     return results
