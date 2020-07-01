@@ -158,8 +158,8 @@ def plot_results(
     pop_rates: bool = False,
     raster_right: int = None,
     xlim_psd: int = 120,
-    excerpt_x_left: int = 250,
-    excerpt_x_right: int = 300
+    excerpt_x_left: int = 200,
+    excerpt_x_right: int = 300,
 ):
     """
     Plots all relevant figures needed to understand network behavior.
@@ -429,12 +429,7 @@ def raster(
         markersize="4.0",
     )
 
-    plt.legend(
-        handles=[
-            mpatches.Patch(color="dimgrey", label="Excitatory Group"),
-            mpatches.Patch(color="black", label="Inhibitory Group"),
-        ]
-    )
+    plt.legend(["Excitatory", "Inhibitory"])
 
     # TODO: plot complete time axis, currently only x-ticks for available data is plotted
     ax.set_xlim(left=x_left if x_left else 0, right=x_right)
