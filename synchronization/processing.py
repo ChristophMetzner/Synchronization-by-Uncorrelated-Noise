@@ -137,7 +137,7 @@ def phase(signal):
     return np.angle(hil)
 
 
-def mean_phase_coherence(y1, y2) -> float:
+def phase_difference(y1, y2, unwrap: bool = True) -> np.ndarray:
     """
     Calculates the mean phase coherence.
 
@@ -148,15 +148,32 @@ def mean_phase_coherence(y1, y2) -> float:
     sig1_hill = hilbert(y1)
     sig2_hill = hilbert(y2)
 
-    # get angle and unwrap to remove discontinuities
-    phase_y1 = np.unwrap(np.angle(sig1_hill))
-    phase_y2 = np.unwrap(np.angle(sig2_hill))
+    # Get angle and unwrap to remove discontinuities
+    angl_sig1 = np.angle(sig1_hill)
+    angl_sig2 = np.angle(sig2_hill)
 
-    # calculate phase difference
-    inst_phase_diff = phase_y1 - phase_y2
+    if unwrap:
+        angl_sig1 = np.unwrap(angl_sig1)
+        angl_sig2 = np.unwrap(angl_sig2)
 
-    # complex form by projecting onto unit circle
-    complex_phase_diff = [np.exp(1j * phase) for phase in inst_phase_diff]
+    # Calculate phase difference
+    inst_phase_diff = angl_sig1 - angl_sig2
+    return inst_phase_diff
+
+
+def mean_phase_coherence(y1, y2, unwrap: bool = True) -> float:
+    """
+    Calculates the mean phase coherence.
+
+    R = | 1/N sum e^i(phi(t_j) - phi(t_k)) |
+
+    Implements equation (21) from http://www.scholarpedia.org/article/Measures_of_neuronal_signal_synchrony.
+    """
+    # phase differences at each time step.
+    diffs = phase_difference(y1, y2, unwrap=unwrap)
+
+    # complex form by projecting onto unit circle.
+    complex_phase_diff = [np.exp(1j * phase) for phase in diffs]
 
     # absolute value of average of complex phase differences.
     phase_coherence_index = np.abs(sum(complex_phase_diff) / len(complex_phase_diff))

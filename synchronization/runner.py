@@ -213,6 +213,10 @@ def post_processing(results: dict) -> dict:
     plv_net_2_e = np.mean(processing.order_parameter_over_time(neurons_net_2_e))
     plv_net_2_i = np.mean(processing.order_parameter_over_time(neurons_net_2_i))
 
+    mpc = processing.mean_phase_coherence(f_lfps[0], f_lfps[1])
+
+    results["mean_phase_coherence"] = mpc
+
     results["phase_synchronization_over_time"] = global_order_parameter
     results["phase_synchronization"] = total_value
 
