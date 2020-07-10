@@ -25,6 +25,8 @@ def network_sim(signal, params: dict):
     ### Excitatory cells
     C_e = params["C_exc"] * pF
     gL_e = params["gL_exc"] * nS
+
+    # Resistance of membrane
     R_e = 1 / gL_e
     taum_e = params["taum_exc"] * ms
     EL_e = params["EL_exc"] * mV
@@ -263,7 +265,7 @@ def network_sim(signal, params: dict):
     print("Initializing net ...")
     start_init = time.time()
 
-    net = Network(E, I, rate_monitor_e, rate_monitor_i,)
+    net = Network(E, I, rate_monitor_e, rate_monitor_i, )
 
     if params["poisson_enabled"][0]:
         # dv_1 = sigma^2 / mu
@@ -280,7 +282,7 @@ def network_sim(signal, params: dict):
             target_var="v",
             N=params["poisson_size"],
             rate=neuron_rate_ * Hz,
-            weight="((VT_e - Vr_e) * poisson_strength_1 * taum_e) / R_e / C_e",
+            weight="(VT_e - Vr_e) * poisson_strength_1",
         )
         net.add(P_E)
 
@@ -290,7 +292,7 @@ def network_sim(signal, params: dict):
                 target_var="v",
                 N=params["poisson_size"],
                 rate=neuron_rate_ * Hz,
-                weight="((VT_i - Vr_i) * poisson_strength_1 * taum_i) / R_i / C_i",
+                weight="(VT_i - Vr_i) * poisson_strength_1",
             )
             net.add(P_I)
 
@@ -306,7 +308,7 @@ def network_sim(signal, params: dict):
         if params["poisson_enabled"][1]:
             # dv_2 = p * dv_1
             poisson_strength_1 = (
-                params["poisson_variance"] / params["poisson_mean_input"]
+                    params["poisson_variance"] / params["poisson_mean_input"]
             )
 
             # second network gets higher strength which leads to lower rate.
@@ -330,7 +332,7 @@ def network_sim(signal, params: dict):
                 target_var="v",
                 N=params["poisson_size"],
                 rate=rate_2 * Hz,
-                weight="((VT_e - Vr_e) * poisson_strength_1 * taum_e) / R_e / C_e",
+                weight="(VT_e - Vr_e) * poisson_strength_1",
             )
             net.add(P_E_2)
 
@@ -340,7 +342,7 @@ def network_sim(signal, params: dict):
                     target_var="v",
                     N=params["poisson_size"],
                     rate=rate_2 * Hz,
-                    weight="((VT_i - Vr_i) * poisson_strength_1 * taum_i) / R_i / C_i",
+                    weight="(VT_i - Vr_i) * poisson_strength_1",
                 )
                 net.add(P_I_2)
 
@@ -585,21 +587,21 @@ def network_sim(signal, params: dict):
 
 
 def build_synapses_multiple_populations(
-    E,
-    E2,
-    I,
-    I2,
-    p_etoe,
-    p_etoi,
-    p_itoe,
-    p_itoi,
-    p_ppee,
-    p_ppei,
-    N_e,
-    N_i,
-    net,
-    params,
-    simclock,
+        E,
+        E2,
+        I,
+        I2,
+        p_etoe,
+        p_etoi,
+        p_itoe,
+        p_itoi,
+        p_ppee,
+        p_ppei,
+        N_e,
+        N_i,
+        net,
+        params,
+        simclock,
 ):
     syn_EE2 = Synapses(E2, E2, on_pre="g_ampa+=J_etoe", clock=simclock)
     syn_EE2.connect(p=p_etoe)
@@ -642,7 +644,7 @@ def build_synapses_multiple_populations(
 
 
 def build_synapses_first_population(
-    E, I, p_etoe, p_etoi, p_itoe, p_itoi, N_e, N_i, net, simclock
+        E, I, p_etoe, p_etoi, p_itoe, p_itoi, N_e, N_i, net, simclock
 ):
     synEE = Synapses(E, E, on_pre="g_ampa+=J_etoe", clock=simclock)
     synEE.connect(p=p_etoe)
@@ -662,16 +664,16 @@ def build_synapses_first_population(
 
 
 def create_neuron_group_2(
-    N_e,
-    N_i,
-    have_adap_e,
-    have_adap_i,
-    model_eqs_e2,
-    model_eqs_i2,
-    params,
-    simclock,
-    t_ref_e,
-    t_ref_i,
+        N_e,
+        N_i,
+        have_adap_e,
+        have_adap_i,
+        model_eqs_e2,
+        model_eqs_i2,
+        params,
+        simclock,
+        t_ref_e,
+        t_ref_i,
 ):
     E2 = NeuronGroup(
         N=N_e,
@@ -696,16 +698,16 @@ def create_neuron_group_2(
 
 
 def create_neuron_group_1(
-    N_e,
-    N_i,
-    have_adap_e,
-    have_adap_i,
-    model_eqs_e1,
-    model_eqs_i1,
-    params,
-    simclock,
-    t_ref_e,
-    t_ref_i,
+        N_e,
+        N_i,
+        have_adap_e,
+        have_adap_i,
+        model_eqs_e1,
+        model_eqs_i1,
+        params,
+        simclock,
+        t_ref_e,
+        t_ref_i,
 ):
     E = NeuronGroup(
         N=N_e,
