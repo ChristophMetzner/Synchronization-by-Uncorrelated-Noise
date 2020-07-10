@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
 import pandas as pd
+import os
 
 from typing import Tuple, List, Dict
 from matplotlib import mlab
@@ -33,6 +34,7 @@ def plot_exploration(
     vmin_phase: float = 0.0,
     vmax_freq: int = 120,
     vmin_ratio: int = 0,
+    vmax_bandpower: int = 1000
 ):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
@@ -109,7 +111,7 @@ def plot_exploration(
         title="Bandpower of Dominant Frequency of Network 1",
         colorbar="Bandpower",
         vmin=0.0,
-        vmax=1000,
+        vmax=vmax_bandpower,
         ax=axs[0, 1],
     )
 
@@ -133,7 +135,7 @@ def plot_exploration(
         title="Bandpower of Dominant Frequency of Network 2",
         colorbar="Bandpower",
         vmin=0.0,
-        vmax=1000,
+        vmax=vmax_bandpower,
         ax=axs[1, 1],
     )
 
@@ -409,6 +411,78 @@ def lfp(
     return fig, ax
 
 
+def psd_multiple_models(
+    models: list,
+    fig_size: tuple,
+    duration: int = None,
+    dt: float = 1.0,
+    skip: int = 200,
+    xlim: int = 120,
+):
+    duration = duration if duration else models[0]["runtime"]
+    if skip:
+        duration -= skip
+
+    net_1_1, net_1_2 = processing.lfp_nets(models[0], skip=skip)
+    net_2_1, net_2_2 = processing.lfp_nets(models[1], skip=skip)
+
+    # number of data points used in each block for the FTT.
+    # Set to number of data points in the input signal.
+    NFFT = int((duration / dt / 1.0))
+
+    # Calculating the Sampling frequency.
+    # As our time unit is here ms and step size of 1 ms, a fs of 1.0 is the best we can do.
+    fs = 1.0 / dt
+
+    # NFFT: length of each segment, set here to 1.0.
+    # Thus each segment is exactly one data point
+    psd1_1, freqs = mlab.psd(
+        net_1_1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none
+    )
+    psd1_2, _ = mlab.psd(net_1_2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
+
+    psd2_1, freqs = mlab.psd(
+        net_2_1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none
+    )
+    psd2_2, _ = mlab.psd(net_2_2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
+
+    # We multiply by 1000 to get from ms to s.
+    freqs = freqs * 1000
+
+    # Remove unwanted power at 0 Hz
+    psd1_1[0] = 0.0
+    psd1_2[0] = 0.0
+    psd2_1[0] = 0.0
+    psd2_2[0] = 0.0
+
+    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
+    ax = fig.add_subplot(111)
+    ax.set_title("Power Spectral Density", fontsize=16)
+    ax.set_xlabel("Frequency (Hz)", fontsize=16)
+    ax.set_ylabel("Density", fontsize=16)
+
+    # first model
+    ax.plot(freqs, psd1_1, alpha=0.3, linewidth=5.5, c=c_exc)
+    ax.plot(freqs, psd1_2, alpha=0.3, linewidth=5.5, c="royalblue")
+
+    # second model
+    ax.plot(freqs, psd2_1, alpha=1.0, linewidth=5.5, c=c_exc)
+    ax.plot(freqs, psd2_2, alpha=1.0, linewidth=5.5, c="royalblue")
+
+    plt.legend(
+        [
+            "strength = 1.0 - Net 1",
+            "strength = 1.0 - Net 2",
+            "strength = 12.5 - Net 1",
+            "sterngth = 12.5 - Net 2",
+        ]
+    )
+
+    ax.set_xlim([0, xlim])
+    ax.set_xticks(range(0, xlim + 10, 10))
+    return fig, ax
+
+
 def psd(
     model: dict,
     title: str = None,
@@ -516,9 +590,9 @@ def raster(
         print("0 size array of spikes, cannot create raster plot.")
         return
 
-    ax.set_title(title if title else "Raster")
-    ax.set_xlabel("Time in ms")
-    ax.set_ylabel("Neuron index")
+    ax.set_title(title if title else "Raster", fontsize=16)
+    ax.set_xlabel("Time in ms", fontsize=16)
+    ax.set_ylabel("Neuron index", fontsize=16)
 
     ax.plot(s_e[1] * 1000, s_e[0], "k.", c=c_exc, markersize="2.0")
     ax.plot(
@@ -973,8 +1047,16 @@ def _prepare_data(metric: str, models: [dict], x: str, y: str):
     return data
 
 
-def _save_to_file(name: str, save: bool, key: str = None, folder: str = None):
+def _save_to_file(
+    name: str, save: bool, key: str = None, folder: str = None, dpi: int = 300
+):
     if save:
         base = f"{name}-{key}.png" if key else f"{name}.png"
         fname = f"{folder}/{base}" if folder else base
-        plt.savefig(f"{constants.PLOTS_PATH}/{fname}")
+
+        if folder:
+            os.makedirs(constants.PLOTS_PATH + "/" + folder, exist_ok=True)
+
+        plt.tight_layout()
+        plt.savefig(f"{constants.PLOTS_PATH}/{fname}", dpi=dpi, bbox_inches="tight")
+
