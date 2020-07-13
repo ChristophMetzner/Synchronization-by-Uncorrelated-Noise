@@ -149,11 +149,6 @@ def get_params():
     params["wm_init"] = 0.0  # [pA]
 
     # for recurrency
-    params["const_delay"] = 0.1  # [ms]
-
-    # for plotting
-    # colors[modelname] = color
-    # TODO: do we need this?
-    # params["color"] = {"net": "b"}
-    # params["lw"] = {"net": "1"}
+    params["const_delay"] = 0.2  # [ms]
+    
     return params

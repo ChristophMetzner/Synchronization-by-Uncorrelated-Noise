@@ -34,7 +34,7 @@ def plot_exploration(
     vmin_phase: float = 0.0,
     vmax_freq: int = 120,
     vmin_ratio: int = 0,
-    vmax_bandpower: int = 1000
+    vmax_bandpower: int = 1000,
 ):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
@@ -51,36 +51,40 @@ def plot_exploration(
     if len(ex.explore_params.keys()) == 1:
         param = list(ex.explore_params.keys())[0]
 
+        x = "poisson_variance"
+
         metric = "freq_ratio"
-        fig, ax = plt.subplots(figsize=(6, 3))
-        ax.plot(ex.df[param], ex.df[metric], c=c_inh, marker=".")
-        ax.set_title("Frequency Ratio", fontsize=16)
-        ax.set_xlabel(param, fontsize=16)
-        ax.set_ylim(0, 1)
+        fig, ax = plt.subplots(figsize=(15, 3))
+        df = ex.df.sort_values(by=param)
+        ax.plot(df[param], df[metric], c=c_inh, marker=".")
+        ax.set_title("Frequency Ratio")
+        ax.set_xlabel(param)
+        ax.set_ylim(0, 1.1)
         ax.set_ylabel("Dom Freq Ratio")
 
-        fig, ax = plt.subplots(figsize=(6, 3))
-        ax.plot(ex.df[param], ex.df["phase_synchronization"], linewidth=2.0, marker=".")
-        ax.plot(ex.df[param], ex.df["plv_net_1_e"], linewidth=2.0, marker=".")
-        ax.plot(ex.df[param], ex.df["plv_net_1_i"], linewidth=2.0, marker=".")
-        ax.plot(ex.df[param], ex.df["plv_net_2_e"], linewidth=2.0, marker=".")
-        ax.plot(ex.df[param], ex.df["plv_net_2_i"], linewidth=2.0, marker=".")
+        metric = "mean_phase_coherence"
+        fig, ax = plt.subplots(figsize=(15, 3))
+        df = ex.df.sort_values(by=param)
+        ax.plot(df[param], df[metric], linewidth=2.0, marker=".", color=c_inh)
+        # ax.plot(ex.df[param], ex.df["phase_synchronization"], linewidth=2.0, marker=".")
+        ax.plot(df[param], df["plv_net_1_e"], linewidth=2.0, marker=".")
+        ax.plot(df[param], df["plv_net_1_i"], linewidth=2.0, marker=".")
+        ax.plot(df[param], df["plv_net_2_e"], linewidth=2.0, marker=".")
+        ax.plot(df[param], df["plv_net_2_i"], linewidth=2.0, marker=".")
 
         plt.legend(
             [
-                "Frequency Ratio",
-                "Inter Network",
-                "Net 1 - Excitatory",
-                "Net 1 - Inhibitory",
-                "Net 2 - Excitatory",
-                "Net 2 - Inhibitory",
+                "Mean Phase Coherence",
+                "PLV within Net 1 E",
+                "PLV within Net 1 I",
+                "PLV within Net 2 E",
+                "PLV within Net 2 I",
             ]
         )
-
-        ax.set_title("Phase Synchronization", fontsize=16)
-        ax.set_xlabel(param, fontsize=16)
+        ax.set_title("Phase Locking")
+        ax.set_xlabel(param)
+        ax.set_ylabel("Mean Phase Coherence")
         ax.set_ylim(0, 1)
-        ax.set_ylabel("Kuramoto Order Parameter")
 
         return
 
@@ -457,7 +461,7 @@ def psd_multiple_models(
 
     fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
     ax = fig.add_subplot(111)
-    ax.set_title("Power Spectral Density", fontsize=16)
+    # ax.set_title("Power Spectral Density", fontsize=16)
     ax.set_xlabel("Frequency (Hz)", fontsize=16)
     ax.set_ylabel("Density", fontsize=16)
 

@@ -323,7 +323,7 @@ def network_sim(signal, params: dict):
             # )
 
             # rate of 2nd network is fraction of 1st network.
-            rate_2 = neuron_rate_ * params["poisson_p"]
+            rate_2 = params["poisson_p"] * neuron_rate_
 
             print(f"Net 2 - rate for single neuron {rate_2}")
 
