@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from brian2 import *
+from brian2tools import *
 
 import os
 import time
@@ -88,9 +89,11 @@ def network_sim(signal, params: dict):
     # what is recorded during the simulation
     record_spikes = params["net_record_spikes"]
     record_all_v_at_times = params["net_record_all_neurons"]
+    record_synapses = params["net_record_synapses"]
+    plot_connectivity = params["plot_connectivity"]
 
-    # simulation time step
-    simclock = Clock(dt_sim)
+    # Simulation Clock
+    clock = Clock(dt_sim)
 
     w_refr_e = (
         " (unless refractory)"
@@ -196,7 +199,7 @@ def network_sim(signal, params: dict):
         model_eqs_e1,
         model_eqs_i1,
         params,
-        simclock,
+        clock,
         t_ref_e,
         t_ref_i,
     )
@@ -253,7 +256,7 @@ def network_sim(signal, params: dict):
             model_eqs_e2,
             model_eqs_i2,
             params,
-            simclock,
+            clock,
             t_ref_e,
             t_ref_i,
         )
@@ -266,7 +269,7 @@ def network_sim(signal, params: dict):
 
     net = Network(E, I, rate_monitor_e, rate_monitor_i,)
 
-    ###  Poisson Input
+    # Poisson Input
     poisson_strength = params["poisson_variance"] / params["poisson_mean_input"]
     poisson_I_ratio = params["poisson_I_ratio"]
     N_P = params["poisson_size"]
@@ -303,7 +306,7 @@ def network_sim(signal, params: dict):
             net.add(P_I)
 
     build_synapses_first_population(
-        E, I, p_etoe, p_etoi, p_itoe, p_itoi, N_e, N_i, net, simclock
+        E, I, p_etoe, p_etoi, p_itoe, p_itoi, net, clock, plot_connectivity
     )
 
     if N_pop > 1:
@@ -347,11 +350,9 @@ def network_sim(signal, params: dict):
             p_itoi,
             p_ppee,
             p_ppei,
-            N_e,
-            N_i,
             net,
             params,
-            simclock,
+            clock,
         )
 
     print("Initialization time: {}s".format(time.time() - start_init))
@@ -435,6 +436,12 @@ def network_sim(signal, params: dict):
         print("Lower bound active at {}".format(params["net_v_lower_bound"]))
         net.add(V_lowerbound_I2)
 
+    if record_synapses:
+        g_ampa_monitor = StateMonitor(E, "g_ampa", record=[0], clock=clock)
+        g_gaba_monitor = StateMonitor(I, "g_gaba", record=[0], clock=clock)
+        net.add(g_ampa_monitor)
+        net.add(g_gaba_monitor)
+
     if record_all_v_at_times:
         # define clock which runs on a very course time grid (memory issue)
         clock_record_all = Clock(params["net_record_all_neurons_dt"] * ms)
@@ -507,6 +514,10 @@ def network_sim(signal, params: dict):
         "r_i1_t": net_t_i1,
         "t": time_r,
         "dt_sim": dt_sim,
+        "ampa": g_ampa_monitor.g_ampa / nS,
+        "ampa_t": g_ampa_monitor.t / ms,
+        "gaba": g_gaba_monitor.g_gaba / nS,
+        "gaba_t": g_ampa_monitor.t / ms,
     }
 
     if N_pop > 1:
@@ -581,21 +592,7 @@ def network_sim(signal, params: dict):
 
 
 def build_synapses_multiple_populations(
-    E,
-    E2,
-    I,
-    I2,
-    p_etoe,
-    p_etoi,
-    p_itoe,
-    p_itoi,
-    p_ppee,
-    p_ppei,
-    N_e,
-    N_i,
-    net,
-    params,
-    simclock,
+    E, E2, I, I2, p_etoe, p_etoi, p_itoe, p_itoi, p_ppee, p_ppei, net, params, simclock,
 ):
     syn_EE2 = Synapses(E2, E2, on_pre="g_ampa+=J_etoe", clock=simclock)
     syn_EE2.connect(p=p_etoe)
@@ -638,15 +635,15 @@ def build_synapses_multiple_populations(
 
 
 def build_synapses_first_population(
-    E, I, p_etoe, p_etoi, p_itoe, p_itoi, N_e, N_i, net, simclock
+    E, I, p_etoe, p_etoi, p_itoe, p_itoi, net, simclock, plot_connectivity
 ):
-    synEE = Synapses(E, E, on_pre="g_ampa+=J_etoe", clock=simclock)
-    synEE.connect(p=p_etoe)
-    net.add(synEE)
+    syn_EE = Synapses(E, E, on_pre="g_ampa+=J_etoe", clock=simclock)
+    syn_EE.connect(p=p_etoe)
+    net.add(syn_EE)
 
-    synEI = Synapses(E, I, on_pre="g_ampa+=J_etoi", clock=simclock)
-    synEI.connect(p=p_etoi)
-    net.add(synEI)
+    syn_EI = Synapses(E, I, on_pre="g_ampa+=J_etoi", clock=simclock)
+    syn_EI.connect(p=p_etoi)
+    net.add(syn_EI)
 
     syn_IE = Synapses(I, E, on_pre="g_gaba+=J_itoe", clock=simclock)
     syn_IE.connect(p=p_itoe)
@@ -655,6 +652,20 @@ def build_synapses_first_population(
     syn_II = Synapses(I, I, on_pre="g_gaba+=J_itoi", clock=simclock)
     syn_II.connect(p=p_itoi)
     net.add(syn_II)
+
+    if plot_connectivity:
+        fig, axs = plt.subplots(figsize=(30, 10), nrows=2, ncols=2)
+        plt.title("Connectivity of E and I population inside Network 1", fontsize=14)
+
+        axs[0, 0].set_title("E to E")
+        axs[0, 1].set_title("E to I")
+        axs[1, 0].set_title("I to E")
+        axs[1, 1].set_title("I to I")
+
+        brian_plot(syn_EE, axes=axs[0, 0])
+        brian_plot(syn_EI, axes=axs[0, 1])
+        brian_plot(syn_IE, axes=axs[1, 0])
+        brian_plot(syn_II, axes=axs[1, 1])
 
 
 def create_neuron_group_2(

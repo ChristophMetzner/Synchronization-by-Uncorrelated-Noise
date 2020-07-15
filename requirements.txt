@@ -7,3 +7,4 @@ seaborn==0.10.0
 jupyter==1.0.0
 jupyterlab==2.1.5
 mopet==0.1.2
+brian2tools==0.2.1.1

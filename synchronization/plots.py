@@ -583,12 +583,12 @@ def raster(
         ax = fig.add_subplot(111)
 
     if population == 1:
-        s_e = model["net_spikes_e"][:N_e]
-        s_i = model["net_spikes_i1"][:N_i]
+        s_e = model["net_spikes_e"]
+        s_i = model["net_spikes_i1"]
 
     else:
-        s_e = model["net_spikes_e2"][:N_e]
-        s_i = model["net_spikes_i2"][:N_i]
+        s_e = model["net_spikes_e2"]
+        s_i = model["net_spikes_i2"]
 
     if s_e[0].size == 0 and s_i[0].size == 0:
         print("0 size array of spikes, cannot create raster plot.")
@@ -696,6 +696,21 @@ def population_rates(model: dict, skip: int = None):
         axs[1, 1].set_title("Population 2 - Inhibitory")
         axs[1, 1].set_xlabel("Time in ms")
         axs[1, 1].set_ylabel("Firing Rate")
+
+
+def synaptic_conductance(model: dict):
+    """
+    Plots g_AMPA and g_GABA trace of E and I neuron respectively.
+
+    :param model: current model, must contain recorded AMPA and GABA conductances.
+    """
+    plt.figure(figsize=(20, 3))
+    plt.xlabel("Time in [ms]", fontsize=14)
+    plt.ylabel("Conductance in [nS]", fontsize=14)
+    plt.plot(model["ampa_t"], model["ampa"][0], c=c_inh)
+    plt.plot(model["gaba_t"], model["gaba"][0])
+    plt.legend(["AMPA Conductance", "GABA Conductance"])
+    plt.tight_layout()
 
 
 def phases_inter_nets(model: dict):
@@ -1063,4 +1078,3 @@ def _save_to_file(
 
         plt.tight_layout()
         plt.savefig(f"{constants.PLOTS_PATH}/{fname}", dpi=dpi, bbox_inches="tight")
-

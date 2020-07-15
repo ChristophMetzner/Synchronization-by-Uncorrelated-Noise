@@ -22,14 +22,15 @@ def get_params():
     # Ratio between input strengths of the two networks.
     params["poisson_p"] = 0.83
     
-
     # params for ou process #
     params["ou_enabled"] = [True, True]
     params["ou_stationary"] = True  # if False --> ou process starts at X0
 
     # parameters for network simulation
-    params["net_record_spikes"] = 1000  # 200 # number of neurons to record spikes from
-    params["net_record_all_neurons"] = True  # False
+    params["net_record_spikes"] = 1000
+    params["net_record_all_neurons"] = True
+    params["net_record_synapses"] = True
+    params["plot_connectivity"] = False
 
     # keep this high; otherwise great deal of memory, zero if not
     params["net_record_all_neurons_dt"] = 1.0
