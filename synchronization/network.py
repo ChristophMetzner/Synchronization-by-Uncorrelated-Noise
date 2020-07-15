@@ -184,6 +184,7 @@ def network_sim(signal, params: dict):
     J_itoi = params["J_itoi"] * nS
     J_ppee = params["J_ppee"] * nS
     J_ppei = params["J_ppei"] * nS
+    J_ppii = params["J_ppii"] * nS
     p_etoe = params["p_etoe"]
     p_etoi = params["p_etoi"]
     p_itoe = params["p_itoe"]
@@ -280,9 +281,8 @@ def network_sim(signal, params: dict):
         poisson_rate = poisson_group_rate / params["poisson_size"]
 
         print(
-            f"Net 1 - poisson rate {poisson_group_rate} - single neuron {poisson_rate}"
+            f"Net 1 - poisson rate {poisson_group_rate} - single neuron {poisson_rate} - strength {poisson_strength}"
         )
-        print(f"Poisson strength: {poisson_strength}")
 
         P_E = PoissonInput(
             target=E,
@@ -611,27 +611,39 @@ def build_synapses_multiple_populations(
     net.add(synII2)
 
     """
-    Connections between populations
+    Synapses between populations
     """
-    SynE1E2 = Synapses(E, E2, on_pre="g_ampa+=J_ppee", clock=simclock)
-    SynE1E2.connect(p=p_ppee)
-    SynE1E2.delay = "{} * ms".format(params["const_delay"], clock=simclock)
-    net.add(SynE1E2)
+    if params["syn_net_exc"]:
+        SynE1E2 = Synapses(E, E2, on_pre="g_ampa+=J_ppee", clock=simclock)
+        SynE1E2.connect(p=p_ppee)
+        SynE1E2.delay = "{} * ms".format(params["const_delay"], clock=simclock)
+        net.add(SynE1E2)
 
-    SynE2E1 = Synapses(E2, E, on_pre="g_ampa+=J_ppee", clock=simclock)
-    SynE2E1.connect(p=p_ppee)
-    SynE2E1.delay = "{} * ms".format(params["const_delay"], clock=simclock)
-    net.add(SynE2E1)
+        SynE2E1 = Synapses(E2, E, on_pre="g_ampa+=J_ppee", clock=simclock)
+        SynE2E1.connect(p=p_ppee)
+        SynE2E1.delay = "{} * ms".format(params["const_delay"], clock=simclock)
+        net.add(SynE2E1)
 
-    SynE1I2 = Synapses(E, I2, on_pre="g_ampa+=J_ppei", clock=simclock)
-    SynE1I2.connect(p=p_ppei)
-    SynE1I2.delay = "{} * ms".format(params["const_delay"])
-    net.add(SynE1I2)
+        SynE1I2 = Synapses(E, I2, on_pre="g_ampa+=J_ppei", clock=simclock)
+        SynE1I2.connect(p=p_ppei)
+        SynE1I2.delay = "{} * ms".format(params["const_delay"])
+        net.add(SynE1I2)
 
-    SynE2I1 = Synapses(E2, I, on_pre="g_ampa+=J_ppei", clock=simclock)
-    SynE2I1.connect(p=p_ppei)
-    SynE2I1.delay = "{} * ms".format(params["const_delay"])
-    net.add(SynE2I1)
+        SynE2I1 = Synapses(E2, I, on_pre="g_ampa+=J_ppei", clock=simclock)
+        SynE2I1.connect(p=p_ppei)
+        SynE2I1.delay = "{} * ms".format(params["const_delay"])
+        net.add(SynE2I1)
+
+    if params["syn_net_inh"]:
+        syn_II2 = Synapses(I, I2, on_pre="g_gaba+=J_ppii", clock=simclock)
+        syn_II2.connect(p=p_ppei)
+        syn_II2.delay = "{} * ms".format(params["const_delay"])
+        net.add(syn_II2)
+
+        syn_I2I = Synapses(I2, I, on_pre="g_gaba+=J_ppii", clock=simclock)
+        syn_I2I.connect(p=p_ppei)
+        syn_I2I.delay = "{} * ms".format(params["const_delay"])
+        net.add(syn_I2I)
 
 
 def build_synapses_first_population(

@@ -51,8 +51,6 @@ def plot_exploration(
     if len(ex.explore_params.keys()) == 1:
         param = list(ex.explore_params.keys())[0]
 
-        x = "poisson_variance"
-
         metric = "freq_ratio"
         fig, ax = plt.subplots(figsize=(15, 3))
         df = ex.df.sort_values(by=param)
@@ -538,10 +536,10 @@ def psd(
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("Density")
 
-    if groups == "excitatory":
+    if groups == "EXC":
         ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
 
-    elif groups == "inhibitory":
+    elif groups == "INH":
         ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
 
     else:

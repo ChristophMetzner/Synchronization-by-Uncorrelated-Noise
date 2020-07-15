@@ -55,7 +55,7 @@ def get_params():
     # Adds randomness to initial mebmrane voltage of neurons.
     params["net_random_membrane_voltage"] = True
 
-    ### Brian2 specific parameters
+    # Brian2 specific parameters
     # standalone mode for network sim
     params["brian2_standalone"] = False
     params["brian2_device"] = "cpp_standalone"
@@ -64,8 +64,7 @@ def get_params():
     # integration method for (should be specified for brian2_rc3)
     params["net_integration_method"] = "heun"  # 'heun'
 
-    ### Neuron Model Parameters (AdEX)
-
+    # Neuron Model Parameters (AdEX)
     # Excitatory cells
     params["C_exc"] = 200.0  # [pF] Capacitance
     params["gL_exc"] = 10.0  # [nS] Conductance
@@ -118,26 +117,24 @@ def get_params():
     # for recurrency
     factor = 10.0
 
+    # Synapses between populations
+    params["syn_net_exc"] = True
+    params["syn_net_inh"] = False
+
     # [nS] synaptic strength E-E conns within population
     params["J_etoe"] = 0.01 * factor
-
     # [nS] synaptic strength E-I conns within population
-    # .25
     params["J_etoi"] = 0.05 * factor
-
     # [nS] synaptic strength I-E conns within population
     params["J_itoe"] = 1.0 * factor
-
     # [nS] synaptic strength I-I conns within population
     params["J_itoi"] = 0.3 * factor
-
     # [nS] synaptic strength E-E conns between population
-    # .1
     params["J_ppee"] = 0.2
-
     # [nS] synaptic strength E-I conns between population
-    # .1
     params["J_ppei"] = 0.1
+    # [nS] synaptic strength I-I conns between population
+    params["J_ppii"] = 0.1
 
     # connectivity inside populations E <-> I
     params["p_etoe"] = 0.4
