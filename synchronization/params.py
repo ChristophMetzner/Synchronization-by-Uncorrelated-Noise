@@ -12,13 +12,16 @@ def get_params():
     # params for poisson input
     params["poisson_enabled"] = [False, False]
     # Determines if I neurons receive Poisson Input.
-    params["poisson_enabled_I"] = False
+    params["poisson_I_enabled"] = False
+    # Proportion of Poisson Noise for I.
+    params["poisson_I_ratio"] = 0.5
     params["poisson_mean_input"] = 120
     # Number of Neurons per PoissonInput.
     params["poisson_size"] = 800
     params["poisson_variance"] = 1.0
     # Ratio between input strengths of the two networks.
     params["poisson_p"] = 0.83
+    
 
     # params for ou process #
     params["ou_enabled"] = [True, True]

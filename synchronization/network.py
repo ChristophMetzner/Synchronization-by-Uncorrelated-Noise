@@ -19,8 +19,7 @@ def network_sim(signal, params: dict):
     else:
         prefs.codegen.target = params["brian2_codegen_target"]
 
-    # stripe on brian units within the copied dict for the simulation so that brian can work with them
-
+    # Stripe on brian units within the copied dict for the simulation so that brian can work with them
     ### Neuron group specific parameters
     ### Excitatory cells
     C_e = params["C_exc"] * pF
@@ -82,7 +81,7 @@ def network_sim(signal, params: dict):
     mu_ext_array_e = signal[0]  # [mV/ms]
     sigma_ext_array_e = signal[1]  # [mV/sqrt(ms)]
 
-    # todo: Change runner.py to create specific input for inhibitory population(s)
+    # TODO: this should be signal[0][1] ?
     mu_ext_array_i = np.zeros_like(mu_ext_array_e)  # signal[0] # [mV/ms]
     sigma_ext_array_i = np.zeros_like(mu_ext_array_e)  # signal[1] # [mV/sqrt(ms)]
 
@@ -265,34 +264,41 @@ def network_sim(signal, params: dict):
     print("Initializing net ...")
     start_init = time.time()
 
-    net = Network(E, I, rate_monitor_e, rate_monitor_i, )
+    net = Network(E, I, rate_monitor_e, rate_monitor_i,)
 
+    ###  Poisson Input
+    poisson_strength = params["poisson_variance"] / params["poisson_mean_input"]
+    poisson_I_ratio = params["poisson_I_ratio"]
+    N_P = params["poisson_size"]
     if params["poisson_enabled"][0]:
         # dv_1 = sigma^2 / mu
-        poisson_strength_1 = params["poisson_variance"] / params["poisson_mean_input"]
-
+        poisson_group_rate = params["poisson_mean_input"] / poisson_strength
         # lambda_1 = mu / dv_1 / #neurons
-        group_rate_ = params["poisson_mean_input"] / poisson_strength_1
-        neuron_rate_ = group_rate_ / params["poisson_size"]
-        print(f"Net 1 - poisson rate {group_rate_} - single neuron {neuron_rate_}")
-        print(f"Poisson strength: {poisson_strength_1}")
+        poisson_rate = poisson_group_rate / params["poisson_size"]
+
+        print(
+            f"Net 1 - poisson rate {poisson_group_rate} - single neuron {poisson_rate}"
+        )
+        print(f"Poisson strength: {poisson_strength}")
 
         P_E = PoissonInput(
             target=E,
             target_var="v",
-            N=params["poisson_size"],
-            rate=neuron_rate_ * Hz,
-            weight="(VT_e - Vr_e) * poisson_strength_1",
+            N=N_P,
+            rate=poisson_rate * Hz,
+            weight="(VT_e - Vr_e) * poisson_strength",
         )
         net.add(P_E)
 
-        if params["poisson_enabled_I"]:
+        if params["poisson_I_enabled"]:
+            I_rate = poisson_rate * poisson_I_ratio
+            print("Poisson rate to I pop:", I_rate)
             P_I = PoissonInput(
                 target=I,
                 target_var="v",
-                N=params["poisson_size"],
-                rate=neuron_rate_ * Hz,
-                weight="(VT_i - Vr_i) * poisson_strength_1",
+                N=N_P,
+                rate=I_rate * Hz,
+                weight="(VT_i - Vr_i) * poisson_strength * poisson_I_ratio",
             )
             net.add(P_I)
 
@@ -306,25 +312,8 @@ def network_sim(signal, params: dict):
         net.add(E2, I2, rate_monitor_e2, rate_monitor_i2)
 
         if params["poisson_enabled"][1]:
-            # dv_2 = p * dv_1
-            poisson_strength_1 = (
-                    params["poisson_variance"] / params["poisson_mean_input"]
-            )
-
-            # second network gets higher strength which leads to lower rate.
-            # dv_2
-            # poisson_strength_2 = poisson_strength_1 * params["poisson_p"]
-
-            # lambda_2 = mu / dv_2 / #neurons
-            # rate_2 = (
-            #     params["poisson_mean_input"]
-            #     / poisson_strength_2
-            #     / params["poisson_size"]
-            # )
-
-            # rate of 2nd network is fraction of 1st network.
-            rate_2 = params["poisson_p"] * neuron_rate_
-
+            # Rate of 2nd network is fraction of 1st network.
+            rate_2 = params["poisson_p"] * poisson_rate
             print(f"Net 2 - rate for single neuron {rate_2}")
 
             P_E_2 = PoissonInput(
@@ -332,17 +321,18 @@ def network_sim(signal, params: dict):
                 target_var="v",
                 N=params["poisson_size"],
                 rate=rate_2 * Hz,
-                weight="(VT_e - Vr_e) * poisson_strength_1",
+                weight="(VT_e - Vr_e) * poisson_strength",
             )
             net.add(P_E_2)
 
-            if params["poisson_enabled_I"]:
+            if params["poisson_I_enabled"]:
+                I_rate = rate_2 * poisson_I_ratio
                 P_I_2 = PoissonInput(
                     target=I2,
                     target_var="v",
-                    N=params["poisson_size"],
-                    rate=rate_2 * Hz,
-                    weight="(VT_i - Vr_i) * poisson_strength_1",
+                    N=N_P,
+                    rate=I_rate * Hz,
+                    weight="(VT_i - Vr_i) * poisson_strength * poisson_I_ratio",
                 )
                 net.add(P_I_2)
 
@@ -368,18 +358,20 @@ def network_sim(signal, params: dict):
 
     # Initial distribution of the network simulation
     if params["net_random_membrane_voltage"]:
+        # Random initialization.
         # Borrowed from https://brian2.readthedocs.io/en/stable/examples/frompapers.Stimberg_et_al_2018.example_1_COBA.html
         E.v = "EL_e + rand() * (VT_e - EL_e)"
         I.v = "EL_i + rand() * (VT_i - EL_i)"
+
+        if N_pop > 1:
+            E2.v = "EL_e + rand() * (VT_e - EL_e)"
+            I2.v = "EL_i + rand() * (VT_i - EL_i)"
     else:
+        # Fixed value for all neurons.
         E.v = np.ones(len(E)) * params["net_delta_peak_E"] * mV
         I.v = np.ones(len(I)) * params["net_delta_peak_I"] * mV
 
-    if N_pop > 1:
-        if params["net_random_membrane_voltage"]:
-            E2.v = "EL_e + rand() * (VT_e - EL_e)"
-            I2.v = "EL_i + rand() * (VT_i - EL_i)"
-        else:
+        if N_pop > 1:
             E2.v = np.ones(len(E2)) * params["net_delta_peak_E"] * mV
             I2.v = np.ones(len(I2)) * params["net_delta_peak_I"] * mV
 
@@ -446,6 +438,9 @@ def network_sim(signal, params: dict):
     if record_all_v_at_times:
         # define clock which runs on a very course time grid (memory issue)
         clock_record_all = Clock(params["net_record_all_neurons_dt"] * ms)
+
+        # TODO: add range to limit number of recorded traces
+        # range(min(params['net_record_example_v_traces'] ,N_total))
         v_monitor_record_all_E = StateMonitor(
             E, "v", record=True, clock=clock_record_all
         )
@@ -485,13 +480,11 @@ def network_sim(signal, params: dict):
             spike_monitor_I2 = SpikeMonitor(record_spikes_group_I2, name="I2_spikemon")
             net.add(spike_monitor_I2, record_spikes_group_I2)
 
-    print("==== Running Network ... ====")
     start_time = time.time()
     net.run(runtime, report="text")
-    print("==== Network Run Finished ====")
 
     if params["brian2_standalone"]:
-        project_dir = cpp_default_dir + "/test" + str(os.getpid())
+        project_dir = cpp_default_dir + "/sim" + str(os.getpid())
         device.build(directory=project_dir, compile=True, run=True, debug=False)
 
     run_time = time.time() - start_time
@@ -579,6 +572,7 @@ def network_sim(signal, params: dict):
             results["v_all_neurons_i2"] = v_all_neurons_i2
             results["t_all_neurons_i2"] = t_all_neurons_i2
 
+    # Reinit device for next run.
     if params["brian2_standalone"]:
         shutil.rmtree(project_dir)
         device.reinit()
@@ -587,21 +581,21 @@ def network_sim(signal, params: dict):
 
 
 def build_synapses_multiple_populations(
-        E,
-        E2,
-        I,
-        I2,
-        p_etoe,
-        p_etoi,
-        p_itoe,
-        p_itoi,
-        p_ppee,
-        p_ppei,
-        N_e,
-        N_i,
-        net,
-        params,
-        simclock,
+    E,
+    E2,
+    I,
+    I2,
+    p_etoe,
+    p_etoi,
+    p_itoe,
+    p_itoi,
+    p_ppee,
+    p_ppei,
+    N_e,
+    N_i,
+    net,
+    params,
+    simclock,
 ):
     syn_EE2 = Synapses(E2, E2, on_pre="g_ampa+=J_etoe", clock=simclock)
     syn_EE2.connect(p=p_etoe)
@@ -644,7 +638,7 @@ def build_synapses_multiple_populations(
 
 
 def build_synapses_first_population(
-        E, I, p_etoe, p_etoi, p_itoe, p_itoi, N_e, N_i, net, simclock
+    E, I, p_etoe, p_etoi, p_itoe, p_itoi, N_e, N_i, net, simclock
 ):
     synEE = Synapses(E, E, on_pre="g_ampa+=J_etoe", clock=simclock)
     synEE.connect(p=p_etoe)
@@ -664,16 +658,16 @@ def build_synapses_first_population(
 
 
 def create_neuron_group_2(
-        N_e,
-        N_i,
-        have_adap_e,
-        have_adap_i,
-        model_eqs_e2,
-        model_eqs_i2,
-        params,
-        simclock,
-        t_ref_e,
-        t_ref_i,
+    N_e,
+    N_i,
+    have_adap_e,
+    have_adap_i,
+    model_eqs_e2,
+    model_eqs_i2,
+    params,
+    simclock,
+    t_ref_e,
+    t_ref_i,
 ):
     E2 = NeuronGroup(
         N=N_e,
@@ -698,16 +692,16 @@ def create_neuron_group_2(
 
 
 def create_neuron_group_1(
-        N_e,
-        N_i,
-        have_adap_e,
-        have_adap_i,
-        model_eqs_e1,
-        model_eqs_i1,
-        params,
-        simclock,
-        t_ref_e,
-        t_ref_i,
+    N_e,
+    N_i,
+    have_adap_e,
+    have_adap_i,
+    model_eqs_e1,
+    model_eqs_i1,
+    params,
+    simclock,
+    t_ref_e,
+    t_ref_i,
 ):
     E = NeuronGroup(
         N=N_e,
