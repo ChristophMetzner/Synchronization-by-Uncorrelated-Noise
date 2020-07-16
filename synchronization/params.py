@@ -9,6 +9,9 @@ So far, only brian2 model parameters are included. FP parameters will be added l
 def get_params():
     params = dict()
 
+    # If true we use EI coupled networks, if False we assume only I population.
+    params["model_EI"] = True
+
     # params for poisson input
     params["poisson_enabled"] = [False, False]
     # Determines if I neurons receive Poisson Input.
@@ -21,7 +24,7 @@ def get_params():
     params["poisson_variance"] = 1.0
     # Ratio between input strengths of the two networks.
     params["poisson_p"] = 0.83
-    
+
     # params for ou process #
     params["ou_enabled"] = [True, True]
     params["ou_stationary"] = True  # if False --> ou process starts at X0
@@ -70,11 +73,13 @@ def get_params():
     params["gL_exc"] = 10.0  # [nS] Conductance
     params["taum_exc"] = params["C_exc"] / params["gL_exc"]  # [ms]
     params["EL_exc"] = -65.0  # [mV]            reversal potential of membrane
-    params["Ew_exc"] = -80.0  # [mV]            reversal potential for adaptation param w
+    params[
+        "Ew_exc"
+    ] = -80.0  # [mV]            reversal potential for adaptation param w
     params["VT_exc"] = -50.0  # [mV]            membrane threshold
-    params["deltaT_exc"] = 1.5  # [mV]          
-    params["Vcut_exc"] = -40.0  # [mV]          
-    params["tauw_exc"] = 200.0  # [ms]          
+    params["deltaT_exc"] = 1.5  # [mV]
+    params["Vcut_exc"] = -40.0  # [mV]
+    params["tauw_exc"] = 200.0  # [ms]
     params["a_exc"] = 4.0  # [nS]               subthreshold adaptation param
     params["b_exc"] = 40.0  # [pA]              spike-frequency adaptation param
     params["Vr_exc"] = -70.0  # [mV]            reset voltage
@@ -145,11 +150,12 @@ def get_params():
     # connectivity between populations
     params["p_ppee"] = 0.01
     params["p_ppei"] = 0.01
+    params["p_ppii"] = 0.1
 
     # initial value for the mean adaptation current
     params["wm_init"] = 0.0  # [pA]
 
     # for recurrency
     params["const_delay"] = 0.2  # [ms]
-    
+
     return params

@@ -61,24 +61,29 @@ def plot_exploration(
         ax.set_ylabel("Dom Freq Ratio")
 
         metric = "mean_phase_coherence"
+        legend = []
         fig, ax = plt.subplots(figsize=(15, 3))
         df = ex.df.sort_values(by=param)
         ax.plot(df[param], df[metric], linewidth=2.0, marker=".", color=c_inh)
-        # ax.plot(ex.df[param], ex.df["phase_synchronization"], linewidth=2.0, marker=".")
-        ax.plot(df[param], df["plv_net_1_e"], linewidth=2.0, marker=".")
-        ax.plot(df[param], df["plv_net_1_i"], linewidth=2.0, marker=".")
-        ax.plot(df[param], df["plv_net_2_e"], linewidth=2.0, marker=".")
-        ax.plot(df[param], df["plv_net_2_i"], linewidth=2.0, marker=".")
+        legend.append("mean_phase_coherence")
 
-        plt.legend(
-            [
-                "Mean Phase Coherence",
-                "PLV within Net 1 E",
-                "PLV within Net 1 I",
-                "PLV within Net 2 E",
-                "PLV within Net 2 I",
-            ]
-        )
+        if "plv_net_1_e" in df:
+            ax.plot(df[param], df["plv_net_1_e"], linewidth=2.0, marker=".")
+            legend.append("plv_net_1_e")
+
+        if "plv_net_2_e" in df:
+            ax.plot(df[param], df["plv_net_2_e"], linewidth=2.0, marker=".")
+            legend.append("plv_net_2_e")
+
+        if "plv_net_1_i" in df:
+            ax.plot(df[param], df["plv_net_1_i"], linewidth=2.0, marker=".")
+            legend.append("plv_net_1_i")
+
+        if "plv_net_2_i" in df:
+            ax.plot(df[param], df["plv_net_2_i"], linewidth=2.0, marker=".")
+            legend.append("plv_net_2_i")
+
+        plt.legend(legend)
         ax.set_title("Phase Locking")
         ax.set_xlabel(param)
         ax.set_ylabel("Mean Phase Coherence")
@@ -259,11 +264,12 @@ def plot_exploration(
 def plot_results(
     model,
     full_raster: bool = False,
-    pop_rates: bool = False,
+    pop_rates: bool = True,
     raster_right: int = None,
     xlim_psd: int = 120,
     excerpt_x_left: int = 200,
     excerpt_x_right: int = 300,
+    psd_group: str = None,
 ):
     """
     Plots all relevant figures needed to understand network behavior.
@@ -274,8 +280,22 @@ def plot_results(
     * Population Rates
 
     """
-    psd(model, title="PSD of 1st network", population=1, fig_size=(8, 3), xlim=xlim_psd)
-    psd(model, title="PSD of 2nd network", population=2, fig_size=(8, 3), xlim=xlim_psd)
+    psd(
+        model,
+        title="PSD of 1st network",
+        population=1,
+        fig_size=(8, 3),
+        xlim=xlim_psd,
+        groups=psd_group,
+    )
+    psd(
+        model,
+        title="PSD of 2nd network",
+        population=2,
+        fig_size=(8, 3),
+        xlim=xlim_psd,
+        groups=psd_group,
+    )
 
     lfp_nets(model, skip=100)
 
@@ -493,7 +513,7 @@ def psd(
     folder: str = None,
     save: bool = False,
     population: int = 1,
-    groups: str = "both",
+    groups: str = None,
     fig_size: tuple = None,
     granularity: float = 1.0,
     skip: int = 100,
@@ -538,20 +558,16 @@ def psd(
 
     if groups == "EXC":
         ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
+        plt.legend(["Excitatory"])
 
     elif groups == "INH":
         ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
+        plt.legend(["Inhibitory"])
 
     else:
         ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
         ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
-
-    plt.legend(
-        handles=[
-            mpatches.Patch(color=c_exc, label="Excitatory Group"),
-            mpatches.Patch(color=c_inh, label="Inhibitory Group"),
-        ]
-    )
+        plt.legend(["Excitatory", "Inhibitory"])
 
     ax.set_xlim([0, xlim])
     ax.set_xticks(range(0, xlim + 10, 10))

@@ -161,14 +161,15 @@ def post_processing(results: dict) -> dict:
     lowcut = 30
     highcut = 80
 
-    max_amplitude, peak_freq = processing.band_power(results, skip=skip)
-    results["max_amplitude"] = max_amplitude
-    results["peak_freq"] = peak_freq
+    model_EI = results["model_EI"]
 
-    max_amplitude, peak_freq = processing.band_power(results, network=2, skip=skip)
-    results["max_amplitude_2"] = max_amplitude
-    results["peak_freq_2"] = peak_freq
+    max_amplitude_1, peak_freq_1 = processing.band_power(results, skip=skip)
+    max_amplitude_2, peak_freq_2 = processing.band_power(results, network=2, skip=skip)
 
+    results["max_amplitude"] = max_amplitude_1
+    results["peak_freq"] = peak_freq_1
+    results["max_amplitude_2"] = max_amplitude_2
+    results["peak_freq_2"] = peak_freq_2
     results["freq_diff"] = abs(results["peak_freq"] - results["peak_freq_2"])
 
     ratio = 0
@@ -185,47 +186,59 @@ def post_processing(results: dict) -> dict:
     global_order_parameter = processing.order_parameter_over_time(f_lfps)
     total_value = np.mean(global_order_parameter)
 
-    neurons_net_1_e = [
-        processing.filter(n, lowcut=lowcut, highcut=highcut)
-        for n in results["v_all_neurons_e"][:, skip:]
-    ]
     neurons_net_1_i = [
         processing.filter(n, lowcut=lowcut, highcut=highcut)
         for n in results["v_all_neurons_i1"][:, skip:]
     ]
-    neurons_net_2_e = [
-        processing.filter(n, lowcut=lowcut, highcut=highcut)
-        for n in results["v_all_neurons_e2"][:, skip:]
-    ]
+
     neurons_net_2_i = [
         processing.filter(n, lowcut=lowcut, highcut=highcut)
         for n in results["v_all_neurons_i2"][:, skip:]
     ]
 
-    neurons_net_1 = np.vstack((neurons_net_1_e, neurons_net_1_i))
-    neurons_net_2 = np.vstack((neurons_net_2_e, neurons_net_2_i))
+    neurons_net_1_e = None
+    neurons_net_2_e = None
+    if model_EI:
+        neurons_net_1_e = [
+            processing.filter(n, lowcut=lowcut, highcut=highcut)
+            for n in results["v_all_neurons_e"][:, skip:]
+        ]
+
+        neurons_net_2_e = [
+            processing.filter(n, lowcut=lowcut, highcut=highcut)
+            for n in results["v_all_neurons_e2"][:, skip:]
+        ]
+
+    neurons_net_1 = (
+        neurons_net_1_i
+        if neurons_net_1_e is None
+        else np.vstack((neurons_net_1_e, neurons_net_1_i))
+    )
+    neurons_net_2 = (
+        neurons_net_2_i
+        if neurons_net_2_e is None
+        else np.vstack((neurons_net_2_e, neurons_net_2_i))
+    )
 
     plv_net_1 = np.mean(processing.order_parameter_over_time(neurons_net_1))
-    plv_net_1_e = np.mean(processing.order_parameter_over_time(neurons_net_1_e))
-    plv_net_1_i = np.mean(processing.order_parameter_over_time(neurons_net_1_i))
-
     plv_net_2 = np.mean(processing.order_parameter_over_time(neurons_net_2))
-    plv_net_2_e = np.mean(processing.order_parameter_over_time(neurons_net_2_e))
+    plv_net_1_i = np.mean(processing.order_parameter_over_time(neurons_net_1_i))
     plv_net_2_i = np.mean(processing.order_parameter_over_time(neurons_net_2_i))
-
     mpc = processing.mean_phase_coherence(f_lfps[0], f_lfps[1])
 
-    results["mean_phase_coherence"] = mpc
+    if model_EI:
+        plv_net_1_e = np.mean(processing.order_parameter_over_time(neurons_net_1_e))
+        plv_net_2_e = np.mean(processing.order_parameter_over_time(neurons_net_2_e))
 
+        results["plv_net_2_e"] = plv_net_2_e
+        results["plv_net_1_e"] = plv_net_1_e
+
+    results["mean_phase_coherence"] = mpc
     results["phase_synchronization_over_time"] = global_order_parameter
     results["phase_synchronization"] = total_value
-
     results["plv_net_1"] = plv_net_1
-    results["plv_net_1_e"] = plv_net_1_e
     results["plv_net_1_i"] = plv_net_1_i
-
     results["plv_net_2"] = plv_net_2
-    results["plv_net_2_e"] = plv_net_2_e
     results["plv_net_2_i"] = plv_net_2_i
 
     return results

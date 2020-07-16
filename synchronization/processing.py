@@ -46,18 +46,24 @@ def lfp_single_net(model: dict, population: int = 1, skip: int = None):
     :return: lfp over time.
     :rtype: ndarray
     """
-    N_e = model["N_e"]
-    N_i = model["N_i"]
-
+    model_EI = model["model_EI"]
     if population == 1:
-        v_e = model["v_all_neurons_e"][:, skip:]
-        v_i = model["v_all_neurons_i1"][:, skip:]
+        i_identifier = "v_all_neurons_i1"
+        e_identifier = "v_all_neurons_e"
     else:
-        v_e = model["v_all_neurons_e2"][:, skip:]
-        v_i = model["v_all_neurons_i2"][:, skip:]
+        i_identifier = "v_all_neurons_i2"
+        e_identifier = "v_all_neurons_e2"
 
-    neurons = np.vstack((v_e, v_i))
-    return np.sum(neurons, axis=0) / (N_i + N_e)
+    count = model["N_i"]
+    v_i = model[i_identifier][:, skip:]
+    if model_EI:
+        v_e = model[e_identifier][:, skip:]
+    else:
+        v_e = None
+        count += model["N_e"]
+
+    v = v_i if v_e is None else np.vstack((v_e, v_i))
+    return np.sum(v, axis=0) / count
 
 
 def lfp_nets(model, skip: int = None):

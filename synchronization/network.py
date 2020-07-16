@@ -191,6 +191,7 @@ def network_sim(signal, params: dict):
     p_itoi = params["p_itoi"]
     p_ppee = params["p_ppee"]
     p_ppei = params["p_ppei"]
+    p_ppii = params["p_ppii"]
 
     E, I = create_neuron_group_1(
         N_e,
@@ -350,6 +351,7 @@ def network_sim(signal, params: dict):
             p_itoi,
             p_ppee,
             p_ppei,
+            p_ppii,
             net,
             params,
             clock,
@@ -592,7 +594,20 @@ def network_sim(signal, params: dict):
 
 
 def build_synapses_multiple_populations(
-    E, E2, I, I2, p_etoe, p_etoi, p_itoe, p_itoi, p_ppee, p_ppei, net, params, simclock,
+    E,
+    E2,
+    I,
+    I2,
+    p_etoe,
+    p_etoi,
+    p_itoe,
+    p_itoi,
+    p_ppee,
+    p_ppei,
+    p_ppii,
+    net,
+    params,
+    simclock,
 ):
     syn_EE2 = Synapses(E2, E2, on_pre="g_ampa+=J_etoe", clock=simclock)
     syn_EE2.connect(p=p_etoe)
@@ -636,12 +651,12 @@ def build_synapses_multiple_populations(
 
     if params["syn_net_inh"]:
         syn_II2 = Synapses(I, I2, on_pre="g_gaba+=J_ppii", clock=simclock)
-        syn_II2.connect(p=p_ppei)
+        syn_II2.connect(p=p_ppii)
         syn_II2.delay = "{} * ms".format(params["const_delay"])
         net.add(syn_II2)
 
         syn_I2I = Synapses(I2, I, on_pre="g_gaba+=J_ppii", clock=simclock)
-        syn_I2I.connect(p=p_ppei)
+        syn_I2I.connect(p=p_ppii)
         syn_I2I.delay = "{} * ms".format(params["const_delay"])
         net.add(syn_I2I)
 
