@@ -7,6 +7,19 @@ from scipy.signal.filter_design import butter
 from scipy.signal.signaltools import filtfilt
 
 
+"""
+This module contains a diverse set of functions that process the generated neuronal data of the models.
+
+The following areas are included:
+* LFP
+* PSD
+* filter
+* phase locking
+* phase synchronization
+
+"""
+
+
 def lfp(
     model: dict, duration: int = None, skip: int = None, population: int = 1
 ) -> Tuple:
@@ -31,7 +44,9 @@ def lfp(
         return lfp1, lfp2
 
 
-def lfp_single_net(model: dict, population: int = 1, skip: int = None):
+def lfp_single_net(
+    model: dict, population: int = 1, skip: int = None, gamma_filter: bool = False
+):
     """ Calculates local field potential (LFP) of a single network.
 
     LFP is approximated by taking the average over the membrane voltages of all neurons in the network.
@@ -43,10 +58,11 @@ def lfp_single_net(model: dict, population: int = 1, skip: int = None):
     :type population: int, optional
     :param skip: skips the first x ms, defaults to None
     :type skip: int, optional
+    :param gamma_filter: if True applies band pass filter in gamma range.
     :return: lfp over time.
     :rtype: ndarray
     """
-    model_EI = model["model_EI"]
+    model_ei = model["model_EI"]
     if population == 1:
         i_identifier = "v_all_neurons_i1"
         e_identifier = "v_all_neurons_e"
@@ -54,22 +70,27 @@ def lfp_single_net(model: dict, population: int = 1, skip: int = None):
         i_identifier = "v_all_neurons_i2"
         e_identifier = "v_all_neurons_e2"
 
-    count = model["N_i"]
     v_i = model[i_identifier][:, skip:]
-    if model_EI:
+    if model_ei:
         v_e = model[e_identifier][:, skip:]
+
+        count = model["N_i"] + model["N_e"]
+        v = np.vstack((v_e, v_i))
     else:
-        v_e = None
-        count += model["N_e"]
+        count = model["N_i"]
+        v = v_i
 
-    v = v_i if v_e is None else np.vstack((v_e, v_i))
-    return np.sum(v, axis=0) / count
+    lfp = np.sum(v, axis=0) / count
+    if gamma_filter:
+        lfp = filter(lfp, lowcut=30, highcut=120)
+
+    return lfp
 
 
-def lfp_nets(model, skip: int = None):
+def lfp_nets(model, skip: int = None, gamma_filter: bool = False):
     return (
-        lfp_single_net(model, population=1, skip=skip),
-        lfp_single_net(model, population=2, skip=skip),
+        lfp_single_net(model, population=1, skip=skip, gamma_filter=gamma_filter),
+        lfp_single_net(model, population=2, skip=skip, gamma_filter=gamma_filter),
     )
 
 
@@ -179,12 +200,24 @@ def mean_phase_coherence(y1, y2, unwrap: bool = True) -> float:
     diffs = phase_difference(y1, y2, unwrap=unwrap)
 
     # complex form by projecting onto unit circle.
-    complex_phase_diff = [np.exp(1j * phase) for phase in diffs]
+    complex_phase_diff = [np.exp(1j * phase_diff) for phase_diff in diffs]
 
     # absolute value of average of complex phase differences.
     phase_coherence_index = np.abs(sum(complex_phase_diff) / len(complex_phase_diff))
 
     return phase_coherence_index
+
+
+def mean_phase_coherence_net(model: dict) -> float:
+    """
+    Calculates Mean Phase Coherence between networks of  given `model`.
+
+    :param model: input model.
+    :return: MPC index.
+    """
+    signals = lfp_nets(model, skip=200, gamma_filter=True)
+    mpc = mean_phase_coherence(signals[0], signals[1])
+    return mpc
 
 
 def order_parameter_over_time(signals):
@@ -232,7 +265,7 @@ def phase_synchronization(signals):
     return np.mean(phi)
 
 
-def filter(signal, fs: int = 1000, lowcut: int = 10, highcut: int = 80, order: int = 2):
+def filter(signal, fs: int = 1000, lowcut: int = 30, highcut: int = 80, order: int = 2):
     """ Applies Band Pass Filter to `signal`.
 
     :param signal: input signal
@@ -252,9 +285,5 @@ def filter(signal, fs: int = 1000, lowcut: int = 10, highcut: int = 80, order: i
     return filtered
 
 
-def phase_locking(signals):
-    """ 
-    # TODO: Compute phase locking!
-    """
-    # std deviation of phase differences
-    raise NotImplementedError
+def filter_signals(signals) -> list:
+    return [filter(s) for s in signals]

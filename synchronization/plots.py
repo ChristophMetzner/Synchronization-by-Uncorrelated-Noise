@@ -83,6 +83,10 @@ def plot_exploration(
             ax.plot(df[param], df["plv_net_2_i"], linewidth=2.0, marker=".")
             legend.append("plv_net_2_i")
 
+        if "phase_synchronization" in df:
+            ax.plot(df[param], df["phase_synchronization"], linewidth=2.0, marker=".")
+            legend.append("phase_synchronization")
+
         plt.legend(legend)
         ax.set_title("Phase Locking")
         ax.set_xlabel(param)
@@ -158,17 +162,20 @@ def plot_exploration(
     #     ax=axs[0, 2],
     # )
 
-    heat_map_vis(
-        df=ex.df,
-        value="plv_net_1_e",
-        param_X=param_X,
-        param_Y=param_Y,
-        title="Within Phase Synchronization - Network 1 - Excitatory",
-        colorbar="Kuramoto Order Parameter",
-        vmin=vmin_phase,
-        vmax=vmax_phase,
-        ax=axs[0, 2],
-    )
+    if "plv_net_1_e" in ex.df:
+        heat_map_vis(
+            df=ex.df,
+            value="plv_net_1_e",
+            param_X=param_X,
+            param_Y=param_Y,
+            title="Within Phase Synchronization - Network 1 - Excitatory",
+            colorbar="Kuramoto Order Parameter",
+            vmin=vmin_phase,
+            vmax=vmax_phase,
+            ax=axs[0, 2],
+        )
+    else:
+        axs[0, 2].set_axis_off()
 
     heat_map_vis(
         df=ex.df,
@@ -194,17 +201,20 @@ def plot_exploration(
     #     ax=axs[1, 2],
     # )
 
-    heat_map_vis(
-        df=ex.df,
-        value="plv_net_2_e",
-        param_X=param_X,
-        param_Y=param_Y,
-        title="Within Phase Synchronization - Net 2 - Excitatory",
-        colorbar="Kuramoto Order Parameter",
-        vmin=vmin_phase,
-        vmax=vmax_phase,
-        ax=axs[1, 2],
-    )
+    if "plv_net_2_e" in ex.df:
+        heat_map_vis(
+            df=ex.df,
+            value="plv_net_2_e",
+            param_X=param_X,
+            param_Y=param_Y,
+            title="Within Phase Synchronization - Net 2 - Excitatory",
+            colorbar="Kuramoto Order Parameter",
+            vmin=vmin_phase,
+            vmax=vmax_phase,
+            ax=axs[1, 2],
+        )
+    else:
+        axs[1, 2].set_axis_off()
 
     heat_map_vis(
         df=ex.df,
@@ -339,6 +349,9 @@ def plot_results(
     if pop_rates:
         population_rates(model, skip=2000)
 
+    phases_inter_nets(model)
+    phases_intra_nets(model)
+
 
 def noise(
     mean,
@@ -373,24 +386,6 @@ def noise(
     _save_to_file("noise", save=save, folder=prefix)
 
     return fig, ax
-
-
-def poisson_input(model: dict):
-    # TODO: can be removed?
-    if "poisson_input_t_e" in model and "poisson_input_spikes_e" in model:
-        plt.figure(figsize=(10, 8))
-        plt.title("Poisson Spike Train Input to E population")
-        plt.xlabel("Time in ms")
-        plt.ylabel("Neuron Index of Poisson Group")
-        plt.plot(
-            model["poisson_input_t_e"],
-            model["poisson_input_spikes_e"],
-            ".",
-            c="grey",
-            linewidth=0.5,
-        )
-    else:
-        return None
 
 
 def lfp(
@@ -430,78 +425,6 @@ def lfp(
 
     _save_to_file("summed_voltage", save, prefix)
 
-    return fig, ax
-
-
-def psd_multiple_models(
-    models: list,
-    fig_size: tuple,
-    duration: int = None,
-    dt: float = 1.0,
-    skip: int = 200,
-    xlim: int = 120,
-):
-    duration = duration if duration else models[0]["runtime"]
-    if skip:
-        duration -= skip
-
-    net_1_1, net_1_2 = processing.lfp_nets(models[0], skip=skip)
-    net_2_1, net_2_2 = processing.lfp_nets(models[1], skip=skip)
-
-    # number of data points used in each block for the FTT.
-    # Set to number of data points in the input signal.
-    NFFT = int((duration / dt / 1.0))
-
-    # Calculating the Sampling frequency.
-    # As our time unit is here ms and step size of 1 ms, a fs of 1.0 is the best we can do.
-    fs = 1.0 / dt
-
-    # NFFT: length of each segment, set here to 1.0.
-    # Thus each segment is exactly one data point
-    psd1_1, freqs = mlab.psd(
-        net_1_1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none
-    )
-    psd1_2, _ = mlab.psd(net_1_2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
-
-    psd2_1, freqs = mlab.psd(
-        net_2_1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none
-    )
-    psd2_2, _ = mlab.psd(net_2_2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
-
-    # We multiply by 1000 to get from ms to s.
-    freqs = freqs * 1000
-
-    # Remove unwanted power at 0 Hz
-    psd1_1[0] = 0.0
-    psd1_2[0] = 0.0
-    psd2_1[0] = 0.0
-    psd2_2[0] = 0.0
-
-    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
-    ax = fig.add_subplot(111)
-    # ax.set_title("Power Spectral Density", fontsize=16)
-    ax.set_xlabel("Frequency (Hz)", fontsize=16)
-    ax.set_ylabel("Density", fontsize=16)
-
-    # first model
-    ax.plot(freqs, psd1_1, alpha=0.3, linewidth=5.5, c=c_exc)
-    ax.plot(freqs, psd1_2, alpha=0.3, linewidth=5.5, c="royalblue")
-
-    # second model
-    ax.plot(freqs, psd2_1, alpha=1.0, linewidth=5.5, c=c_exc)
-    ax.plot(freqs, psd2_2, alpha=1.0, linewidth=5.5, c="royalblue")
-
-    plt.legend(
-        [
-            "strength = 1.0 - Net 1",
-            "strength = 1.0 - Net 2",
-            "strength = 12.5 - Net 1",
-            "sterngth = 12.5 - Net 2",
-        ]
-    )
-
-    ax.set_xlim([0, xlim])
-    ax.set_xticks(range(0, xlim + 10, 10))
     return fig, ax
 
 
@@ -727,37 +650,41 @@ def synaptic_conductance(model: dict):
     plt.tight_layout()
 
 
-def phases_inter_nets(model: dict):
+def phases_inter_nets(model: dict, skip: int = 200, show_lfp: bool = False):
     """ Plots figures to analyze phases of networks and their synchronization.
 
+    :param skip: amount of ms to skip.
     :param model: the given model.
     :type model: dict
     """
-    lfp1, lfp2 = processing.lfp_nets(model, skip=200)
+    lfp1, lfp2 = processing.lfp_nets(model, skip=skip)
     f_lfp1, f_lfp2 = (
         processing.filter(lfp1, lowcut=30, highcut=80),
         processing.filter(lfp2, lowcut=30, highcut=80),
     )
 
+    fig_size = (20, 3)
+
     global_order_parameter = processing.order_parameter_over_time((f_lfp1, f_lfp2))
     total_value = np.mean(global_order_parameter)
-    mean_phase_coherence = processing.mean_phase_coherence(f_lfp1[200:], f_lfp2[200:])
+    mean_phase_coherence = processing.mean_phase_coherence(f_lfp1, f_lfp2)
 
     print(f"Global Order Parameter value of: {total_value}")
     print(f"Mean Phase Coherence {mean_phase_coherence}")
 
-    plt.figure(figsize=(20, 3))
-    plt.title("LFP of Net 1", fontsize=18)
-    plt.plot(lfp1, c=c_inh)
-    plt.xlabel("t in ms")
-    plt.ylabel("Voltage in mV")
+    if show_lfp:
+        plt.figure(figsize=fig_size)
+        plt.title("LFP of Net 1", fontsize=18)
+        plt.plot(lfp1, c=c_inh)
+        plt.xlabel("t in ms")
+        plt.ylabel("Voltage in mV")
 
-    plt.figure(figsize=(20, 3))
-    plt.title("30-80 Hz Filtered LFP of Net 1", fontsize=18)
-    plt.xlabel("t in ms")
-    plt.plot(f_lfp1, c=c_inh)
+        plt.figure(figsize=fig_size)
+        plt.title("30-80 Hz Filtered LFP of Net 1", fontsize=18)
+        plt.xlabel("t in ms")
+        plt.plot(f_lfp1, c=c_inh)
 
-    plt.figure(figsize=(20, 3))
+    plt.figure(figsize=fig_size)
     plt.title("Phases of Network 1 and 2 - First 800 ms", fontsize=18)
     plt.xlabel("t in ms")
     plt.ylabel("Angle", fontsize=18)
@@ -765,95 +692,101 @@ def phases_inter_nets(model: dict):
     plt.plot(processing.phase(f_lfp2[:800]), linewidth=3.0, c=c_exc)
     plt.legend(["Net 1", "Net 2"])
 
-    plt.figure(figsize=(20, 3))
+    phase_difference(f_lfp1, f_lfp2)
+
+    plt.figure(figsize=fig_size)
     plt.title(f"Phase Synchronization between Networks", fontsize=18)
     plt.xlabel("Time in ms")
     plt.ylim(0, 1.1)
     plt.ylabel("Kuramoto Order Parameter")
     plt.plot(global_order_parameter, linewidth=2.0, c=c_inh)
 
-    phase_differences = processing.phase_difference(f_lfp1, f_lfp2)
+
+def phase_difference(signal_1, signal_2):
+    """
+    Plots the phase difference of the two signals over time.
+
+    Signals must be filtered already and have the same dimension.
+
+    :param signal_1:
+    :param signal_2:
+    :return:
+    """
+    # Do not unwrap because we want to have values in range of [-2*pi, 2*pi].
+    phase_differences = processing.phase_difference(signal_1, signal_2, unwrap=False)
     plt.figure(figsize=(20, 3))
     plt.title(f"Phase Difference of Networks", fontsize=18)
     plt.xlabel("Time in ms")
     plt.ylabel("Phase Difference")
-    plt.plot(phase_differences, linewidth=2.0, c=c_inh)
+    plt.plot(phase_differences, linewidth=1.0, c=c_inh)
 
 
-def phases_intra_nets(model: dict):
+def phases_intra_nets(model: dict, skip: int = 200, duration: int = 600):
     """ Plots figures to analyze phases of neurons within a network.
 
+    :param duration: duration that should be displayed.
+    :param skip: amount of ms to skip.
     :param model: input model.
     :type model: dict
     """
     print("Computing within synchronization for network 1 and 2")
 
-    neurons_net_1 = np.vstack((model["v_all_neurons_e"], model["v_all_neurons_i1"]))[
-        :, 200:
-    ]
+    v_i = processing.filter_signals(model["v_all_neurons_i1"])
+    v_i2 = processing.filter_signals(model["v_all_neurons_i2"])
 
-    neurons_net_2 = np.vstack((model["v_all_neurons_e2"], model["v_all_neurons_i2"]))[
-        :, 200:
-    ]
+    if model["model_EI"]:
+        v_e = processing.filter_signals(model["v_all_neurons_e"])
+        v_e2 = processing.filter_signals(model["v_all_neurons_e2"])
 
-    f_neurons_net_1 = [
-        processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_1
-    ]
-    f_neurons_net_2 = [
-        processing.filter(n, lowcut=30, highcut=80) for n in neurons_net_2
-    ]
+        neurons_net_1 = np.vstack((v_i, v_e))[:, skip:]
+        neurons_net_2 = np.vstack((v_i2, v_e2))[:, skip:]
+    else:
+        neurons_net_1 = v_i
+        neurons_net_2 = v_i2
 
-    f_plv_net_1 = processing.order_parameter_over_time(f_neurons_net_1)
-    f_plv_net_1_i = processing.order_parameter_over_time(f_neurons_net_1[1000:])
-    f_plv_net_1_e = processing.order_parameter_over_time(f_neurons_net_1[:1000])
+        v_e = None
 
-    f_plv_net_2 = processing.order_parameter_over_time(f_neurons_net_2)
-    # as comparison
-    plv_net_2 = processing.order_parameter_over_time(neurons_net_2)
+    f_plv_net_1 = processing.order_parameter_over_time(neurons_net_1)
+    f_plv_net_1_i = processing.order_parameter_over_time(v_i)
+    f_plv_net_2 = processing.order_parameter_over_time(neurons_net_2)
 
     print("Within Synchronization of Network 1", np.mean(f_plv_net_1))
     print("Within Synchronization of Network 2", np.mean(f_plv_net_2))
 
-    skip = 200
-    duration = 600
-
     plt.figure(figsize=(20, 3))
-    plt.title("Phases of One Excitatory and One Inhibitory Neuron", fontsize=18)
+    if model["model_EI"] and v_e is not None:
+        plt.title("Phases of One Excitatory and One Inhibitory Neuron", fontsize=18)
+        plt.plot(processing.phase(v_i[0][skip:duration]), linewidth=3.0, c=c_inh)
+        plt.plot(processing.phase(v_e[1][skip:duration]), linewidth=3.0, c=c_exc)
+    else:
+        plt.title("Phases of two Inhibitory neurons", fontsize=18)
+        plt.plot(processing.phase(v_i[0][skip:duration]), linewidth=3.0, c=c_inh)
+        plt.plot(processing.phase(v_i[1][skip:duration]), linewidth=3.0, c=c_exc)
+
     plt.xlabel("t in ms")
     plt.ylabel("Angle", fontsize=18)
-    plt.plot(
-        processing.phase(f_neurons_net_1[1001][skip:duration]), linewidth=3.0, c=c_inh
-    )
-    plt.plot(
-        processing.phase(f_neurons_net_1[1][skip:duration]), linewidth=3.0, c=c_exc
-    )
+
     plt.legend(["Inhibitory", "Excitatory"])
 
     plt.figure(figsize=(20, 3))
     plt.title("Phases of 5 Inhibitory Neurons", fontsize=18)
     plt.xlabel("t in ms")
     plt.ylabel("Angle", fontsize=18)
-    plt.plot(
-        processing.phase(f_neurons_net_1[1002][skip:duration]), linewidth=1.5, c=c_inh
-    )
-    plt.plot(
-        processing.phase(f_neurons_net_1[1003][skip:duration]), linewidth=1.5, c=c_exc
-    )
-    plt.plot(processing.phase(f_neurons_net_1[1004][skip:duration]), linewidth=1.5)
-    plt.plot(processing.phase(f_neurons_net_1[1005][skip:duration]), linewidth=1.5)
+    plt.plot(processing.phase(v_i[1][skip:duration]), linewidth=1.5, c=c_inh)
+    plt.plot(processing.phase(v_i[2][skip:duration]), linewidth=1.5, c=c_exc)
+    plt.plot(processing.phase(v_i[3][skip:duration]), linewidth=1.5)
+    plt.plot(processing.phase(v_i[4][skip:duration]), linewidth=1.5)
+    plt.plot(processing.phase(v_i[5][skip:duration]), linewidth=1.5)
 
-    plt.figure(figsize=(20, 3))
-    plt.title("Phases of 5 Excitatory Neurons", fontsize=18)
-    plt.xlabel("t in ms")
-    plt.ylabel("Angle", fontsize=18)
-    plt.plot(
-        processing.phase(f_neurons_net_1[1][skip:duration]), linewidth=1.5, c=c_inh
-    )
-    plt.plot(
-        processing.phase(f_neurons_net_1[2][skip:duration]), linewidth=1.5, c=c_exc
-    )
-    plt.plot(processing.phase(f_neurons_net_1[3][skip:duration]), linewidth=1.5)
-    plt.plot(processing.phase(f_neurons_net_1[4][skip:duration]), linewidth=1.5)
+    if model["model_EI"]:
+        plt.figure(figsize=(20, 3))
+        plt.title("Phases of 5 Excitatory Neurons", fontsize=18)
+        plt.xlabel("t in [ms]")
+        plt.ylabel("Angle", fontsize=18)
+        plt.plot(processing.phase(v_e[1][skip:duration]), linewidth=1.5, c=c_inh)
+        plt.plot(processing.phase(v_e[2][skip:duration]), linewidth=1.5, c=c_exc)
+        plt.plot(processing.phase(v_e[3][skip:duration]), linewidth=1.5)
+        plt.plot(processing.phase(v_e[4][skip:duration]), linewidth=1.5)
 
     plt.figure(figsize=(20, 3))
     plt.title(f"Within Phase Synchronization over Time of Network 1", fontsize=18)
@@ -862,20 +795,12 @@ def phases_intra_nets(model: dict):
     plt.ylabel("Phase Synchronization", fontsize=18)
     plt.plot(f_plv_net_1, linewidth=3.0, c="black")
     plt.plot(f_plv_net_1_i, linewidth=3.0, c=c_inh)
-    plt.plot(f_plv_net_1_e, linewidth=3.0, c=c_exc)
-    plt.legend(["All", "Inhibitory", "Excitatory"])
 
-    plt.figure(figsize=(20, 3))
-    plt.title(
-        f"Within Phase Synchronization of Network 2 - Comparison: filter vs. unfiltered",
-        fontsize=18,
-    )
-    plt.xlabel("Time in ms", fontsize=18)
-    plt.ylim(0, 1.1)
-    plt.ylabel("Phase Synchronization", fontsize=18)
-    plt.plot(plv_net_2, alpha=0.5, c=c_exc)
-    plt.plot(f_plv_net_2, linewidth=3.0, c=c_inh)
-    plt.legend(["Unfiltered", "Gamma Filter (30-80 Hz)"])
+    if model["model_EI"]:
+        f_plv_net_1_e = processing.order_parameter_over_time(v_e)
+        plt.plot(f_plv_net_1_e, linewidth=3.0, c=c_exc)
+
+    plt.legend(["All", "Inhibitory", "Excitatory"])
 
 
 def all_psd(
