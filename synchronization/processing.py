@@ -62,7 +62,7 @@ def lfp_single_net(
     :return: lfp over time.
     :rtype: ndarray
     """
-    model_ei = model["model_EI"]
+    model_ei = "model_EI" not in model or model["model_EI"]
     if population == 1:
         i_identifier = "v_all_neurons_i1"
         e_identifier = "v_all_neurons_e"

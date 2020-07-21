@@ -280,6 +280,7 @@ def plot_results(
     excerpt_x_left: int = 200,
     excerpt_x_right: int = 300,
     psd_group: str = None,
+    skip: int = 200,
 ):
     """
     Plots all relevant figures needed to understand network behavior.
@@ -297,6 +298,7 @@ def plot_results(
         fig_size=(8, 3),
         xlim=xlim_psd,
         groups=psd_group,
+        skip=skip
     )
     psd(
         model,
@@ -305,6 +307,7 @@ def plot_results(
         fig_size=(8, 3),
         xlim=xlim_psd,
         groups=psd_group,
+        skip=skip
     )
 
     lfp_nets(model, skip=100)
@@ -318,7 +321,6 @@ def plot_results(
             key="stoch_weak_PING",
             ax=axs[0],
             x_right=raster_right,
-            N_e=200,
         )
         raster(
             title="Raster of 2nd network",
@@ -326,7 +328,6 @@ def plot_results(
             population=2,
             ax=axs[1],
             x_right=raster_right,
-            N_e=200,
         )
 
     fig, axs = plt.subplots(1, 2, figsize=(20, 5))
@@ -383,7 +384,7 @@ def noise(
 
     plt.tight_layout()
 
-    _save_to_file("noise", save=save, folder=prefix)
+    save_to_file("noise", save=save, folder=prefix)
 
     return fig, ax
 
@@ -423,7 +424,7 @@ def lfp(
 
     plt.tight_layout()
 
-    _save_to_file("summed_voltage", save, prefix)
+    save_to_file("summed_voltage", save, prefix)
 
     return fig, ax
 
@@ -480,22 +481,93 @@ def psd(
     ax.set_ylabel("Density")
 
     if groups == "EXC":
-        ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
+        ax.plot(freqs, psd1, "0.75", linewidth=1.0, c=c_exc)
         plt.legend(["Excitatory"])
 
     elif groups == "INH":
-        ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
+        ax.plot(freqs, psd2, "0.75", linewidth=1.0, c=c_inh)
         plt.legend(["Inhibitory"])
 
     else:
-        ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
-        ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
+        ax.plot(freqs, psd1, "0.75", linewidth=1.0, c=c_exc)
+        ax.plot(freqs, psd2, "0.75", linewidth=1.0, c=c_inh)
         plt.legend(["Excitatory", "Inhibitory"])
 
     ax.set_xlim([0, xlim])
     ax.set_xticks(range(0, xlim + 10, 10))
 
-    _save_to_file("psd", save, key, folder)
+    save_to_file("psd", save, key, folder)
+
+    return fig, ax
+
+
+def psd_multiple_models(
+    models: list,
+    fig_size: tuple,
+    duration: int = None,
+    dt: float = 1.0,
+    skip: int = 200,
+    xlim: int = 120,
+):
+    duration = duration if duration else models[0]["runtime"]
+    if skip:
+        duration -= skip
+
+    net_1_1, net_1_2 = processing.lfp_nets(models[0], skip=skip)
+    net_2_1, net_2_2 = processing.lfp_nets(models[1], skip=skip)
+
+    # number of data points used in each block for the FTT.
+    # Set to number of data points in the input signal.
+    NFFT = int((duration / dt / 1.0))
+
+    # Calculating the Sampling frequency.
+    # As our time unit is here ms and step size of 1 ms, a fs of 1.0 is the best we can do.
+    fs = 1.0 / dt
+
+    # NFFT: length of each segment, set here to 1.0.
+    # Thus each segment is exactly one data point
+    psd1_1, freqs = mlab.psd(
+        net_1_1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none
+    )
+    psd1_2, _ = mlab.psd(net_1_2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
+
+    psd2_1, _ = mlab.psd(net_2_1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
+    psd2_2, _ = mlab.psd(net_2_2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
+
+    # We multiply by 1000 to get from ms to s.
+    freqs = freqs * 1000
+
+    # Remove unwanted power at 0 Hz
+    psd1_1[0] = 0.0
+    psd1_2[0] = 0.0
+    psd2_1[0] = 0.0
+    psd2_2[0] = 0.0
+
+    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
+    ax = fig.add_subplot(111)
+    # ax.set_title("Power Spectral Density", fontsize=16)
+    ax.set_xlabel("Frequency (Hz)", fontsize=16)
+    ax.set_ylabel("Power", fontsize=16)
+
+    # first model
+    ax.plot(freqs, psd1_1, alpha=0.3, linewidth=5.5, c=c_exc)
+    ax.plot(freqs, psd1_2, alpha=0.3, linewidth=5.5, c="royalblue")
+
+    # second model
+    ax.plot(freqs, psd2_1, alpha=1.0, linewidth=5.5, c=c_exc)
+    ax.plot(freqs, psd2_2, alpha=1.0, linewidth=5.5, c="royalblue")
+
+    plt.legend(
+        [
+            "strength = 1.0 - Net 1",
+            "strength = 1.0 - Net 2",
+            "strength = 12.5 - Net 1",
+            "strength = 12.5 - Net 2",
+        ]
+    )
+
+    ax.set_xlim([0, xlim])
+    ax.set_xticks(range(0, xlim + 10, 10))
 
     return fig, ax
 
@@ -510,8 +582,6 @@ def raster(
     folder: str = None,
     population: int = 1,
     fig_size: Tuple = None,
-    N_e: int = None,
-    N_i: int = None,
     ax=None,
 ):
     fig = None
@@ -550,7 +620,7 @@ def raster(
     ax.set_xlim(left=x_left if x_left else 0, right=x_right)
 
     plt.tight_layout()
-    _save_to_file("raster", save=save, key=key, folder=folder)
+    save_to_file("raster", save=save, key=key, folder=folder)
     return fig, ax
 
 
@@ -589,6 +659,7 @@ def population_rates(model: dict, skip: int = None):
     """
     Plots the smoothed population rates for excitatory and inhibitory groups of both populations.
 
+    :param skip: amount of ms to skip.
     :param model: model.
     """
     fig, axs = plt.subplots(2, 2, figsize=(20, 10), sharey="col")
@@ -734,7 +805,7 @@ def phases_intra_nets(model: dict, skip: int = 200, duration: int = 600):
     v_i = processing.filter_signals(model["v_all_neurons_i1"])
     v_i2 = processing.filter_signals(model["v_all_neurons_i2"])
 
-    if model["model_EI"]:
+    if "model_EI" not in model or model["model_EI"]:
         v_e = processing.filter_signals(model["v_all_neurons_e"])
         v_e2 = processing.filter_signals(model["v_all_neurons_e2"])
 
@@ -754,7 +825,7 @@ def phases_intra_nets(model: dict, skip: int = 200, duration: int = 600):
     print("Within Synchronization of Network 2", np.mean(f_plv_net_2))
 
     plt.figure(figsize=(20, 3))
-    if model["model_EI"] and v_e is not None:
+    if "model_EI" not in model or model["model_EI"] and v_e is not None:
         plt.title("Phases of One Excitatory and One Inhibitory Neuron", fontsize=18)
         plt.plot(processing.phase(v_i[0][skip:duration]), linewidth=3.0, c=c_inh)
         plt.plot(processing.phase(v_e[1][skip:duration]), linewidth=3.0, c=c_exc)
@@ -778,7 +849,7 @@ def phases_intra_nets(model: dict, skip: int = 200, duration: int = 600):
     plt.plot(processing.phase(v_i[4][skip:duration]), linewidth=1.5)
     plt.plot(processing.phase(v_i[5][skip:duration]), linewidth=1.5)
 
-    if model["model_EI"]:
+    if "model_EI" not in model or model["model_EI"]:
         plt.figure(figsize=(20, 3))
         plt.title("Phases of 5 Excitatory Neurons", fontsize=18)
         plt.xlabel("t in [ms]")
@@ -796,7 +867,7 @@ def phases_intra_nets(model: dict, skip: int = 200, duration: int = 600):
     plt.plot(f_plv_net_1, linewidth=3.0, c="black")
     plt.plot(f_plv_net_1_i, linewidth=3.0, c=c_inh)
 
-    if model["model_EI"]:
+    if "model_EI" not in model or model["model_EI"]:
         f_plv_net_1_e = processing.order_parameter_over_time(v_e)
         plt.plot(f_plv_net_1_e, linewidth=3.0, c=c_exc)
 
@@ -1005,8 +1076,8 @@ def _prepare_data(metric: str, models: [dict], x: str, y: str):
     return data
 
 
-def _save_to_file(
-    name: str, save: bool, key: str = None, folder: str = None, dpi: int = 300
+def save_to_file(
+    name: str, save: bool = True, key: str = None, folder: str = None, dpi: int = 300
 ):
     if save:
         base = f"{name}-{key}.png" if key else f"{name}.png"

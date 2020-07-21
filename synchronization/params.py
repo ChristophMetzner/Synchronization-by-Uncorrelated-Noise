@@ -55,7 +55,7 @@ def get_params():
     # note for uniform distribution: by default the uniform initial distribution is set on the interval [Vr, Vcut]
     params["net_delta_peak_E"] = -70.0
     params["net_delta_peak_I"] = -70.0
-    # Adds randomness to initial mebmrane voltage of neurons.
+    # Adds randomness to initial membrane voltage of neurons.
     params["net_random_membrane_voltage"] = True
 
     # Brian2 specific parameters
@@ -82,6 +82,7 @@ def get_params():
     params["tauw_exc"] = 200.0  # [ms]
     params["a_exc"] = 4.0  # [nS]               subthreshold adaptation param
     params["b_exc"] = 40.0  # [pA]              spike-frequency adaptation param
+    # TODO: why is Vr so high? In Naud et al. it is around -40-60 mv?
     params["Vr_exc"] = -70.0  # [mV]            reset voltage
     params["t_ref_exc"] = 1.0  # [ms]
 
