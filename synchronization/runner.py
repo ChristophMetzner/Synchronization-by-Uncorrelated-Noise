@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 import pickle
 import os
 
@@ -47,8 +46,6 @@ def run(
     if modified_params:
         # Update params with modified_params
         p = update(p, modified_params)
-
-    # TODO: check if model already exist, if it should not be overwritten, skip this run!
 
     # external time trace used for generating input and plotting
     # if time step is unequal to model_dt input gets interpolated
