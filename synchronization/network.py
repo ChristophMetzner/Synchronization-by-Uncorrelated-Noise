@@ -7,8 +7,12 @@ import os
 import time
 import shutil
 import gc
+import logging
+
 
 cpp_default_dir = "brian2_compile"
+
+logger = logging.getLogger("sim")
 
 
 def network_sim(signal, params: dict):
@@ -266,7 +270,7 @@ def network_sim(signal, params: dict):
     rate_monitor_e = PopulationRateMonitor(E, name="aeif_ratemon_e")
     rate_monitor_i = PopulationRateMonitor(I, name="aeif_ratemon_i")
 
-    print("Initializing net ...")
+    logger.debug("Initializing net ...")
     start_init = time.time()
 
     net = Network(E, I, rate_monitor_e, rate_monitor_i,)
@@ -281,7 +285,7 @@ def network_sim(signal, params: dict):
         # lambda_1 = mu / dv_1 / #neurons
         poisson_rate = poisson_group_rate / params["poisson_size"]
 
-        print(
+        logger.debug(
             f"Net 1 - poisson rate {poisson_group_rate} - single neuron {poisson_rate} - strength {poisson_strength}"
         )
 
@@ -296,7 +300,7 @@ def network_sim(signal, params: dict):
 
         if params["poisson_I_enabled"]:
             I_rate = poisson_rate * poisson_I_ratio
-            print("Poisson rate to I pop:", I_rate)
+            logger.debug("Poisson rate to I pop:", I_rate)
             P_I = PoissonInput(
                 target=I,
                 target_var="v",
@@ -318,7 +322,7 @@ def network_sim(signal, params: dict):
         if params["poisson_enabled"][1]:
             # Rate of 2nd network is fraction of 1st network.
             rate_2 = params["poisson_p"] * poisson_rate
-            print(f"Net 2 - rate for single neuron {rate_2}")
+            logger.debug(f"Net 2 - rate for single neuron {rate_2}")
 
             P_E_2 = PoissonInput(
                 target=E2,
@@ -357,7 +361,7 @@ def network_sim(signal, params: dict):
             clock,
         )
 
-    print("Initialization time: {}s".format(time.time() - start_init))
+    logger.debug("Initialization time: {}s".format(time.time() - start_init))
 
     # Initial distribution of the network simulation
     if params["net_random_membrane_voltage"]:
@@ -403,7 +407,7 @@ def network_sim(signal, params: dict):
             dt=dt_sim,
         )
 
-        print("Lower bound active at {}".format(params["net_v_lower_bound"]))
+        logger.debug("Lower bound active at {}".format(params["net_v_lower_bound"]))
         net.add(V_lowerbound_E)
 
         V_lowerbound_E2 = E2.run_regularly(
@@ -413,7 +417,7 @@ def network_sim(signal, params: dict):
             dt=dt_sim,
         )
 
-        print("Lower bound active at {}".format(params["net_v_lower_bound"]))
+        logger.debug("Lower bound active at {}".format(params["net_v_lower_bound"]))
         net.add(V_lowerbound_E2)
 
         # new in Brian2.0b4: custom_operation --> run_regularly
@@ -424,7 +428,7 @@ def network_sim(signal, params: dict):
             dt=dt_sim,
         )
 
-        print("Lower bound active at {}".format(params["net_v_lower_bound"]))
+        logger.debug("Lower bound active at {}".format(params["net_v_lower_bound"]))
         net.add(V_lowerbound_I1)
 
         # new in Brian2.0b4: custom_operation --> run_regularly
@@ -435,7 +439,7 @@ def network_sim(signal, params: dict):
             dt=dt_sim,
         )
 
-        print("Lower bound active at {}".format(params["net_v_lower_bound"]))
+        logger.debug("Lower bound active at {}".format(params["net_v_lower_bound"]))
         net.add(V_lowerbound_I2)
 
     if record_synapses:
@@ -497,7 +501,7 @@ def network_sim(signal, params: dict):
         device.build(directory=project_dir, compile=True, run=True, debug=False)
 
     run_time = time.time() - start_time
-    print("runtime: %1.1f" % run_time)
+    logger.debug("runtime: %1.1f" % run_time)
 
     # unbinned quantities
     net_rates_e = rate_monitor_e.smooth_rate(window="flat", width=10.0 * ms) / Hz
