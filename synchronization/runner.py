@@ -156,7 +156,7 @@ def post_processing(results: dict) -> dict:
 
     # low and high cut frequency for filter
     lowcut = 30
-    highcut = 80
+    highcut = 120
 
     model_EI = results["model_EI"]
 

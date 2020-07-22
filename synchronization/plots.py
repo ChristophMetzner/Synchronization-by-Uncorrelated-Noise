@@ -298,7 +298,7 @@ def plot_results(
         fig_size=(8, 3),
         xlim=xlim_psd,
         groups=psd_group,
-        skip=skip
+        skip=skip,
     )
     psd(
         model,
@@ -307,7 +307,7 @@ def plot_results(
         fig_size=(8, 3),
         xlim=xlim_psd,
         groups=psd_group,
-        skip=skip
+        skip=skip,
     )
 
     lfp_nets(model, skip=100)
@@ -724,14 +724,15 @@ def synaptic_conductance(model: dict):
 def phases_inter_nets(model: dict, skip: int = 200, show_lfp: bool = False):
     """ Plots figures to analyze phases of networks and their synchronization.
 
+    :param show_lfp: if True LFP over time will be plotted.
     :param skip: amount of ms to skip.
     :param model: the given model.
     :type model: dict
     """
     lfp1, lfp2 = processing.lfp_nets(model, skip=skip)
     f_lfp1, f_lfp2 = (
-        processing.filter(lfp1, lowcut=30, highcut=80),
-        processing.filter(lfp2, lowcut=30, highcut=80),
+        processing.filter(lfp1, lowcut=30, highcut=120),
+        processing.filter(lfp2, lowcut=30, highcut=120),
     )
 
     fig_size = (20, 3)

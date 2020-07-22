@@ -265,7 +265,7 @@ def phase_synchronization(signals):
     return np.mean(phi)
 
 
-def filter(signal, fs: int = 1000, lowcut: int = 30, highcut: int = 80, order: int = 2):
+def filter(signal, fs: int = 1000, lowcut: int = 30, highcut: int = 120, order: int = 2):
     """ Applies Band Pass Filter to `signal`.
 
     :param signal: input signal
