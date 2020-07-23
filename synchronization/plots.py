@@ -281,6 +281,7 @@ def plot_results(
     excerpt_x_right: int = 300,
     psd_group: str = None,
     skip: int = 200,
+    networks: int = 2,
 ):
     """
     Plots all relevant figures needed to understand network behavior.
@@ -300,17 +301,19 @@ def plot_results(
         groups=psd_group,
         skip=skip,
     )
-    psd(
-        model,
-        title="PSD of 2nd network",
-        population=2,
-        fig_size=(8, 3),
-        xlim=xlim_psd,
-        groups=psd_group,
-        skip=skip,
-    )
 
-    lfp_nets(model, skip=100)
+    if networks > 1:
+        psd(
+            model,
+            title="PSD of 2nd network",
+            population=2,
+            fig_size=(8, 3),
+            xlim=xlim_psd,
+            groups=psd_group,
+            skip=skip,
+        )
+
+    lfp_nets(model, skip=100, single_net=networks == 1)
 
     if full_raster:
         fig, axs = plt.subplots(1, 2, figsize=(40, 15))
@@ -322,13 +325,15 @@ def plot_results(
             ax=axs[0],
             x_right=raster_right,
         )
-        raster(
-            title="Raster of 2nd network",
-            model=model,
-            population=2,
-            ax=axs[1],
-            x_right=raster_right,
-        )
+
+        if networks > 1:
+            raster(
+                title="Raster of 2nd network",
+                model=model,
+                population=2,
+                ax=axs[1],
+                x_right=raster_right,
+            )
 
     fig, axs = plt.subplots(1, 2, figsize=(20, 5))
     raster(
@@ -338,20 +343,23 @@ def plot_results(
         x_right=excerpt_x_right,
         ax=axs[0],
     )
-    raster(
-        title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 2",
-        model=model,
-        x_left=excerpt_x_left,
-        x_right=excerpt_x_right,
-        population=2,
-        ax=axs[1],
-    )
+
+    if networks > 1:
+        raster(
+            title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 2",
+            model=model,
+            x_left=excerpt_x_left,
+            x_right=excerpt_x_right,
+            population=2,
+            ax=axs[1],
+        )
 
     if pop_rates:
         population_rates(model, skip=2000)
 
-    phases_inter_nets(model)
-    phases_intra_nets(model)
+    if networks > 1:
+        phases_inter_nets(model)
+        phases_intra_nets(model)
 
 
 def noise(
@@ -416,12 +424,8 @@ def lfp(
     ax.plot(t, lfp2, "0.25", c=c_exc)
 
     plt.legend(
-        handles=[
-            mpatches.Patch(color="black", label="Excitatory Group"),
-            mpatches.Patch(color="darkgrey", label="Inhibitory Group"),
-        ]
+        ["Excitatory Group", "Inhibitory Group",]
     )
-
     plt.tight_layout()
 
     save_to_file("summed_voltage", save, prefix)
