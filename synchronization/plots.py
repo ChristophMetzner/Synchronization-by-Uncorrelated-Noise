@@ -275,6 +275,7 @@ def plot_results(
     model,
     full_raster: bool = False,
     pop_rates: bool = True,
+    phase_analysis: bool = False,
     raster_right: int = None,
     xlim_psd: int = 120,
     excerpt_x_left: int = 200,
@@ -291,6 +292,17 @@ def plot_results(
     * Spike Raster
     * Population Rates
 
+    :param model: model dict holding recorded data.
+    :param full_raster: if True, raster plot will be shown.
+    :param pop_rates: if True,
+    :param phase_analysis:
+    :param raster_right:
+    :param xlim_psd:
+    :param excerpt_x_left:
+    :param excerpt_x_right:
+    :param psd_group:
+    :param skip:
+    :param networks:
     """
     psd(
         model,
@@ -357,7 +369,7 @@ def plot_results(
     if pop_rates:
         population_rates(model, skip=2000)
 
-    if networks > 1:
+    if networks > 1 and phase_analysis:
         phases_inter_nets(model)
         phases_intra_nets(model)
 
@@ -1045,6 +1057,45 @@ def heat_map(
     ax = sns.heatmap(heatmap_data, **kwargs)
 
     return fig, ax, df
+
+
+def isi_histograms(model: dict, bins: int = 60):
+    """
+    Plots the inter spike interval histograms of each population.
+
+    :param model: input model.
+    :param bins: number of bins.
+    """
+    avg_E = np.average(model["isi_E"])
+    avg_I = np.average(model["isi_I"])
+
+    if "model_EI" not in model or model["model_EI"]:
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.set_title("ISI Histogram of E Population of 1st Network")
+        ax.set_xlabel("Time in [ms]")
+        ax.set_ylabel("Density")
+        ax.hist(model["isi_E"], bins=bins, color=c_exc)
+        plt.axvline(avg_E, color="orange", linestyle="dashed", linewidth=3)
+        min_ylim, max_ylim = plt.ylim()
+        plt.text(avg_E * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_E))
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.set_title("ISI Histogram of I Population of 1st Network")
+    ax.set_xlabel("Time in [ms]")
+    ax.set_ylabel("Density")
+    ax.hist(model["isi_I"], bins=bins, color=c_inh)
+    plt.axvline(avg_I, color="orange", linestyle="dashed", linewidth=3)
+    min_ylim, max_ylim = plt.ylim()
+    plt.text(avg_I * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_I))
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.set_title("ISI Histogram of I Population of 1st Network")
+    ax.set_xlabel("Time in [ms]")
+    ax.set_ylabel("Density")
+    ax.hist(model["isi_I2"], bins=bins, color=c_inh)
+    plt.axvline(avg_I, color="orange", linestyle="dashed", linewidth=3)
+    min_ylim, max_ylim = plt.ylim()
+    plt.text(avg_I * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_I))
 
 
 def _prepare_data(metric: str, models: [dict], x: str, y: str):

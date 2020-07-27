@@ -1,11 +1,12 @@
 import numpy as np
 
 from typing import Tuple
+
+from brian2 import ms
 from scipy.signal import hilbert
 from matplotlib import mlab
 from scipy.signal.filter_design import butter
 from scipy.signal.signaltools import filtfilt
-
 
 """
 This module contains a diverse set of functions that process the generated neuronal data of the models.
@@ -265,7 +266,9 @@ def phase_synchronization(signals):
     return np.mean(phi)
 
 
-def filter(signal, fs: int = 1000, lowcut: int = 30, highcut: int = 120, order: int = 2):
+def filter(
+    signal, fs: int = 1000, lowcut: int = 30, highcut: int = 120, order: int = 2
+):
     """ Applies Band Pass Filter to `signal`.
 
     :param signal: input signal
@@ -287,3 +290,52 @@ def filter(signal, fs: int = 1000, lowcut: int = 30, highcut: int = 120, order: 
 
 def filter_signals(signals) -> list:
     return [filter(s) for s in signals]
+
+
+def group_neurons(v, window=None, t_start=15, t_end=35, thr=-60):
+    """
+    Simple spike detection algorithm for given time window.
+
+    Ideas:
+    * Could also use recorded SpikeMonitor.
+    """
+
+    window = window if window else (120, 170)
+
+    first = []
+    second = []
+
+    for n_idx, n in enumerate(v):
+        spiked = False
+        for mv_idx, mv in enumerate(n[window[0] : window[1]]):
+            if mv < thr and t_end >= mv_idx >= t_start:
+                spiked = True
+
+        if spiked:
+            first.append(n)
+        else:
+            second.append(n)
+
+    print(len(first))
+    print(len(second))
+    return first, second
+
+
+def inter_spike_intervals(spike_trains) -> list:
+    """
+    Computes the inter spike intervals for a list of `spike_trains`.
+
+    Each spike train contains spiking times of a neuron.
+
+    :param spike_trains: list of spike times.
+    :return: list, spike intervals.
+    """
+    isi = []
+    for n in spike_trains:
+        end = len(n) - 1
+        for idx, t in enumerate(n):
+            if idx != end:
+                t_next = n[idx + 1]
+                isi.append(abs(t_next - t) / ms)
+
+    return isi

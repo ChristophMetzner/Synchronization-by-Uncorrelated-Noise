@@ -3,6 +3,8 @@ from __future__ import print_function
 from brian2 import *
 from brian2tools import *
 
+from synchronization import processing
+
 import os
 import time
 import shutil
@@ -454,26 +456,18 @@ def network_sim(signal, params: dict):
 
         # TODO: add range to limit number of recorded traces
         # range(min(params['net_record_example_v_traces'] ,N_total))
-        v_monitor_record_all_E = StateMonitor(
-            E, "v", record=True, clock=clock_record_all
-        )
-        net.add(v_monitor_record_all_E)
+        v_trace_E = StateMonitor(E, "v", record=True, clock=clock_record_all)
+        net.add(v_trace_E)
 
-        v_monitor_record_all_I1 = StateMonitor(
-            I, "v", record=True, clock=clock_record_all
-        )
-        net.add(v_monitor_record_all_I1)
+        v_trace_I1 = StateMonitor(I, "v", record=True, clock=clock_record_all)
+        net.add(v_trace_I1)
 
         if N_pop > 1:
-            v_monitor_record_all_E2 = StateMonitor(
-                E2, "v", record=True, clock=clock_record_all
-            )
-            net.add(v_monitor_record_all_E2)
+            v_trace_E2 = StateMonitor(E2, "v", record=True, clock=clock_record_all)
+            net.add(v_trace_E2)
 
-            v_monitor_record_all_I2 = StateMonitor(
-                I2, "v", record=True, clock=clock_record_all
-            )
-            net.add(v_monitor_record_all_I2)
+            v_trace_I2 = StateMonitor(I2, "v", record=True, clock=clock_record_all)
+            net.add(v_trace_I2)
 
     if record_spikes > 0:
         record_spikes_group_E = Subgroup(E, 0, min(record_spikes, N_e))
@@ -504,10 +498,10 @@ def network_sim(signal, params: dict):
     logger.debug("runtime: %1.1f" % run_time)
 
     # unbinned quantities
-    net_rates_e = rate_monitor_e.smooth_rate(window="flat", width=10.0 * ms) / Hz
+    net_rates_e = rate_monitor_e.smooth_rate(window="gaussian", width=5.0 * ms) / Hz
     net_t_e = rate_monitor_e.t / ms
 
-    net_rates_i1 = rate_monitor_i.smooth_rate(window="flat", width=10.0 * ms) / Hz
+    net_rates_i1 = rate_monitor_i.smooth_rate(window="gaussian", width=5.0 * ms) / Hz
     net_t_i1 = rate_monitor_i.t / ms
 
     # for smoothing function net_rates do: helpers.smooth_trace(net_rates, int(rates_dt / dt_sim))
@@ -527,10 +521,14 @@ def network_sim(signal, params: dict):
     }
 
     if N_pop > 1:
-        net_rates_e2 = rate_monitor_e2.smooth_rate(window="flat", width=10.0 * ms) / Hz
+        net_rates_e2 = (
+            rate_monitor_e2.smooth_rate(window="gaussian", width=5.0 * ms) / Hz
+        )
         net_t_e2 = rate_monitor_e2.t / ms
 
-        net_rates_i2 = rate_monitor_i2.smooth_rate(window="flat", width=10.0 * ms) / Hz
+        net_rates_i2 = (
+            rate_monitor_i2.smooth_rate(window="gaussian", width=5.0 * ms) / Hz
+        )
         net_t_i2 = rate_monitor_i2.t / ms
 
         results["r_e2"] = net_rates_e2
@@ -548,8 +546,32 @@ def network_sim(signal, params: dict):
         i, t = net_spikes_i1
         net_spikes_i1 = [i * 1, t * 1]
 
+        # TODO: based on this we can compute the rate (and detect cycles?)
+        # spike rates can then be used to plot the spike rate distribution
+        isi_e = processing.inter_spike_intervals(
+            spike_monitor_E.spike_trains().values()
+        )
+        isi_i = processing.inter_spike_intervals(
+            spike_monitor_I1.spike_trains().values()
+        )
+
+        results["isi_E"] = isi_e
+        results["isi_I"] = isi_i
+        results["spike_trains_E"] = spike_monitor_E.spike_trains()
+        results["spike_trains_I"] = spike_monitor_I1.spike_trains()
         results["net_spikes_e"] = net_spikes_e
         results["net_spikes_i1"] = net_spikes_i1
+
+        # TODO: get this working!
+        # for idx, t in zip(net_spikes_e[0], net_spikes_e[1]):
+        #     # get to next higher second
+        #     i = int(t / 1.0)
+        #     v_trace_E.v[idx][i] = 40 * mV
+
+        # plot(v_trace_E.v[0])
+
+        # TODO: calculate mean firing rate f_e1, f_e2, f_i1, f_i2
+        # number of spikes / simulation time * Number of Neurons
 
         if N_pop > 1:
             net_spikes_e2 = spike_monitor_E2.it
@@ -560,15 +582,21 @@ def network_sim(signal, params: dict):
             i, t = net_spikes_i2
             net_spikes_i2 = [i * 1, t * 1]
 
+            results["isi_E2"] = processing.inter_spike_intervals(
+                spike_monitor_E2.spike_trains().values()
+            )
+            results["isi_I2"] = processing.inter_spike_intervals(
+                spike_monitor_I2.spike_trains().values()
+            )
             results["net_spikes_e2"] = net_spikes_e2
             results["net_spikes_i2"] = net_spikes_i2
 
     if record_all_v_at_times:
-        v_all_neurons_e = v_monitor_record_all_E.v / mV
-        t_all_neurons_e = v_monitor_record_all_E.t / ms
+        v_all_neurons_e = v_trace_E.v / mV
+        t_all_neurons_e = v_trace_E.t / ms
 
-        v_all_neurons_i1 = v_monitor_record_all_I1.v / mV
-        t_all_neurons_i1 = v_monitor_record_all_I1.t / ms
+        v_all_neurons_i1 = v_trace_I1.v / mV
+        t_all_neurons_i1 = v_trace_I1.t / ms
 
         results["v_all_neurons_e"] = v_all_neurons_e
         results["t_all_neurons_e"] = t_all_neurons_e
@@ -577,11 +605,11 @@ def network_sim(signal, params: dict):
         results["t_all_neurons_i1"] = t_all_neurons_i1
 
         if N_pop > 1:
-            v_all_neurons_e2 = v_monitor_record_all_E2.v / mV
-            t_all_neurons_e2 = v_monitor_record_all_E2.t / ms
+            v_all_neurons_e2 = v_trace_E2.v / mV
+            t_all_neurons_e2 = v_trace_E2.t / ms
 
-            v_all_neurons_i2 = v_monitor_record_all_I2.v / mV
-            t_all_neurons_i2 = v_monitor_record_all_I2.t / ms
+            v_all_neurons_i2 = v_trace_I2.v / mV
+            t_all_neurons_i2 = v_trace_I2.t / ms
 
             results["v_all_neurons_e2"] = v_all_neurons_e2
             results["t_all_neurons_e2"] = t_all_neurons_e2
