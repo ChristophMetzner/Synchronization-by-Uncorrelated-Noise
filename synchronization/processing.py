@@ -258,8 +258,8 @@ def phase_synchronization(signals):
     avg = sum(complex_phases) / len(complex_phases)
 
     # take the length of the vector
-    # it tells us about the consistency of the phases
-    # length -> 0 => low consistency, length -> 1 => high consistency
+    # it tells us about the lag of the phases
+    # length -> 0 => high lag, length -> 1 => no lag, perfect synchronization
     phi = np.abs(avg)
 
     # mean of phi as it is currently phi over time
@@ -292,7 +292,7 @@ def filter_signals(signals) -> list:
     return [filter(s) for s in signals]
 
 
-def group_neurons(v, window=None, t_start=15, t_end=35, thr=-60):
+def group_neurons(v, spike_t: int, window, t_start=5, t_end=5, thr=-70):
     """
     Simple spike detection algorithm for given time window.
 
@@ -308,7 +308,7 @@ def group_neurons(v, window=None, t_start=15, t_end=35, thr=-60):
     for n_idx, n in enumerate(v):
         spiked = False
         for mv_idx, mv in enumerate(n[window[0] : window[1]]):
-            if mv < thr and t_end >= mv_idx >= t_start:
+            if mv <= thr and spike_t + t_end >= mv_idx >= spike_t - t_start:
                 spiked = True
 
         if spiked:
@@ -339,3 +339,63 @@ def inter_spike_intervals(spike_trains) -> list:
                 isi.append(abs(t_next - t) / ms)
 
     return isi
+
+
+def get_first_spike(v, t, window):
+    """
+    Returns first spike of first neuron in `v` in time `window`.
+
+    First spike hit once membrane voltage is below or equal to -70 mV.
+
+    :param v: voltage trace of neurons.
+    :param t: recorded time steps.
+    :param window: (start, end)
+    :return:
+    """
+    spikes = [
+        (x, y)
+        for (x, y) in zip(v[0][window[0] : window[1]], t[window[0] : window[1]])
+        if x <= -70
+    ]
+
+    if spikes:
+        v_s, t_s = spikes[0]
+        return v_s, t_s
+    else:
+        return None
+
+
+def spike_participation(v, peaks):
+    """
+    Compute spike participation on neuron and on network level.
+
+    :param v: membrane voltage traces.
+    :param peaks: peak data structure.
+    :return: (participation per neuron, participation per peak)
+    """
+    peak_count = len(peaks[0])
+    participation_n = {}
+    participation_p = {}
+
+    for peak in peaks[0]:
+        for idx, v_n in enumerate(v):
+            v_p = v_n[int(peak) - 4 : int(peak) + 4]
+            if any([s for s in v_p if s >= -47]):
+                if peak in participation_p:
+                    participation_p[peak] += 1
+                else:
+                    participation_p[peak] = 1
+
+                if idx in participation_n:
+                    participation_n[idx] += 1
+                else:
+                    participation_n[idx] = 1
+                participation_n[idx] = participation_n[idx]
+
+    for k in participation_n.keys():
+        participation_n[k] = participation_n[k] / peak_count
+
+    for p in participation_p.keys():
+        participation_p[p] = participation_p[p] / 1000
+
+    return participation_n, participation_p

@@ -671,6 +671,37 @@ def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
     return ax
 
 
+def membrane_potentials_sample(model: dict, detail_window=(900, 1000)):
+    v = model["v_all_neurons_i1"]
+    v2 = model["v_all_neurons_i2"]
+    t = model["t_all_neurons_i1"]
+
+    plt.figure(figsize=(20, 3))
+    plt.title("Membrane Voltage of an Inhibitory Neuron", fontsize=16)
+    plt.xlabel("Time in [ms]", fontsize=16)
+    plt.ylabel("Voltage in [mV]", fontsize=16)
+    plt.plot(t, v[0], c=c_inh, linewidth=2.5)
+    plt.plot(t, v[1], linewidth=0.5)
+    plt.plot(t, v[2], linewidth=0.5)
+
+    plt.figure(figsize=(20, 3))
+    plt.plot(
+        t[detail_window[0] : detail_window[1]],
+        v[0][detail_window[0] : detail_window[1]],
+        c=c_inh,
+        linewidth=2.5,
+    )
+    plt.xticks(np.arange(detail_window[0], detail_window[1], 5.0))
+
+    plt.figure(figsize=(20, 3))
+    plt.title("Network 2", fontsize=16)
+    plt.xlabel("Time in [ms]", fontsize=16)
+    plt.ylabel("Voltage in [mV]", fontsize=16)
+    plt.plot(t, v2[0], c="green", linewidth=0.5)
+    plt.plot(t, v2[1], linewidth=2.5)
+    plt.plot(t, v2[2], linewidth=0.5)
+
+
 def population_rates(model: dict, skip: int = None):
     """
     Plots the smoothed population rates for excitatory and inhibitory groups of both populations.
@@ -1066,10 +1097,9 @@ def isi_histograms(model: dict, bins: int = 60):
     :param model: input model.
     :param bins: number of bins.
     """
-    avg_E = np.average(model["isi_E"])
-    avg_I = np.average(model["isi_I"])
-
     if "model_EI" not in model or model["model_EI"]:
+        avg_E = np.average(model["isi_E"])
+
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.set_title("ISI Histogram of E Population of 1st Network")
         ax.set_xlabel("Time in [ms]")
@@ -1077,7 +1107,11 @@ def isi_histograms(model: dict, bins: int = 60):
         ax.hist(model["isi_E"], bins=bins, color=c_exc)
         plt.axvline(avg_E, color="orange", linestyle="dashed", linewidth=3)
         min_ylim, max_ylim = plt.ylim()
-        plt.text(avg_E * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_E))
+        plt.text(
+            avg_E * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=14
+        )
+
+    avg_I = np.average(model["isi_I"])
 
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_title("ISI Histogram of I Population of 1st Network")
@@ -1086,16 +1120,71 @@ def isi_histograms(model: dict, bins: int = 60):
     ax.hist(model["isi_I"], bins=bins, color=c_inh)
     plt.axvline(avg_I, color="orange", linestyle="dashed", linewidth=3)
     min_ylim, max_ylim = plt.ylim()
-    plt.text(avg_I * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_I))
+    plt.text(
+        avg_I * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_I), fontsize=14
+    )
+
+    avg_I2 = np.average(model["isi_I2"])
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.set_title("ISI Histogram of I Population of 1st Network")
+    ax.set_title("ISI Histogram of I Population of 2nd Network")
     ax.set_xlabel("Time in [ms]")
     ax.set_ylabel("Density")
     ax.hist(model["isi_I2"], bins=bins, color=c_inh)
-    plt.axvline(avg_I, color="orange", linestyle="dashed", linewidth=3)
+    plt.axvline(avg_I2, color="orange", linestyle="dashed", linewidth=3)
     min_ylim, max_ylim = plt.ylim()
-    plt.text(avg_I * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_I))
+    plt.text(
+        avg_I2 * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_I2), fontsize=14
+    )
+
+
+def spike_variability_analysis(v, v2, window, t_s, t_width=(5, 5)):
+    figsize = (15, 2)
+    first, second = processing.group_neurons(
+        v2, window=window, spike_t=t_s - window[0], t_start=t_width[0], t_end=t_width[1]
+    )
+
+    plt.figure(figsize=figsize)
+    plt.title(
+        "Membrane Potential of a single I neuron of Net 1 showing a spike", fontsize=14
+    )
+    plt.xlabel("Time in [ms]", fontsize=14)
+    plt.ylabel("Voltage in [mv]")
+    plt.ylim(-70, -40)
+    plt.plot(v[0][window[0] : window[1]], linewidth=3.0, c="black")
+
+    plt.figure(figsize=figsize)
+    plt.title(
+        "Comparison of mean membrane potential of spiking and non-spiking group",
+        fontsize=14,
+    )
+    plt.xlabel("Time in [ms]", fontsize=14)
+    plt.ylabel("Voltage in [mv]")
+    plt.ylim(-70, -40)
+    plt.plot(np.mean(first, axis=0)[window[0] : window[1]], c=c_exc, linewidth=3.0)
+    plt.plot(np.mean(second, axis=0)[window[0] : window[1]], c=c_inh, linewidth=3.0)
+    plt.legend(["Spiking of I in Net 2", "Surpressed of I in Net 2"])
+
+    plt.figure(figsize=figsize)
+    plt.title("Example traces from each group", fontsize=14)
+    plt.xlabel("Time in [ms]", fontsize=14)
+    plt.ylabel("Voltage in [mv]")
+    plt.ylim(-70, -40)
+
+    for f in first[:50]:
+        plt.plot(f[window[0] : window[1]], c=c_exc, linewidth=0.5, alpha=0.75)
+    for s in second[:50]:
+        plt.plot(s[window[0] : window[1]], c=c_inh, linewidth=0.5, alpha=0.75)
+
+    # plt.figure(figsize=figsize)
+    # plt.title(
+    #     "Potentials of non spiking group over 1s, showing spiking at in other time windows.",
+    #     fontsize=16,
+    # )
+    # plt.xlabel("Time in [ms]", fontsize=14)
+    # plt.ylim(-70, -40)
+    # for s in second[:10]:
+    #     plt.plot(s[:500], linewidth=0.75)
 
 
 def _prepare_data(metric: str, models: [dict], x: str, y: str):

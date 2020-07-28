@@ -1,24 +1,45 @@
 import numpy as np
 import pickle
 import os
+import logging
 
 from synchronization import params
 from synchronization import network as net
 from synchronization import constants
 from synchronization.utils import generate_ou_input, update
 from synchronization import processing
+from synchronization import analysis
 
 
 def run(
-    file_name: str = None, experiment_name: str = None, modified_params: dict = None
+    file_name: str = None,
+    experiment_name: str = None,
+    modified_params: dict = None,
+    load: bool = False,
 ):
     """
-    Runs the simulation and persists the model with `basename`.
+    Runs the simulation and persists the model with `filename`.
 
+    :param load: if True will load persisted model instead.
     :param modified_params: dict that updates the default params.
     :param file_name: file name of model without extension.
     :param experiment_name: used as parent folder to group by experiment.
     """
+
+    if load:
+        if not file_name:
+            logging.error("Cannot load model with None filename.")
+            return None
+
+        try:
+            logging.debug("Load persisted model ...")
+            model = analysis.load_model(file_name)
+            logging.debug("Model loaded.")
+            return model
+        except Exception as e:
+            logging.error("Failed ot load model", e)
+            return None
+
     # use as default the parameters from file params.py
     # if not specified else below
     p = params.get_params()
@@ -158,7 +179,7 @@ def post_processing(results: dict) -> dict:
     lowcut = 30
     highcut = 120
 
-    model_EI = results["model_EI"]
+    model_ei = results["model_EI"]
 
     max_amplitude_1, peak_freq_1 = processing.band_power(results, skip=skip)
     max_amplitude_2, peak_freq_2 = processing.band_power(results, network=2, skip=skip)
@@ -195,7 +216,7 @@ def post_processing(results: dict) -> dict:
 
     neurons_net_1_e = None
     neurons_net_2_e = None
-    if model_EI:
+    if model_ei:
         neurons_net_1_e = [
             processing.filter(n, lowcut=lowcut, highcut=highcut)
             for n in results["v_all_neurons_e"][:, skip:]
@@ -223,7 +244,7 @@ def post_processing(results: dict) -> dict:
     plv_net_2_i = np.mean(processing.order_parameter_over_time(neurons_net_2_i))
     mpc = processing.mean_phase_coherence(f_lfps[0], f_lfps[1])
 
-    if model_EI:
+    if model_ei:
         plv_net_1_e = np.mean(processing.order_parameter_over_time(neurons_net_1_e))
         plv_net_2_e = np.mean(processing.order_parameter_over_time(neurons_net_2_e))
 
