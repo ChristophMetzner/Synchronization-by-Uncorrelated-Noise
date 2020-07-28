@@ -588,6 +588,8 @@ def network_sim(signal, params: dict):
             results["isi_I2"] = processing.inter_spike_intervals(
                 spike_monitor_I2.spike_trains().values()
             )
+            results["spike_trains_E2"] = spike_monitor_E2.spike_trains()
+            results["spike_trains_I2"] = spike_monitor_I2.spike_trains()
             results["net_spikes_e2"] = net_spikes_e2
             results["net_spikes_i2"] = net_spikes_i2
 
