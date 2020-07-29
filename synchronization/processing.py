@@ -365,12 +365,14 @@ def get_first_spike(v, t, window):
         return None
 
 
-def spike_participation(v, peaks):
+def spike_participation(v, peaks, width: int = 4, threshold=-47):
     """
     Compute spike participation on neuron and on network level.
 
     :param v: membrane voltage traces.
     :param peaks: peak data structure.
+    :param threshold:
+    :param width:
     :return: (participation per neuron, participation per peak)
     """
     peak_count = len(peaks[0])
@@ -379,8 +381,8 @@ def spike_participation(v, peaks):
 
     for peak in peaks[0]:
         for idx, v_n in enumerate(v):
-            v_p = v_n[int(peak) - 4 : int(peak) + 4]
-            if any([s for s in v_p if s >= -47]):
+            v_p = v_n[int(peak) - width : int(peak) + width]
+            if any([s for s in v_p if s >= threshold]):
                 if peak in participation_p:
                     participation_p[peak] += 1
                 else:
@@ -396,6 +398,6 @@ def spike_participation(v, peaks):
         participation_n[k] = participation_n[k] / peak_count
 
     for p in participation_p.keys():
-        participation_p[p] = participation_p[p] / 1000
+        participation_p[p] = participation_p[p] / len(v)
 
     return participation_n, participation_p

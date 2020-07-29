@@ -11,7 +11,6 @@ import shutil
 import gc
 import logging
 
-
 cpp_default_dir = "brian2_compile"
 
 logger = logging.getLogger("sim")
@@ -27,8 +26,8 @@ def network_sim(signal, params: dict):
         prefs.codegen.target = params["brian2_codegen_target"]
 
     # Stripe on brian units within the copied dict for the simulation so that brian can work with them
-    ### Neuron group specific parameters
-    ### Excitatory cells
+    # Neuron group specific parameters
+    # Excitatory cells
     C_e = params["C_exc"] * pF
     gL_e = params["gL_exc"] * nS
 
@@ -47,7 +46,7 @@ def network_sim(signal, params: dict):
     tau_AMPA = params["tau_AMPA"] * ms
     E_AMPA = params["E_AMPA"] * mV
 
-    ### Inhibitory cells
+    # Inhibitory cells
     C_i = params["C_inh1"] * pF
     gL_i = params["gL_inh1"] * nS
     R_i = 1 / gL_i
@@ -64,7 +63,7 @@ def network_sim(signal, params: dict):
     tau_GABA = params["tau_GABA"] * ms
     E_GABA = params["E_GABA"] * mV
 
-    ### General parameters
+    # General parameters
     dt_sim = params["net_dt"] * ms
     net_w_init_e = params["net_w_init_e"] * pA
     net_w_init_i = params["net_w_init_i"] * pA
@@ -444,16 +443,21 @@ def network_sim(signal, params: dict):
         logger.debug("Lower bound active at {}".format(params["net_v_lower_bound"]))
         net.add(V_lowerbound_I2)
 
+    # define clock which runs on a very course time grid (memory issue)
+    clock_record_all = Clock(params["net_record_all_neurons_dt"] * ms)
+
     if record_synapses:
-        g_ampa_monitor = StateMonitor(E, "g_ampa", record=[0], clock=clock)
-        g_gaba_monitor = StateMonitor(I, "g_gaba", record=[0], clock=clock)
-        net.add(g_ampa_monitor)
-        net.add(g_gaba_monitor)
+        g_ampa_monitor_E = StateMonitor(E, "g_ampa", record=np.arange(0, 30, 1), clock=clock_record_all)
+        g_gaba_monitor_I = StateMonitor(I, "g_gaba", record=np.arange(0, 30, 1), clock=clock_record_all)
+        net.add(g_ampa_monitor_E, g_gaba_monitor_I)
+
+        if N_pop > 1:
+            g_ampa_monitor_E2 = StateMonitor(E2, "g_ampa", record=np.arange(0, 30, 1), clock=clock_record_all)
+            g_gaba_monitor_I2 = StateMonitor(I2, "g_gaba", record=np.arange(0, 30, 1), clock=clock_record_all)
+            net.add(g_ampa_monitor_E2)
+            net.add(g_gaba_monitor_I2)
 
     if record_all_v_at_times:
-        # define clock which runs on a very course time grid (memory issue)
-        clock_record_all = Clock(params["net_record_all_neurons_dt"] * ms)
-
         # TODO: add range to limit number of recorded traces
         # range(min(params['net_record_example_v_traces'] ,N_total))
         v_trace_E = StateMonitor(E, "v", record=True, clock=clock_record_all)
@@ -514,10 +518,10 @@ def network_sim(signal, params: dict):
         "r_i1_t": net_t_i1,
         "t": time_r,
         "dt_sim": dt_sim,
-        "ampa": g_ampa_monitor.g_ampa / nS,
-        "ampa_t": g_ampa_monitor.t / ms,
-        "gaba": g_gaba_monitor.g_gaba / nS,
-        "gaba_t": g_ampa_monitor.t / ms,
+        "ampa": g_ampa_monitor_E.g_ampa / nS,
+        "ampa_t": g_ampa_monitor_E.t / ms,
+        "gaba": g_gaba_monitor_I.g_gaba / nS,
+        "gaba_t": g_ampa_monitor_E.t / ms,
     }
 
     if N_pop > 1:
@@ -535,6 +539,8 @@ def network_sim(signal, params: dict):
         results["r_e2_t"] = net_t_e2
         results["r_i2"] = net_rates_i2
         results["r_i2_t"] = net_t_i2
+        results["ampa_2"] = g_ampa_monitor_E2.g_ampa / nS
+        results["gaba_2"] = g_gaba_monitor_I2.g_gaba / nS
 
     if record_spikes > 0:
         # multiply by 1 like this to ensure brian extracts the results before we delete the compile directory

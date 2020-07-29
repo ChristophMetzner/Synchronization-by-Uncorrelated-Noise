@@ -7,6 +7,7 @@ import os
 
 from typing import Tuple, List, Dict
 from matplotlib import mlab
+from scipy.signal import find_peaks
 
 from synchronization import constants
 from synchronization import processing
@@ -17,6 +18,9 @@ from mopet import mopet
 FIG_SIZE = [10, 6]
 FIG_SIZE_QUADRATIC = [8, 6]
 FIG_SIZE_PSD = [8, 3]
+
+# Title and Axes Fontsize
+FONTSIZE = 14
 
 # Colors
 c_exc = "r"
@@ -449,7 +453,7 @@ def psd(
     model: dict,
     title: str = None,
     duration: int = None,
-    dt: float = 1.0,
+    dt: float = None,
     folder: str = None,
     save: bool = False,
     population: int = 1,
@@ -463,6 +467,7 @@ def psd(
     Plots the Power Spectral Density.
     """
     duration = duration if duration else model["runtime"]
+    dt = dt if dt else model["net_record_all_neurons_dt"]
     if skip:
         duration -= skip
 
@@ -472,7 +477,7 @@ def psd(
 
     # number of data points used in each block for the FTT.
     # Set to number of data points in the input signal.
-    NFFT = int((duration / dt / granularity))
+    nfft = int((duration / dt / granularity))
 
     # Calculating the Sampling frequency.
     # As our time unit is here ms and step size of 1 ms, a fs of 1.0 is the best we can do.
@@ -480,8 +485,8 @@ def psd(
 
     # NFFT: length of each segment, set here to 1.0.
     # Thus each segment is exactly one data point
-    psd1, freqs = mlab.psd(lfp1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
-    psd2, _ = mlab.psd(lfp2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
+    psd1, freqs = mlab.psd(lfp1, NFFT=nfft, Fs=fs, noverlap=0, window=mlab.window_none)
+    psd2, _ = mlab.psd(lfp2, NFFT=nfft, Fs=fs, noverlap=0, window=mlab.window_none)
 
     # We multiply by 1000 to get from ms to s.
     freqs = freqs * 1000
@@ -641,7 +646,7 @@ def raster(
 
 
 def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
-    dt = 1.0
+    dt = model["net_record_dt"]
     duration = model["runtime"]
 
     if skip:
@@ -672,34 +677,61 @@ def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
 
 
 def membrane_potentials_sample(model: dict, detail_window=(900, 1000)):
-    v = model["v_all_neurons_i1"]
-    v2 = model["v_all_neurons_i2"]
+    """
+    Plots several membrane potential traces of I and E cells.
+
+    :param model: model with recorded traces.
+    :param detail_window: time window for detail look.
+    """
+    v_i1 = model["v_all_neurons_i1"]
+    v_i2 = model["v_all_neurons_i2"]
+
     t = model["t_all_neurons_i1"]
 
-    plt.figure(figsize=(20, 3))
-    plt.title("Membrane Voltage of an Inhibitory Neuron", fontsize=16)
-    plt.xlabel("Time in [ms]", fontsize=16)
-    plt.ylabel("Voltage in [mV]", fontsize=16)
-    plt.plot(t, v[0], c=c_inh, linewidth=2.5)
-    plt.plot(t, v[1], linewidth=0.5)
-    plt.plot(t, v[2], linewidth=0.5)
+    if model["model_EI"]:
+        v_e1 = model["v_all_neurons_e"]
+
+        plt.figure(figsize=(20, 3))
+        plt.title("Membrane Voltages of excitatory neurons in Net 1", fontsize=FONTSIZE)
+        plt.xlabel("Time in [ms]", fontsize=FONTSIZE)
+        plt.ylabel("Voltage in [mV]", fontsize=FONTSIZE)
+        plt.plot(t, v_e1[0], c=c_exc, linewidth=2.5)
+        plt.plot(t, v_e1[1], linewidth=0.5)
+        plt.plot(t, v_e1[2], linewidth=0.5)
 
     plt.figure(figsize=(20, 3))
+    plt.title("Membrane Voltages of inhibitory neurons in Net 2", fontsize=FONTSIZE)
+    plt.xlabel("Time in [ms]", fontsize=FONTSIZE)
+    plt.ylabel("Voltage in [mV]", fontsize=FONTSIZE)
+    plt.plot(t, v_i1[0], c=c_inh, linewidth=2.5)
+    plt.plot(t, v_i1[1], linewidth=0.5)
+    plt.plot(t, v_i1[2], linewidth=0.5)
+
+    plt.figure(figsize=(20, 3))
+    plt.title("Detailed look at single excitatory and inhibitory trace in Net 1")
     plt.plot(
         t[detail_window[0] : detail_window[1]],
-        v[0][detail_window[0] : detail_window[1]],
+        v_i1[0][detail_window[0] : detail_window[1]],
         c=c_inh,
         linewidth=2.5,
     )
+
+    if model["model_EI"]:
+        plt.plot(
+            t[detail_window[0] : detail_window[1]],
+            v_e1[0][detail_window[0] : detail_window[1]],
+            c=c_exc,
+            linewidth=2.5,
+        )
     plt.xticks(np.arange(detail_window[0], detail_window[1], 5.0))
 
     plt.figure(figsize=(20, 3))
-    plt.title("Network 2", fontsize=16)
-    plt.xlabel("Time in [ms]", fontsize=16)
-    plt.ylabel("Voltage in [mV]", fontsize=16)
-    plt.plot(t, v2[0], c="green", linewidth=0.5)
-    plt.plot(t, v2[1], linewidth=2.5)
-    plt.plot(t, v2[2], linewidth=0.5)
+    plt.title("Network 2", fontsize=14)
+    plt.xlabel("Time in [ms]", fontsize=14)
+    plt.ylabel("Voltage in [mV]", fontsize=14)
+    plt.plot(t, v_i2[0], c="green", linewidth=0.5)
+    plt.plot(t, v_i2[1], linewidth=2.5)
+    plt.plot(t, v_i2[2], linewidth=0.5)
 
 
 def population_rates(model: dict, skip: int = None):
@@ -753,18 +785,51 @@ def population_rates(model: dict, skip: int = None):
         axs[1, 1].set_ylabel("Firing Rate")
 
 
-def synaptic_conductance(model: dict):
+def synaptic_conductance(model: dict, start: int = 100, end: int = None):
     """
-    Plots g_AMPA and g_GABA trace of E and I neuron respectively.
+    Plots g_AMPA and g_GABA trace of E and I neurons respectively.
 
+    :param end: end time index.
+    :param start: start time index.
     :param model: current model, must contain recorded AMPA and GABA conductances.
     """
-    plt.figure(figsize=(20, 3))
+    plt.figure(figsize=(20, 5))
     plt.xlabel("Time in [ms]", fontsize=14)
     plt.ylabel("Conductance in [nS]", fontsize=14)
-    plt.plot(model["ampa_t"], model["ampa"][0], c=c_inh)
-    plt.plot(model["gaba_t"], model["gaba"][0])
-    plt.legend(["AMPA Conductance", "GABA Conductance"])
+    legend = ["GABA Conductance - Net 1"]
+
+    print("Mean GABA Conductance - Net 1: ", model["gaba"].mean())
+
+    # for trace in model["gaba"][:10]:
+    #     plt.plot(model["gaba_t"][start:end], trace[start:end], c=c_inh)
+
+    plt.plot(
+        model["gaba_t"][start:end],
+        model["gaba"].mean(axis=0)[start:end],
+        c="black",
+        alpha=0.7,
+    )
+
+    if "gaba_2" in model:
+        plt.plot(
+            model["gaba_t"][start:end],
+            model["gaba_2"].mean(axis=0)[start:end],
+            c="orange",
+            alpha=0.7,
+        )
+        legend.append("GABA Conductance - Net 2")
+
+        print("Mean GABA Conductance - Net 2: ", model["gaba_2"].mean())
+
+    if model["model_EI"]:
+        for trace in model["ampa"][:10]:
+            plt.plot(model["ampa_t"][start:end], trace[start:end], c=c_exc, alpha=0.7)
+
+            print("Mean AMAP Conductance: ", model["gaba"].mean())
+
+        legend.append("AMPA Conductance")
+
+    plt.legend(legend)
     plt.tight_layout()
 
 
@@ -1111,6 +1176,21 @@ def isi_histograms(model: dict, bins: int = 60):
             avg_E * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=14
         )
 
+        avg_E2 = np.average(model["isi_E2"])
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.set_title("ISI Histogram of E Population of 2nd Network")
+        ax.set_xlabel("Time in [ms]")
+        ax.set_ylabel("Density")
+        ax.hist(model["isi_E2"], bins=bins, color=c_exc)
+        plt.axvline(avg_E2, color="orange", linestyle="dashed", linewidth=3)
+        min_ylim, max_ylim = plt.ylim()
+        plt.text(
+            avg_E2 * 1.1,
+            max_ylim * 0.9,
+            r"$\mu$: {:.2f} ms".format(avg_E2),
+            fontsize=14,
+        )
+
     avg_I = np.average(model["isi_I"])
 
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -1146,7 +1226,8 @@ def spike_variability_analysis(v, v2, window, t_s, t_width=(5, 5)):
 
     plt.figure(figsize=figsize)
     plt.title(
-        "Membrane Potential of a single I neuron of Net 1 showing a spike", fontsize=14
+        f"Membrane voltage of 1 neuron in Net 1 - with focus on spike at {t_s} ms",
+        fontsize=14,
     )
     plt.xlabel("Time in [ms]", fontsize=14)
     plt.ylabel("Voltage in [mv]")
@@ -1161,12 +1242,18 @@ def spike_variability_analysis(v, v2, window, t_s, t_width=(5, 5)):
     plt.xlabel("Time in [ms]", fontsize=14)
     plt.ylabel("Voltage in [mv]")
     plt.ylim(-70, -40)
-    plt.plot(np.mean(first, axis=0)[window[0] : window[1]], c=c_exc, linewidth=3.0)
-    plt.plot(np.mean(second, axis=0)[window[0] : window[1]], c=c_inh, linewidth=3.0)
-    plt.legend(["Spiking of I in Net 2", "Surpressed of I in Net 2"])
+    if first:
+        plt.plot(np.mean(first, axis=0)[window[0] : window[1]], c=c_exc, linewidth=3.0)
+
+    if second:
+        plt.plot(np.mean(second, axis=0)[window[0] : window[1]], c=c_inh, linewidth=3.0)
+
+    plt.legend(["Spiking of I in Net 2", "Suppressed of I in Net 2"])
 
     plt.figure(figsize=figsize)
-    plt.title("Example traces from each group", fontsize=14)
+    plt.title(
+        "Membrane voltage traces showing grouping of I cells in net 2", fontsize=14
+    )
     plt.xlabel("Time in [ms]", fontsize=14)
     plt.ylabel("Voltage in [mv]")
     plt.ylim(-70, -40)
@@ -1176,15 +1263,61 @@ def spike_variability_analysis(v, v2, window, t_s, t_width=(5, 5)):
     for s in second[:50]:
         plt.plot(s[window[0] : window[1]], c=c_inh, linewidth=0.5, alpha=0.75)
 
-    # plt.figure(figsize=figsize)
-    # plt.title(
-    #     "Potentials of non spiking group over 1s, showing spiking at in other time windows.",
-    #     fontsize=16,
-    # )
-    # plt.xlabel("Time in [ms]", fontsize=14)
-    # plt.ylim(-70, -40)
-    # for s in second[:10]:
-    #     plt.plot(s[:500], linewidth=0.75)
+
+def spike_participation_histograms(model):
+    """
+    The LFP signal for EI population should be split up into LFP of E and LFP of I.
+    Or then simply the average membrane potentials of both cell types.
+    
+    It does not make sense ot use the current LFP and find spike matches for E and I when they fire not at the same time.
+    This must be considered in further analysis...
+    
+    Also phase analysis methods should only use then LFP of E cells.
+    """
+
+    t = model["t_all_neurons_i1"]
+
+    lfp = processing.lfp_single_net(model)
+    lfp = lfp[400:2000]
+
+    peaks = find_peaks(lfp)
+    y = [lfp[p] for p in peaks[0]]
+
+    fig, ax = plt.subplots(figsize=(20, 5))
+    plt.title("Peak detection for LFP of Network 1")
+    plt.plot(lfp, c_inh, linewidth=2.0)
+    plt.plot(peaks[0], y, "r+", linewidth=3, c=c_exc)
+    plt.show()
+
+    if model["model_EI"]:
+        v = model["v_all_neurons_e"]
+        v2 = model["v_all_neurons_e2"]
+    else:
+        v = model["v_all_neurons_i1"]
+        v2 = model["v_all_neurons_i2"]
+
+    p_1, p_1_peaks = processing.spike_participation(v, peaks)
+    p_2, p_2_peaks = processing.spike_participation(v2, peaks)
+
+    fig, axs = plt.subplots(ncols=2, figsize=(14, 5))
+    axs[0].set_title(
+        "Histogram of spike participation per neuron in peaks of network 1"
+    )
+    axs[0].hist(list(p_1.values()), bins=20, color=c_exc)
+    axs[0].hist(list(p_2.values()), bins=20, color=c_inh)
+    axs[0].legend(
+        ["Net 1 - participation per neuron", "Net 2 - participation per I neuron"]
+    )
+
+    axs[1].set_title("Histogram of general participation in peaks of network 1")
+    axs[1].hist(list(p_1_peaks.values()), bins=20, color=c_exc)
+    axs[1].hist(list(p_2_peaks.values()), bins=20, color=c_inh)
+    axs[1].legend(
+        [
+            "Net 1 - participation across all neurons",
+            "Net 2 - participation across all neurons",
+        ]
+    )
 
 
 def _prepare_data(metric: str, models: [dict], x: str, y: str):
