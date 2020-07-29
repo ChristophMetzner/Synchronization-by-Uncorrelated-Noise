@@ -1155,33 +1155,41 @@ def heat_map(
     return fig, ax, df
 
 
-def isi_histograms(model: dict, bins: int = 60):
+def isi_histograms(model: dict, bins: int = 60, filter_outlier: bool = False):
     """
     Plots the inter spike interval histograms of each population.
 
     :param model: input model.
     :param bins: number of bins.
+    :param filter_outlier: if True removes outlier from dataset.
     """
     if "model_EI" not in model or model["model_EI"]:
-        avg_E = np.average(model["isi_E"])
+        isi_E = model["isi_E"]
+        avg_E = np.average(isi_E)
+        if filter_outlier:
+            isi_E = processing.filter_inter_spike_intervals(isi_E)
 
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.set_title("ISI Histogram of E Population of 1st Network")
         ax.set_xlabel("Time in [ms]")
         ax.set_ylabel("Density")
-        ax.hist(model["isi_E"], bins=bins, color=c_exc)
+        ax.hist(isi_E, bins=bins, color=c_exc)
         plt.axvline(avg_E, color="orange", linestyle="dashed", linewidth=3)
         min_ylim, max_ylim = plt.ylim()
         plt.text(
             avg_E * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=14
         )
 
-        avg_E2 = np.average(model["isi_E2"])
+        isi_E2 = model["isi_E2"]
+        avg_E2 = np.average(isi_E2)
+        if filter_outlier:
+            isi_E2 = processing.filter_inter_spike_intervals(isi_E2)
+
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.set_title("ISI Histogram of E Population of 2nd Network")
         ax.set_xlabel("Time in [ms]")
         ax.set_ylabel("Density")
-        ax.hist(model["isi_E2"], bins=bins, color=c_exc)
+        ax.hist(isi_E2, bins=bins, color=c_exc)
         plt.axvline(avg_E2, color="orange", linestyle="dashed", linewidth=3)
         min_ylim, max_ylim = plt.ylim()
         plt.text(
@@ -1191,26 +1199,32 @@ def isi_histograms(model: dict, bins: int = 60):
             fontsize=14,
         )
 
-    avg_I = np.average(model["isi_I"])
+    isi_I = model["isi_I"]
+    avg_I = np.average(isi_I)
+    if filter_outlier:
+        isi_I = processing.filter_inter_spike_intervals(isi_I)
 
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_title("ISI Histogram of I Population of 1st Network")
     ax.set_xlabel("Time in [ms]")
     ax.set_ylabel("Density")
-    ax.hist(model["isi_I"], bins=bins, color=c_inh)
+    ax.hist(isi_I, bins=bins, color=c_inh)
     plt.axvline(avg_I, color="orange", linestyle="dashed", linewidth=3)
     min_ylim, max_ylim = plt.ylim()
     plt.text(
         avg_I * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_I), fontsize=14
     )
 
-    avg_I2 = np.average(model["isi_I2"])
+    isi_I2 = model["isi_I2"]
+    avg_I2 = np.average(isi_I2)
+    if filter_outlier:
+        isi_I2 = processing.filter_inter_spike_intervals(isi_I2)
 
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set_title("ISI Histogram of I Population of 2nd Network")
     ax.set_xlabel("Time in [ms]")
     ax.set_ylabel("Density")
-    ax.hist(model["isi_I2"], bins=bins, color=c_inh)
+    ax.hist(isi_I2, bins=bins, color=c_inh)
     plt.axvline(avg_I2, color="orange", linestyle="dashed", linewidth=3)
     min_ylim, max_ylim = plt.ylim()
     plt.text(

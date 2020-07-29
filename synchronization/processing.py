@@ -401,3 +401,16 @@ def spike_participation(v, peaks, width: int = 4, threshold=-47):
         participation_p[p] = participation_p[p] / len(v)
 
     return participation_n, participation_p
+
+
+def filter_inter_spike_intervals(isi):
+    """
+    Removes outlier from array of inter spike intervals.
+
+    Currently we use just a crude heuristic as it suffices to remove extremely high intervals.
+
+    :param isi: array.
+    :return: filtered array.
+    """
+    isi_avg = np.average(isi)
+    return [e for e in isi if e < isi_avg + 40]
