@@ -637,7 +637,6 @@ def raster(
 
     plt.legend(["Excitatory", "Inhibitory"])
 
-    # TODO: plot complete time axis, currently only x-ticks for available data is plotted
     ax.set_xlim(left=x_left if x_left else 0, right=x_right)
 
     plt.tight_layout()
@@ -985,59 +984,6 @@ def phases_intra_nets(model: dict, skip: int = 200, duration: int = 600):
         plt.plot(f_plv_net_1_e, linewidth=3.0, c=c_exc)
 
     plt.legend(["All", "Inhibitory", "Excitatory"])
-
-
-def all_psd(
-    models: List[Dict],
-    n_cols: int,
-    n_rows: int,
-    single_network: bool = False,
-    figsize=(20, 5),
-):
-    models = list(models)
-
-    # TODO: use ratio and define columns and rows depending on length of models
-    fig, axs = plt.subplots(n_cols, n_rows, figsize=figsize, sharex=False)
-
-    for i, ax in enumerate(axs.reshape(-1)):
-        try:
-            title, data = models[i]
-        except (KeyError, IndexError):
-            # ignore
-            pass
-        else:
-            ax.set_title(title, fontsize=10)
-
-            duration = data["runtime"]
-            dt = 1.0
-
-            if single_network:
-                lfp1, lfp2 = processing.lfp(model=data, skip=100)
-            else:
-                lfp1, lfp2 = processing.lfp_nets(model=data, skip=100)
-
-            timepoints = int((duration / dt) / 2)
-            fs = 1.0 / dt
-
-            psd1, freqs = mlab.psd(
-                lfp1, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
-            )
-
-            psd2, _ = mlab.psd(
-                lfp2, NFFT=int(timepoints), Fs=fs, noverlap=0, window=mlab.window_none
-            )
-
-            psd1[0] = 0.0
-            psd2[0] = 0.0
-
-            ax.set_xlabel("Frequency")
-            ax.set_ylabel("Density")
-            ax.plot(freqs * 1000, psd1, "0.25", linewidth=2.0, c="blue")
-            ax.plot(freqs * 1000, psd2, "0.75", linewidth=2.0, c="green")
-            ax.set_xlim([0, 80])
-
-    plt.tight_layout()
-    return fig, axs
 
 
 def ou_noise_by_params(model: dict, fig_size: Tuple = None):

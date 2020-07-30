@@ -447,13 +447,21 @@ def network_sim(signal, params: dict):
     clock_record_all = Clock(params["net_record_all_neurons_dt"] * ms)
 
     if record_synapses:
-        g_ampa_monitor_E = StateMonitor(E, "g_ampa", record=np.arange(0, 30, 1), clock=clock_record_all)
-        g_gaba_monitor_I = StateMonitor(I, "g_gaba", record=np.arange(0, 30, 1), clock=clock_record_all)
+        g_ampa_monitor_E = StateMonitor(
+            E, "g_ampa", record=np.arange(0, 30, 1), clock=clock_record_all
+        )
+        g_gaba_monitor_I = StateMonitor(
+            I, "g_gaba", record=np.arange(0, 30, 1), clock=clock_record_all
+        )
         net.add(g_ampa_monitor_E, g_gaba_monitor_I)
 
         if N_pop > 1:
-            g_ampa_monitor_E2 = StateMonitor(E2, "g_ampa", record=np.arange(0, 30, 1), clock=clock_record_all)
-            g_gaba_monitor_I2 = StateMonitor(I2, "g_gaba", record=np.arange(0, 30, 1), clock=clock_record_all)
+            g_ampa_monitor_E2 = StateMonitor(
+                E2, "g_ampa", record=np.arange(0, 30, 1), clock=clock_record_all
+            )
+            g_gaba_monitor_I2 = StateMonitor(
+                I2, "g_gaba", record=np.arange(0, 30, 1), clock=clock_record_all
+            )
             net.add(g_ampa_monitor_E2)
             net.add(g_gaba_monitor_I2)
 
@@ -552,8 +560,6 @@ def network_sim(signal, params: dict):
         i, t = net_spikes_i1
         net_spikes_i1 = [i * 1, t * 1]
 
-        # TODO: based on this we can compute the rate (and detect cycles?)
-        # spike rates can then be used to plot the spike rate distribution
         isi_e = processing.inter_spike_intervals(
             spike_monitor_E.spike_trains().values()
         )
@@ -568,7 +574,8 @@ def network_sim(signal, params: dict):
         results["net_spikes_e"] = net_spikes_e
         results["net_spikes_i1"] = net_spikes_i1
 
-        # TODO: get this working!
+        # TODO: set voltage to positive value for spikes
+        #   this can only be done properly if simulation step size and recording step sizes is equal.
         # for idx, t in zip(net_spikes_e[0], net_spikes_e[1]):
         #     # get to next higher second
         #     i = int(t / 1.0)

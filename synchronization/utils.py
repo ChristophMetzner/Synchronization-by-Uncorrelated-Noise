@@ -472,7 +472,7 @@ def rectify_trace(t, f, name_f):
     f[negative_f] = 0.0
 
 
-# todo: recursive comparison and fine-grained warning/verbose output control
+# TODO: recursive comparison and fine-grained warning/verbose output control
 def compare_dicts(d1, d2, ignore):
     for k1 in d1.keys():
         if k1 not in ignore:
