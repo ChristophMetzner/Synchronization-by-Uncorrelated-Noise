@@ -722,7 +722,11 @@ def membrane_potentials_sample(model: dict, detail_window=(900, 1000)):
             c=c_exc,
             linewidth=2.5,
         )
-    plt.xticks(np.arange(detail_window[0], detail_window[1], 5.0))
+
+    if detail_window[1] - detail_window[0] > 300:
+        plt.xticks(np.arange(detail_window[0], detail_window[1], 50.0))
+    else:
+        plt.xticks(np.arange(detail_window[0], detail_window[1], 5.0))
 
     plt.figure(figsize=(20, 3))
     plt.title("Network 2", fontsize=14)

@@ -2,7 +2,7 @@ import numpy as np
 
 from typing import Tuple
 
-from brian2 import ms
+from brian2 import ms, mV
 from scipy.signal import hilbert
 from matplotlib import mlab
 from scipy.signal.filter_design import butter
@@ -365,7 +365,7 @@ def get_first_spike(v, t, window):
         return None
 
 
-def spike_participation(v, peaks, width: int = 4, threshold=-47):
+def spike_participation(v, peaks, width: int = 5, threshold=-47):
     """
     Compute spike participation on neuron and on network level.
 
@@ -392,7 +392,6 @@ def spike_participation(v, peaks, width: int = 4, threshold=-47):
                     participation_n[idx] += 1
                 else:
                     participation_n[idx] = 1
-                participation_n[idx] = participation_n[idx]
 
     for k in participation_n.keys():
         participation_n[k] = participation_n[k] / peak_count
@@ -414,3 +413,29 @@ def filter_inter_spike_intervals(isi):
     """
     isi_avg = np.average(isi)
     return [e for e in isi if e < isi_avg + 40]
+
+
+def set_positive_spikes(dt_sim, rates_dt, v_trace, net_spikes):
+    """
+    Sets for each spike in the `v_trace` voltage to positive value.
+
+    :param dt_sim: step size of simulation.
+    :param rates_dt: step size of recording monitor.
+    :param v_trace: voltage trace of monitor.
+    :param net_spikes: spikes from SpikeMonitor.
+    :return: v_trace with positive voltage values at spike time.
+    """
+    # This can only be done properly if recording step size equals simulation step size.
+    if dt_sim == rates_dt:
+        # Brian's groups are read-only, therefore we assign it to a new variable.
+        v_trace = v_trace.v
+
+        for idx, t in zip(net_spikes[0], net_spikes[1]):
+            # Amount of simulation steps to get to time t.
+            # Gives us the correct index for neuron trace array.
+            i = int(t / dt_sim)
+
+            # Set to ~ 0-40 mV.
+            v_trace[idx][i] = 40 * mV
+
+        return v_trace

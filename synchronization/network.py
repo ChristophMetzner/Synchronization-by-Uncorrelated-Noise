@@ -574,15 +574,6 @@ def network_sim(signal, params: dict):
         results["net_spikes_e"] = net_spikes_e
         results["net_spikes_i1"] = net_spikes_i1
 
-        # TODO: set voltage to positive value for spikes
-        #   this can only be done properly if simulation step size and recording step sizes is equal.
-        # for idx, t in zip(net_spikes_e[0], net_spikes_e[1]):
-        #     # get to next higher second
-        #     i = int(t / 1.0)
-        #     v_trace_E.v[idx][i] = 40 * mV
-
-        # plot(v_trace_E.v[0])
-
         # TODO: calculate mean firing rate f_e1, f_e2, f_i1, f_i2
         # number of spikes / simulation time * Number of Neurons
 
