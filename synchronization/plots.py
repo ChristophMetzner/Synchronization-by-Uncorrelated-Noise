@@ -30,6 +30,192 @@ c_net_1 = "midnightblue"
 c_net_2 = "crimson"
 
 
+def plot_ING_exp_figure(
+    ex: mopet.Exploration,
+    param_x: str = None,
+    param_y: str = None,
+    vmax_phase: float = 1.0,
+    vmin_phase: float = 0.0,
+    vmin_ratio: int = 0,
+    filename: str = "ING_exp",
+):
+    if not param_x or not param_y:
+        axis_names = list(ex.explore_params.keys())
+        param_x = axis_names[0]
+        param_y = axis_names[1]
+
+    fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(13, 10))
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_1_i",
+        param_X=param_x,
+        param_Y=param_y,
+        title="Within Phase Synchronization - Network 1 - Inhibitory",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[0],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_2_i",
+        param_X=param_x,
+        param_Y=param_y,
+        title="Within Phase Synchronization - Net 2 - Inhibitory",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[1],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="phase_synchronization",
+        param_X=param_x,
+        param_Y=param_y,
+        title="Phase Synchronization",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[2],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="freq_ratio",
+        param_X=param_x,
+        param_Y=param_y,
+        title="Dominant Frequency Ratio",
+        colorbar="Ratio",
+        vmin=vmin_ratio,
+        vmax=1.0,
+        ax=axs.flat[3],
+    )
+
+    # heat_map_vis(
+    #     df=ex.df,
+    #     value="mean_phase_coherence",
+    #     param_X=param_x,
+    #     param_Y=param_y,
+    #     title="Mean Phase Coherence between Networks",
+    #     colorbar="Mean Phase Coherence",
+    #     vmin=vmin_phase,
+    #     vmax=vmax_phase,
+    #     ax=axs.flat[4],
+    # )
+
+    save_to_file(filename, folder="ING")
+
+    return fig, axs
+
+
+def plot_exp_figure(
+    ex: mopet.Exploration,
+    param_X: str = None,
+    param_Y: str = None,
+    vmax_phase: float = 1.0,
+    vmin_phase: float = 0.0,
+    vmin_ratio: int = 0,
+    filename: str = "PING_exp",
+):
+    if not param_X or not param_Y:
+        axis_names = list(ex.explore_params.keys())
+        param_X = axis_names[0]
+        param_Y = axis_names[1]
+
+    fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(17, 20))
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_1_e",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Within Phase Synchronization - Network 1 - Excitatory",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[0],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_1_i",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Within Phase Synchronization - Network 1 - Inhibitory",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[1],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_2_e",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Within Phase Synchronization - Net 2 - Excitatory",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[2],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="plv_net_2_i",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Within Phase Synchronization - Net 2 - Inhibitory",
+        colorbar="Kuramoto Order Parameter",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[3],
+    )
+
+    # heat_map_vis(
+    #     df=ex.df,
+    #     value="phase_synchronization",
+    #     param_X=param_X,
+    #     param_Y=param_Y,
+    #     title="Phase Synchronization",
+    #     colorbar="Kuramoto Order Parameter",
+    #     vmin=vmin_phase,
+    #     vmax=vmax_phase,
+    #     ax=axs.flat[4],
+    # )
+
+    heat_map_vis(
+        df=ex.df,
+        value="freq_ratio",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Dominant Frequency Ratio",
+        colorbar="Ratio",
+        vmin=vmin_ratio,
+        vmax=1.0,
+        ax=axs.flat[4],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="mean_phase_coherence",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Mean Phase Coherence between Networks",
+        colorbar="Mean Phase Coherence",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[5],
+    )
+
+    save_to_file(filename, folder="PING")
+
+    return fig, axs
+
+
 def plot_exploration(
     ex: mopet.Exploration,
     param_X: str = None,
@@ -53,50 +239,7 @@ def plot_exploration(
     """
 
     if len(ex.explore_params.keys()) == 1:
-        param = list(ex.explore_params.keys())[0]
-
-        metric = "freq_ratio"
-        fig, ax = plt.subplots(figsize=(15, 3))
-        df = ex.df.sort_values(by=param)
-        ax.plot(df[param], df[metric], c=c_inh, marker=".")
-        ax.set_title("Frequency Ratio")
-        ax.set_xlabel(param)
-        ax.set_ylim(0, 1.1)
-        ax.set_ylabel("Dom Freq Ratio")
-
-        metric = "mean_phase_coherence"
-        legend = []
-        fig, ax = plt.subplots(figsize=(15, 3))
-        df = ex.df.sort_values(by=param)
-        ax.plot(df[param], df[metric], linewidth=2.0, marker=".", color=c_inh)
-        legend.append("mean_phase_coherence")
-
-        if "plv_net_1_e" in df:
-            ax.plot(df[param], df["plv_net_1_e"], linewidth=2.0, marker=".")
-            legend.append("plv_net_1_e")
-
-        if "plv_net_2_e" in df:
-            ax.plot(df[param], df["plv_net_2_e"], linewidth=2.0, marker=".")
-            legend.append("plv_net_2_e")
-
-        if "plv_net_1_i" in df:
-            ax.plot(df[param], df["plv_net_1_i"], linewidth=2.0, marker=".")
-            legend.append("plv_net_1_i")
-
-        if "plv_net_2_i" in df:
-            ax.plot(df[param], df["plv_net_2_i"], linewidth=2.0, marker=".")
-            legend.append("plv_net_2_i")
-
-        if "phase_synchronization" in df:
-            ax.plot(df[param], df["phase_synchronization"], linewidth=2.0, marker=".")
-            legend.append("phase_synchronization")
-
-        plt.legend(legend)
-        ax.set_title("Phase Locking")
-        ax.set_xlabel(param)
-        ax.set_ylabel("Mean Phase Coherence")
-        ax.set_ylim(0, 1)
-
+        _one_dim_exploration(ex)
         return
 
     if not param_X or not param_Y:
@@ -104,6 +247,7 @@ def plot_exploration(
         param_X = axis_names[0]
         param_Y = axis_names[1]
 
+    # for final figure: 3 rows and 2 columns
     fig, axs = plt.subplots(3, 4, figsize=(40, 20))
 
     heat_map_vis(
@@ -275,18 +419,69 @@ def plot_exploration(
     axs[2, 3].set_axis_off()
 
 
+def _one_dim_exploration(ex):
+    param = list(ex.explore_params.keys())[0]
+    metric = "freq_ratio"
+
+    fig, ax = plt.subplots(figsize=(15, 3))
+    df = ex.df.sort_values(by=param)
+
+    ax.plot(df[param], df[metric], c=c_inh, marker=".")
+    ax.set_title("Frequency Ratio")
+    ax.set_xlabel(param)
+    ax.set_ylim(0, 1.1)
+    ax.set_ylabel("Dom Freq Ratio")
+
+    metric = "mean_phase_coherence"
+    legend = []
+
+    fig, ax = plt.subplots(figsize=(15, 3))
+    df = ex.df.sort_values(by=param)
+    ax.plot(df[param], df[metric], linewidth=2.0, marker=".", color=c_inh)
+    legend.append("mean_phase_coherence")
+
+    if "plv_net_1_e" in df:
+        ax.plot(df[param], df["plv_net_1_e"], linewidth=2.0, marker=".")
+        legend.append("plv_net_1_e")
+
+    if "plv_net_2_e" in df:
+        ax.plot(df[param], df["plv_net_2_e"], linewidth=2.0, marker=".")
+        legend.append("plv_net_2_e")
+
+    if "plv_net_1_i" in df:
+        ax.plot(df[param], df["plv_net_1_i"], linewidth=2.0, marker=".")
+        legend.append("plv_net_1_i")
+
+    if "plv_net_2_i" in df:
+        ax.plot(df[param], df["plv_net_2_i"], linewidth=2.0, marker=".")
+        legend.append("plv_net_2_i")
+
+    if "phase_synchronization" in df:
+        ax.plot(df[param], df["phase_synchronization"], linewidth=2.0, marker=".")
+        legend.append("phase_synchronization")
+
+    plt.legend(legend)
+    ax.set_title("Phase Locking")
+    ax.set_xlabel(param)
+    ax.set_ylabel("Mean Phase Coherence")
+    ax.set_ylim(0, 1)
+
+
 def plot_results(
     model,
     full_raster: bool = False,
     pop_rates: bool = True,
     phase_analysis: bool = False,
     raster_right: int = None,
-    xlim_psd: int = 120,
-    excerpt_x_left: int = 200,
-    excerpt_x_right: int = 300,
+    x_max_psd: int = 120,
+    x_min_psd: int = 10,
+    excerpt_x_left: int = 500,
+    excerpt_x_right: int = 900,
     psd_group: str = None,
     skip: int = 200,
     networks: int = 2,
+    folder: str = None,
+    save: bool = False,
 ):
     """
     Plots all relevant figures needed to understand network behavior.
@@ -295,38 +490,50 @@ def plot_results(
     * Local Field Potential (LFP)
     * Spike Raster
     * Population Rates
+    * Phase Analysis
 
     :param model: model dict holding recorded data.
     :param full_raster: if True, raster plot will be shown.
-    :param pop_rates: if True,
-    :param phase_analysis:
-    :param raster_right:
-    :param xlim_psd:
-    :param excerpt_x_left:
-    :param excerpt_x_right:
-    :param psd_group:
-    :param skip:
-    :param networks:
+    :param pop_rates: if True displays population rates.
+    :param phase_analysis: if True plots phase analysis.
+    :param raster_right: right limit for raster time axis.
+    :param x_max_psd: maximum frequency x to show in PSD plot.
+    :param x_min_psd: minimum frequency x to show in PSD plot.
+    :param excerpt_x_left: raster left side start.
+    :param excerpt_x_right: raster right side end.
+    :param psd_group: INH or EXC.
+    :param skip: amount of ms to skip in plots and processing.
+    :param networks: number of networks in model.
+    :param folder: folder to save plots in.
+    :param save: if True save plots in filesystem.
     """
     psd(
         model,
-        title="PSD of 1st network",
+        title=None,
         population=1,
-        fig_size=(8, 3),
-        xlim=xlim_psd,
+        fig_size=(5, 3),
+        x_max=x_max_psd,
+        x_min=x_min_psd,
         groups=psd_group,
         skip=skip,
+        key="1",
+        folder=folder,
+        save=save,
     )
 
     if networks > 1:
         psd(
             model,
-            title="PSD of 2nd network",
+            title=None,
             population=2,
-            fig_size=(8, 3),
-            xlim=xlim_psd,
+            fig_size=(5, 3),
+            x_max=x_max_psd,
+            x_min=x_min_psd,
             groups=psd_group,
             skip=skip,
+            key="2",
+            folder=folder,
+            save=save,
         )
 
     lfp_nets(model, skip=100, single_net=networks == 1)
@@ -336,10 +543,11 @@ def plot_results(
         raster(
             title="Raster of 1st network",
             model=model,
-            save=True,
             key="stoch_weak_PING",
             ax=axs[0],
             x_right=raster_right,
+            folder=folder,
+            save=save,
         )
 
         if networks > 1:
@@ -349,32 +557,41 @@ def plot_results(
                 population=2,
                 ax=axs[1],
                 x_right=raster_right,
+                folder=folder,
+                save=save,
             )
 
     fig, axs = plt.subplots(1, 2, figsize=(20, 5))
     raster(
         title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 1",
         model=model,
+        key="exc_net1",
         x_left=excerpt_x_left,
         x_right=excerpt_x_right,
         ax=axs[0],
+        folder=folder,
+        save=save,
     )
 
     if networks > 1:
         raster(
             title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 2",
             model=model,
+            key="exc_net2",
             x_left=excerpt_x_left,
             x_right=excerpt_x_right,
             population=2,
             ax=axs[1],
+            folder=folder,
+            save=save,
         )
 
     if pop_rates:
         population_rates(model, skip=2000)
 
     if networks > 1 and phase_analysis:
-        phases_inter_nets(model)
+        phases_inter_nets(model, folder=folder)
+        phases_intra_nets(model)
         phases_intra_nets(model)
 
 
@@ -454,14 +671,16 @@ def psd(
     title: str = None,
     duration: int = None,
     dt: float = None,
-    folder: str = None,
-    save: bool = False,
-    population: int = 1,
-    groups: str = None,
-    fig_size: tuple = None,
     granularity: float = 1.0,
     skip: int = 100,
-    xlim: int = 120,
+    x_max: int = 120,
+    x_min: int = 0,
+    population: int = 1,
+    key: str = None,
+    folder: str = None,
+    save: bool = False,
+    groups: str = None,
+    fig_size: tuple = None,
 ):
     """
     Plots the Power Spectral Density.
@@ -470,8 +689,6 @@ def psd(
     dt = dt if dt else model["net_record_all_neurons_dt"]
     if skip:
         duration -= skip
-
-    key = groups
 
     lfp1, lfp2 = processing.lfp(model, population=population, skip=skip)
 
@@ -497,25 +714,25 @@ def psd(
 
     fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
     ax = fig.add_subplot(111)
-    ax.set_title(title if title else "PSD")
-    ax.set_xlabel("Frequency (Hz)")
-    ax.set_ylabel("Density")
+    ax.set_title(title, fontsize=FONTSIZE)
+    ax.set_xlabel("Frequency [Hz]", fontsize=FONTSIZE)
+    ax.set_ylabel("Power", fontsize=FONTSIZE)
 
     if groups == "EXC":
-        ax.plot(freqs, psd1, "0.75", linewidth=1.0, c=c_exc)
+        ax.plot(freqs, psd1, "0.75", linewidth=4.0, c=c_exc)
         plt.legend(["Excitatory"])
 
     elif groups == "INH":
-        ax.plot(freqs, psd2, "0.75", linewidth=1.0, c=c_inh)
+        ax.plot(freqs, psd2, "0.75", linewidth=4.0, c=c_inh)
         plt.legend(["Inhibitory"])
 
     else:
-        ax.plot(freqs, psd1, "0.75", linewidth=1.0, c=c_exc)
-        ax.plot(freqs, psd2, "0.75", linewidth=1.0, c=c_inh)
+        ax.plot(freqs, psd1, "0.75", linewidth=4.0, c=c_exc)
+        ax.plot(freqs, psd2, "0.75", linewidth=4.0, c=c_inh)
         plt.legend(["Excitatory", "Inhibitory"])
 
-    ax.set_xlim([0, xlim])
-    ax.set_xticks(range(0, xlim + 10, 10))
+    ax.set_xlim([x_min, x_max])
+    ax.set_xticks(range(x_min, x_max + 10, 10))
 
     save_to_file("psd", save, key, folder)
 
@@ -622,9 +839,9 @@ def raster(
         print("0 size array of spikes, cannot create raster plot.")
         return
 
-    ax.set_title(title if title else "Raster", fontsize=16)
-    ax.set_xlabel("Time in ms", fontsize=16)
-    ax.set_ylabel("Neuron index", fontsize=16)
+    ax.set_title(title if title else "Raster", fontsize=FONTSIZE)
+    ax.set_xlabel("Time [ms]", fontsize=FONTSIZE)
+    ax.set_ylabel("Neuron index", fontsize=FONTSIZE)
 
     ax.plot(s_e[1] * 1000, s_e[0], "k.", c=c_exc, markersize="2.0")
     ax.plot(
@@ -836,7 +1053,9 @@ def synaptic_conductance(model: dict, start: int = 100, end: int = None):
     plt.tight_layout()
 
 
-def phases_inter_nets(model: dict, skip: int = 200, show_lfp: bool = False):
+def phases_inter_nets(
+    model: dict, skip: int = 200, show_lfp: bool = False, folder: str = None
+):
     """ Plots figures to analyze phases of networks and their synchronization.
 
     :param show_lfp: if True LFP over time will be plotted.
@@ -861,23 +1080,26 @@ def phases_inter_nets(model: dict, skip: int = 200, show_lfp: bool = False):
 
     if show_lfp:
         plt.figure(figsize=fig_size)
-        plt.title("LFP of Net 1", fontsize=18)
+        plt.title("LFP of Net 1", fontsize=FONTSIZE)
         plt.plot(lfp1, c=c_inh)
         plt.xlabel("t in ms")
         plt.ylabel("Voltage in mV")
 
         plt.figure(figsize=fig_size)
-        plt.title("30-80 Hz Filtered LFP of Net 1", fontsize=18)
+        plt.title("30-80 Hz Filtered LFP of Net 1", fontsize=FONTSIZE)
         plt.xlabel("t in ms")
         plt.plot(f_lfp1, c=c_inh)
 
     plt.figure(figsize=fig_size)
-    plt.title("Phases of Network 1 and 2 - First 800 ms", fontsize=18)
-    plt.xlabel("t in ms")
-    plt.ylabel("Angle", fontsize=18)
-    plt.plot(processing.phase(f_lfp1[:800]), linewidth=3.0, c=c_inh)
-    plt.plot(processing.phase(f_lfp2[:800]), linewidth=3.0, c=c_exc)
+    plt.title("Phases of Network 1 and 2 - First 800 ms", fontsize=FONTSIZE)
+    plt.xlabel("Time [ms]", fontsize=FONTSIZE)
+    plt.ylabel("Angle", fontsize=FONTSIZE)
+    plt.plot(processing.phase(f_lfp1[:800]), linewidth=2.0, c=c_inh)
+    plt.plot(processing.phase(f_lfp2[:800]), linewidth=2.0, c=c_exc)
     plt.legend(["Net 1", "Net 2"])
+
+    if folder:
+        save_to_file(name="phases", folder=folder)
 
     phase_difference(f_lfp1, f_lfp2)
 
@@ -1030,10 +1252,10 @@ def heat_map_vis(
             values=value, index=param_Y, columns=param_X, aggfunc="first"
         ),
         extent=[
-            min(df[param_X]),
-            max(df[param_X]),
-            min(df[param_Y]),
-            max(df[param_Y]),
+            min(df[param_X], default=0),
+            max(df[param_X], default=0),
+            min(df[param_Y], default=0),
+            max(df[param_Y], default=0),
         ],
         title=title,
         colorbar=colorbar,
@@ -1055,7 +1277,7 @@ def heat_map_pivoted(
     if not ax:
         fig, ax = plt.subplots()
 
-    ax.set_title(title)
+    ax.set_title(title, fontsize=FONTSIZE)
 
     im = ax.imshow(
         pivot_table,
@@ -1145,9 +1367,7 @@ def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc)
     ax.hist(isi, bins=bins, color=color)
     ax.axvline(avg_E, color="orange", linestyle="dashed", linewidth=3)
     min_ylim, max_ylim = ax.get_ylim()
-    ax.text(
-        avg_E * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=14
-    )
+    ax.text(avg_E * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=14)
 
     return ax
 
