@@ -14,7 +14,6 @@ from synchronization import processing
 from synchronization.utils import generate_ou_input
 from mopet import mopet
 
-# FIG_SIZE = [20, 15]
 FIG_SIZE = [10, 6]
 FIG_SIZE_QUADRATIC = [8, 6]
 FIG_SIZE_PSD = [8, 3]
@@ -1386,7 +1385,8 @@ def spike_variability_analysis(v, v2, window, t_s, t_width=(5, 5)):
     plt.xlabel("Time in [ms]", fontsize=14)
     plt.ylabel("Voltage in [mv]")
     plt.ylim(-70, -40)
-    plt.plot(v[0][window[0] : window[1]], linewidth=3.0, c="black")
+    for i in range(0, 100):
+        plt.plot(v[i][window[0] : window[1]], linewidth=0.75, c="grey", alpha=0.35)
 
     plt.figure(figsize=figsize)
     plt.title(

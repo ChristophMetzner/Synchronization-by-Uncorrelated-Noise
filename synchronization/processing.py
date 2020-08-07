@@ -365,7 +365,7 @@ def get_first_spike(v, t, window):
         return None
 
 
-def spike_participation(v, peaks, width: int = 5, threshold=-47):
+def spike_participation(v, peaks, width: int = 3, threshold=-47):
     """
     Compute spike participation on neuron and on network level.
 
