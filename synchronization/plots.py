@@ -591,7 +591,6 @@ def plot_results(
     if networks > 1 and phase_analysis:
         phases_inter_nets(model, folder=folder)
         phases_intra_nets(model)
-        phases_intra_nets(model)
 
 
 def noise(
