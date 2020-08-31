@@ -28,6 +28,8 @@ c_inh = "midnightblue"
 c_net_1 = "midnightblue"
 c_net_2 = "crimson"
 
+ING_FOLDER = "ING"
+
 
 def plot_ING_exp_figure(
     ex: mopet.Exploration,
@@ -224,21 +226,26 @@ def plot_exploration(
     vmax_freq: int = 120,
     vmin_ratio: int = 0,
     vmax_bandpower: int = 1000,
+    folder: str = None,
 ):
     """Plots 2 dimensional maps to visualize parameter exploration.
 
-    :param vmin_phase:
-    :param vmax_phase:
     :param ex: mopet exploration
     :type ex: mopet.Exploration
     :param param_X: param for x axis, defaults to None
     :type param_X: str, optional
     :param param_Y: param for y axis, defaults to None
     :type param_Y: str, optional
+    :param folder:
+    :param vmax_bandpower:
+    :param vmin_ratio:
+    :param vmax_freq:
+    :param vmin_phase:
+    :param vmax_phase:
     """
 
     if len(ex.explore_params.keys()) == 1:
-        _one_dim_exploration(ex)
+        _one_dim_exploration(ex, folder)
         return
 
     if not param_X or not param_Y:
@@ -418,52 +425,105 @@ def plot_exploration(
     axs[2, 3].set_axis_off()
 
 
-def _one_dim_exploration(ex):
+def _one_dim_exploration(ex, folder: str = None):
     param = list(ex.explore_params.keys())[0]
     metric = "freq_ratio"
-
-    fig, ax = plt.subplots(figsize=(15, 3))
-    df = ex.df.sort_values(by=param)
-
-    ax.plot(df[param], df[metric], c=c_inh, marker=".")
-    ax.set_title("Frequency Ratio")
-    ax.set_xlabel(param)
-    ax.set_ylim(0, 1.1)
-    ax.set_ylabel("Dom Freq Ratio")
+    #
+    # fig, ax = plt.subplots(figsize=(15, 3))
+    # df = ex.df.sort_values(by=param)
+    #
+    # ax.plot(df[param], df[metric], c=c_inh, marker=".")
+    # ax.set_title("Frequency Ratio")
+    # ax.set_xlabel(param)
+    # ax.set_ylim(0, 1.1)
+    # ax.set_ylabel("Dom Freq Ratio")
 
     metric = "mean_phase_coherence"
     legend = []
 
-    fig, ax = plt.subplots(figsize=(15, 3))
+    linewidth_within = 1.0
+    marker_within = "x"
+
+    linewidth_across = 2.0
+    marker_across = "o"
+
+    alpha = 0.7
+
+    fig, ax = plt.subplots(figsize=(15, 8))
     df = ex.df.sort_values(by=param)
-    ax.plot(df[param], df[metric], linewidth=2.0, marker=".", color=c_inh)
-    legend.append("mean_phase_coherence")
 
-    if "plv_net_1_e" in df:
-        ax.plot(df[param], df["plv_net_1_e"], linewidth=2.0, marker=".")
-        legend.append("plv_net_1_e")
+    ax.plot(
+        df[param],
+        df["freq_ratio"],
+        linewidth=linewidth_across,
+        marker=marker_across,
+        color=c_inh,
+    )
+    legend.append("Frequency Ratio p")
 
-    if "plv_net_2_e" in df:
-        ax.plot(df[param], df["plv_net_2_e"], linewidth=2.0, marker=".")
-        legend.append("plv_net_2_e")
-
-    if "plv_net_1_i" in df:
-        ax.plot(df[param], df["plv_net_1_i"], linewidth=2.0, marker=".")
-        legend.append("plv_net_1_i")
-
-    if "plv_net_2_i" in df:
-        ax.plot(df[param], df["plv_net_2_i"], linewidth=2.0, marker=".")
-        legend.append("plv_net_2_i")
+    ax.plot(
+        df[param],
+        df[metric],
+        linewidth=linewidth_across,
+        marker=marker_across,
+        color="mediumblue",
+    )
+    legend.append("Mean Phase Coherence - Networks")
 
     if "phase_synchronization" in df:
-        ax.plot(df[param], df["phase_synchronization"], linewidth=2.0, marker=".")
-        legend.append("phase_synchronization")
+        ax.plot(
+            df[param],
+            df["phase_synchronization"],
+            linewidth=linewidth_across,
+            marker=marker_across,
+        )
+        legend.append("Phase Synchronization - Networks")
 
-    plt.legend(legend)
-    ax.set_title("Phase Locking")
-    ax.set_xlabel(param)
-    ax.set_ylabel("Mean Phase Coherence")
-    ax.set_ylim(0, 1)
+    if "plv_net_1_e" in df:
+        ax.plot(
+            df[param],
+            df["plv_net_1_e"],
+            linewidth=linewidth_within,
+            marker=marker_within,
+            alpha=alpha,
+        )
+        legend.append("Kuramoto Order Parameter - Net 1 - E Pop")
+
+    if "plv_net_1_i" in df:
+        ax.plot(
+            df[param],
+            df["plv_net_1_i"],
+            linewidth=linewidth_within,
+            marker=marker_within,
+            alpha=alpha,
+        )
+        legend.append("Kuramoto Order Parameter - Net 1 - I Pop")
+
+    if "plv_net_2_e" in df:
+        ax.plot(
+            df[param],
+            df["plv_net_2_e"],
+            linewidth=linewidth_within,
+            marker=marker_within,
+            alpha=alpha,
+        )
+        legend.append("Kuramoto Order Parameter - Net 2 - E Pop")
+
+    if "plv_net_2_i" in df:
+        ax.plot(
+            df[param],
+            df["plv_net_2_i"],
+            linewidth=linewidth_within,
+            marker=marker_within,
+            alpha=alpha,
+        )
+        legend.append("Kuramoto Order Parameter - Net 2 - I Pop")
+
+    plt.legend(legend, loc=[0.0, 1.0], fontsize=FONTSIZE)
+    ax.set_xlabel("Noise Strength $\sigma$", fontsize=FONTSIZE)
+    ax.set_ylim(0, 1.1)
+
+    save_to_file("one_dim_exp", folder=folder)
 
 
 def plot_results(
@@ -839,18 +899,22 @@ def raster(
 
     ax.set_title(title if title else "Raster", fontsize=FONTSIZE)
     ax.set_xlabel("Time [ms]", fontsize=FONTSIZE)
-    ax.set_ylabel("Neuron index", fontsize=FONTSIZE)
+    ax.set_ylabel("Neuron Index", fontsize=FONTSIZE)
 
-    ax.plot(s_e[1] * 1000, s_e[0], "k.", c=c_exc, markersize="2.0")
+    if model["model_EI"]:
+        ax.plot(s_e[1] * 1000, s_e[0], "k.", c=c_exc, markersize="2.0")
+
     ax.plot(
         s_i[1] * 1000,
-        s_i[0] + (s_e[0].max() + 1 if s_e[0].size != 0 else 0),
+        s_i[0] + (s_e[0].max() + 1 if s_e[0].size != 0 and model["model_EI"] else 0),
         "k.",
         c=c_inh,
         markersize="4.0",
     )
 
-    plt.legend(["Excitatory", "Inhibitory"])
+    if model["model_EI"]:
+        # if only inhibitory we don't need to add a legend.
+        plt.legend(["Excitatory", "Inhibitory"])
 
     ax.set_xlim(left=x_left if x_left else 0, right=x_right)
 
@@ -1325,7 +1389,13 @@ def heat_map(
     return fig, ax, df
 
 
-def isi_histograms(model: dict, bins: int = 60, filter_outlier: bool = False):
+def isi_histograms(
+    model: dict,
+    bins: int = 60,
+    filter_outlier: bool = False,
+    folder: str = None,
+    key: str = None,
+):
     """
     Plots the inter spike interval histograms of each population.
 
@@ -1339,19 +1409,20 @@ def isi_histograms(model: dict, bins: int = 60, filter_outlier: bool = False):
         fig, axs = plt.subplots(ncols=2, figsize=(13, 5))
 
     ax = _isi_histogram(axs.flat[0], model["isi_I"], bins, filter_outlier, color=c_inh)
-    ax.set_title("ISI Histogram of I Population of 1st Network")
+    ax.set_title("Inhibitory Population of Network 1")
 
     ax = _isi_histogram(axs.flat[1], model["isi_I2"], bins, filter_outlier, color=c_inh)
-    ax.set_title("ISI Histogram of I Population of 2nd Network")
+    ax.set_title("Inhibitory Population of Network 2")
 
     if "model_EI" not in model or model["model_EI"]:
         ax = _isi_histogram(axs.flat[2], model["isi_E"], bins, filter_outlier)
-        ax.set_title("ISI Histogram of E Population of 1st Network")
+        ax.set_title("Excitatory Population of Network 1")
 
         ax = _isi_histogram(axs.flat[3], model["isi_E2"], bins, filter_outlier)
-        ax.set_title("ISI Histogram of E Population of 2nd Network")
+        ax.set_title("Excitatory Population of Network 2")
 
     plt.tight_layout()
+    save_to_file("ISI", key=key, folder=folder)
 
 
 def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc):
@@ -1361,7 +1432,7 @@ def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc)
 
     ax.set_title("ISI Histogram")
     ax.set_xlabel("Time in [ms]")
-    ax.set_ylabel("Density")
+    ax.set_ylabel("Count")
     ax.hist(isi, bins=bins, color=color)
     ax.axvline(avg_E, color="orange", linestyle="dashed", linewidth=3)
     min_ylim, max_ylim = ax.get_ylim()
@@ -1370,51 +1441,70 @@ def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc)
     return ax
 
 
-def spike_variability_analysis(v, v2, window, t_s, t_width=(5, 5)):
-    figsize = (15, 2)
+def spike_variability_analysis(
+    v, v2, window, t_s, t_width=(5, 5), folder: str = None, key: str = None
+):
     first, second = processing.group_neurons(
         v2, window=window, spike_t=t_s - window[0], t_start=t_width[0], t_end=t_width[1]
     )
 
-    plt.figure(figsize=figsize)
-    plt.title(
-        f"Membrane voltage of 1 neuron in Net 1 - with focus on spike at {t_s} ms",
-        fontsize=14,
-    )
-    plt.xlabel("Time in [ms]", fontsize=14)
-    plt.ylabel("Voltage in [mv]")
-    plt.ylim(-70, -40)
-    for i in range(0, 100):
-        plt.plot(v[i][window[0] : window[1]], linewidth=0.75, c="grey", alpha=0.35)
+    fontsize = 12
 
-    plt.figure(figsize=figsize)
-    plt.title(
-        "Comparison of mean membrane potential of spiking and non-spiking group",
-        fontsize=14,
+    figsize = (15, 2 * 5)
+    fig, axs = plt.subplots(figsize=figsize, nrows=3)
+    # axs[0].set_title(
+    #     f"Voltage traces of neurons in Net 1 - with focus on spike at {t_s} ms",
+    #     fontsize=14,
+    # )
+    axs[0].set_xlabel("Time in [ms]", fontsize=fontsize)
+    axs[0].set_ylabel("Voltage in [mv]")
+    axs[0].set_ylim(-70, -40)
+    for i in range(0, len(v)):
+        axs[0].plot(v[i][window[0] : window[1]], linewidth=0.75, c="grey", alpha=0.15)
+
+    axs[0].axvline(t_s - window[0], color="orange", linestyle="solid", linewidth=3)
+    axs[0].axvline(
+        t_s - window[0] - t_width[0], color="orange", linestyle="dotted", linewidth=3
     )
-    plt.xlabel("Time in [ms]", fontsize=14)
-    plt.ylabel("Voltage in [mv]")
-    plt.ylim(-70, -40)
+    axs[0].axvline(
+        t_s - window[0] + t_width[1], color="orange", linestyle="dotted", linewidth=3
+    )
+
+    # axs[1].set_title("Grouped voltage traces of I cells in Net 2", fontsize=fontsize)
+    axs[1].set_xlabel("Time in [ms]", fontsize=fontsize)
+    axs[1].set_ylabel("Voltage in [mv]")
+    axs[1].set_ylim(-70, -40)
+
+    for f in first[:100]:
+        axs[1].plot(f[window[0] : window[1]], c=c_exc, linewidth=0.5, alpha=0.75)
+    for s in second[:100]:
+        axs[1].plot(s[window[0] : window[1]], c=c_inh, linewidth=0.5, alpha=0.75)
+
+    exc_patch = mpatches.Patch(color=c_exc, label="Group of spiking neurons")
+    inh_patch = mpatches.Patch(color=c_inh, label="Group of suppressed neurons")
+    axs[1].legend(handles=[exc_patch, inh_patch])
+
+    # axs[2].set_title(
+    #     "Comparison of mean membrane potential of spiking and non-spiking group",
+    #     fontsize=14,
+    # )
+    axs[2].set_xlabel("Time in [ms]", fontsize=fontsize)
+    axs[2].set_ylabel("Voltage in [mv]")
+    axs[2].set_ylim(-70, -40)
     if first:
-        plt.plot(np.mean(first, axis=0)[window[0] : window[1]], c=c_exc, linewidth=3.0)
+        axs[2].plot(
+            np.mean(first, axis=0)[window[0] : window[1]], c=c_exc, linewidth=3.0
+        )
 
     if second:
-        plt.plot(np.mean(second, axis=0)[window[0] : window[1]], c=c_inh, linewidth=3.0)
+        axs[2].plot(
+            np.mean(second, axis=0)[window[0] : window[1]], c=c_inh, linewidth=3.0
+        )
 
-    plt.legend(["Spiking of I in Net 2", "Suppressed of I in Net 2"])
+    axs[2].legend(["Group of spiking neurons", "Group of suppressed neurons"])
+    plt.tight_layout()
 
-    plt.figure(figsize=figsize)
-    plt.title(
-        "Membrane voltage traces showing grouping of I cells in net 2", fontsize=14
-    )
-    plt.xlabel("Time in [ms]", fontsize=14)
-    plt.ylabel("Voltage in [mv]")
-    plt.ylim(-70, -40)
-
-    for f in first[:50]:
-        plt.plot(f[window[0] : window[1]], c=c_exc, linewidth=0.5, alpha=0.75)
-    for s in second[:50]:
-        plt.plot(s[window[0] : window[1]], c=c_inh, linewidth=0.5, alpha=0.75)
+    save_to_file("spike_variability", folder=folder, key=key, dpi=150)
 
 
 def spike_participation_histograms(model):
