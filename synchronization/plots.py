@@ -16,7 +16,7 @@ from mopet import mopet
 
 FIG_SIZE = [10, 6]
 FIG_SIZE_QUADRATIC = [8, 6]
-FIG_SIZE_PSD = [8, 3]
+FIG_SIZE_PSD = [10, 3]
 
 # Title and Axes Fontsize
 FONTSIZE = 14
@@ -25,8 +25,8 @@ FONTSIZE = 14
 c_exc = "r"
 # c_inh = "cornflowerblue"
 c_inh = "midnightblue"
-c_net_1 = "midnightblue"
-c_net_2 = "crimson"
+c_net_1 = "darkorange"
+c_net_2 = "teal"
 
 ING_FOLDER = "ING"
 
@@ -459,7 +459,7 @@ def _one_dim_exploration(ex, folder: str = None):
         marker=marker_across,
         color=c_inh,
     )
-    legend.append("Frequency Ratio p")
+    legend.append("Dominant Frequency Ratio")
 
     ax.plot(
         df[param],
@@ -598,7 +598,7 @@ def plot_results(
     lfp_nets(model, skip=100, single_net=networks == 1)
 
     if full_raster:
-        fig, axs = plt.subplots(1, 2, figsize=(40, 15))
+        fig, axs = plt.subplots(1, 2, figsize=(40, 18))
         raster(
             title="Raster of 1st network",
             model=model,
@@ -620,27 +620,30 @@ def plot_results(
                 save=save,
             )
 
-    fig, axs = plt.subplots(1, 2, figsize=(20, 5))
+    fig, axs = plt.subplots(1, 1, figsize=(10, 4))
     raster(
-        title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 1",
+        # title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 1",
+        title=None,
         model=model,
         key="exc_net1",
         x_left=excerpt_x_left,
         x_right=excerpt_x_right,
-        ax=axs[0],
+        ax=axs,
         folder=folder,
         save=save,
     )
 
+    fig, axs = plt.subplots(1, 1, figsize=(10, 4))
     if networks > 1:
         raster(
-            title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 2",
+            # title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 2",
+            title=None,
             model=model,
             key="exc_net2",
             x_left=excerpt_x_left,
             x_right=excerpt_x_right,
             population=2,
-            ax=axs[1],
+            ax=axs,
             folder=folder,
             save=save,
         )
@@ -777,16 +780,16 @@ def psd(
     ax.set_ylabel("Power", fontsize=FONTSIZE)
 
     if groups == "EXC":
-        ax.plot(freqs, psd1, "0.75", linewidth=4.0, c=c_exc)
+        ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
         plt.legend(["Excitatory"])
 
     elif groups == "INH":
-        ax.plot(freqs, psd2, "0.75", linewidth=4.0, c=c_inh)
+        ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
         plt.legend(["Inhibitory"])
 
     else:
-        ax.plot(freqs, psd1, "0.75", linewidth=4.0, c=c_exc)
-        ax.plot(freqs, psd2, "0.75", linewidth=4.0, c=c_inh)
+        ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
+        ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
         plt.legend(["Excitatory", "Inhibitory"])
 
     ax.set_xlim([x_min, x_max])
@@ -882,7 +885,7 @@ def raster(
 ):
     fig = None
     if not ax:
-        fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE)
+        fig = plt.figure(figsize=fig_size if fig_size else (10, 7))
         ax = fig.add_subplot(111)
 
     if population == 1:
@@ -897,7 +900,8 @@ def raster(
         print("0 size array of spikes, cannot create raster plot.")
         return
 
-    ax.set_title(title if title else "Raster", fontsize=FONTSIZE)
+    if title:
+        ax.set_title(title, fontsize=FONTSIZE)
     ax.set_xlabel("Time [ms]", fontsize=FONTSIZE)
     ax.set_ylabel("Neuron Index", fontsize=FONTSIZE)
 
@@ -912,9 +916,9 @@ def raster(
         markersize="4.0",
     )
 
-    if model["model_EI"]:
-        # if only inhibitory we don't need to add a legend.
-        plt.legend(["Excitatory", "Inhibitory"])
+    # if model["model_EI"]:
+    # if only inhibitory we don't need to add a legend.
+    # plt.legend(["Excitatory", "Inhibitory"])
 
     ax.set_xlim(left=x_left if x_left else 0, right=x_right)
 
@@ -1131,7 +1135,8 @@ def phases_inter_nets(
         processing.filter(lfp2, lowcut=30, highcut=120),
     )
 
-    fig_size = (20, 3)
+    duration = 500
+    fig_size = (10, 2.7)
 
     global_order_parameter = processing.order_parameter_over_time((f_lfp1, f_lfp2))
     total_value = np.mean(global_order_parameter)
@@ -1153,11 +1158,11 @@ def phases_inter_nets(
         plt.plot(f_lfp1, c=c_inh)
 
     plt.figure(figsize=fig_size)
-    plt.title("Phases of Network 1 and 2 - First 800 ms", fontsize=FONTSIZE)
+    # plt.title("Phases of Network 1 and 2 - First 800 ms", fontsize=FONTSIZE)
     plt.xlabel("Time [ms]", fontsize=FONTSIZE)
     plt.ylabel("Angle", fontsize=FONTSIZE)
-    plt.plot(processing.phase(f_lfp1[:800]), linewidth=2.0, c=c_inh)
-    plt.plot(processing.phase(f_lfp2[:800]), linewidth=2.0, c=c_exc)
+    plt.plot(processing.phase(f_lfp2[:duration]), linewidth=1.5, c=c_inh)
+    plt.plot(processing.phase(f_lfp1[:duration]), linewidth=1.5, c=c_exc)
     plt.legend(["Net 1", "Net 2"])
 
     if folder:
@@ -1402,11 +1407,13 @@ def isi_histograms(
     :param model: input model.
     :param bins: number of bins.
     :param filter_outlier: if True removes outlier from dataset.
+    :param key: key for filename of figure.
+    :param folder: relative output folder.
     """
     if model["model_EI"]:
-        fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(13, 10))
+        fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(10, 5))
     else:
-        fig, axs = plt.subplots(ncols=2, figsize=(13, 5))
+        fig, axs = plt.subplots(ncols=2, figsize=(10, 4))
 
     ax = _isi_histogram(axs.flat[0], model["isi_I"], bins, filter_outlier, color=c_inh)
     ax.set_title("Inhibitory Population of Network 1")
@@ -1431,18 +1438,25 @@ def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc)
         isi = processing.filter_inter_spike_intervals(isi)
 
     ax.set_title("ISI Histogram")
-    ax.set_xlabel("Time in [ms]")
+    ax.set_xlabel("Time [ms]")
     ax.set_ylabel("Count")
     ax.hist(isi, bins=bins, color=color)
     ax.axvline(avg_E, color="orange", linestyle="dashed", linewidth=3)
     min_ylim, max_ylim = ax.get_ylim()
-    ax.text(avg_E * 1.1, max_ylim * 0.9, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=14)
+    ax.text(avg_E * 1.1, max_ylim * 0.7, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=12)
 
     return ax
 
 
 def spike_variability_analysis(
-    v, v2, window, t_s, t_width=(5, 5), folder: str = None, key: str = None
+    v,
+    v2,
+    window,
+    t_s,
+    t_width=(5, 5),
+    folder: str = None,
+    key: str = None,
+    mean_voltage: bool = False,
 ):
     first, second = processing.group_neurons(
         v2, window=window, spike_t=t_s - window[0], t_start=t_width[0], t_end=t_width[1]
@@ -1450,14 +1464,18 @@ def spike_variability_analysis(
 
     fontsize = 12
 
-    figsize = (15, 2 * 5)
-    fig, axs = plt.subplots(figsize=figsize, nrows=3)
+    n_plots = 2
+    if mean_voltage:
+        n_plots += 1
+
+    figsize = (10, n_plots * 2.5)
+    fig, axs = plt.subplots(figsize=figsize, nrows=n_plots)
     # axs[0].set_title(
     #     f"Voltage traces of neurons in Net 1 - with focus on spike at {t_s} ms",
     #     fontsize=14,
     # )
-    axs[0].set_xlabel("Time in [ms]", fontsize=fontsize)
-    axs[0].set_ylabel("Voltage in [mv]")
+    axs[0].set_xlabel("Time [ms]", fontsize=fontsize)
+    axs[0].set_ylabel("Voltage [mV]")
     axs[0].set_ylim(-70, -40)
     for i in range(0, len(v)):
         axs[0].plot(v[i][window[0] : window[1]], linewidth=0.75, c="grey", alpha=0.15)
@@ -1471,8 +1489,8 @@ def spike_variability_analysis(
     )
 
     # axs[1].set_title("Grouped voltage traces of I cells in Net 2", fontsize=fontsize)
-    axs[1].set_xlabel("Time in [ms]", fontsize=fontsize)
-    axs[1].set_ylabel("Voltage in [mv]")
+    axs[1].set_xlabel("Time [ms]", fontsize=fontsize)
+    axs[1].set_ylabel("Voltage [mV]")
     axs[1].set_ylim(-70, -40)
 
     for f in first[:100]:
@@ -1488,21 +1506,22 @@ def spike_variability_analysis(
     #     "Comparison of mean membrane potential of spiking and non-spiking group",
     #     fontsize=14,
     # )
-    axs[2].set_xlabel("Time in [ms]", fontsize=fontsize)
-    axs[2].set_ylabel("Voltage in [mv]")
-    axs[2].set_ylim(-70, -40)
-    if first:
-        axs[2].plot(
-            np.mean(first, axis=0)[window[0] : window[1]], c=c_exc, linewidth=3.0
-        )
 
-    if second:
-        axs[2].plot(
-            np.mean(second, axis=0)[window[0] : window[1]], c=c_inh, linewidth=3.0
-        )
+    if mean_voltage:
+        axs[2].set_xlabel("Time [ms]", fontsize=fontsize)
+        axs[2].set_ylabel("Voltage [mV]")
+        axs[2].set_ylim(-70, -40)
+        if first:
+            axs[2].plot(
+                np.mean(first, axis=0)[window[0] : window[1]], c=c_exc, linewidth=3.0
+            )
 
-    axs[2].legend(["Group of spiking neurons", "Group of suppressed neurons"])
-    plt.tight_layout()
+        if second:
+            axs[2].plot(
+                np.mean(second, axis=0)[window[0] : window[1]], c=c_inh, linewidth=3.0
+            )
+
+        axs[2].legend(["Group of spiking neurons", "Group of suppressed neurons"])
 
     save_to_file("spike_variability", folder=folder, key=key, dpi=150)
 
