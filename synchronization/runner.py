@@ -162,9 +162,14 @@ def run_in_mopet(params) -> dict:
     results = run(modified_params=params)
     results = post_processing(results)
 
-    # Remove types that are not supported yet by Mopet
-    remove = [k for k in results if results[k] is None or isinstance(results[k], str)]
-    # print(f"Removing keys {remove} containing NoneType from dictionary to avoid conflicts with Mopet")
+    # Remove types that are not supported by Mopet yet
+    remove = [
+        k
+        for k in results
+        if results[k] is None
+        or isinstance(results[k], str)
+        or isinstance(results[k], dict)
+    ]
     for k in remove:
         del results[k]
 

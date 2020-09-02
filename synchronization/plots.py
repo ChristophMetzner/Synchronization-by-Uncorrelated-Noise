@@ -45,17 +45,22 @@ def plot_ING_exp_figure(
         param_x = axis_names[0]
         param_y = axis_names[1]
 
-    fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(13, 10))
+    fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(10, 8))
+
+    x_label = "Frequency Ratio p"
+    y_label = "Noise Strength $\sigma^2$"
 
     heat_map_vis(
         df=ex.df,
         value="plv_net_1_i",
         param_X=param_x,
         param_Y=param_y,
-        title="Within Phase Synchronization - Network 1 - Inhibitory",
+        title="Within Phase Synchronization - Net 1",
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
+        xlabel=x_label,
+        ylabel=y_label,
         ax=axs.flat[0],
     )
 
@@ -64,10 +69,12 @@ def plot_ING_exp_figure(
         value="plv_net_2_i",
         param_X=param_x,
         param_Y=param_y,
-        title="Within Phase Synchronization - Net 2 - Inhibitory",
+        title="Within Phase Synchronization - Net 2",
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
+        xlabel=x_label,
+        ylabel=y_label,
         ax=axs.flat[1],
     )
 
@@ -80,6 +87,8 @@ def plot_ING_exp_figure(
         colorbar="Kuramoto Order Parameter",
         vmin=vmin_phase,
         vmax=vmax_phase,
+        xlabel=x_label,
+        ylabel=y_label,
         ax=axs.flat[2],
     )
 
@@ -92,6 +101,8 @@ def plot_ING_exp_figure(
         colorbar="Ratio",
         vmin=vmin_ratio,
         vmax=1.0,
+        xlabel=x_label,
+        ylabel=y_label,
         ax=axs.flat[3],
     )
 
@@ -449,7 +460,7 @@ def _one_dim_exploration(ex, folder: str = None):
 
     alpha = 0.7
 
-    fig, ax = plt.subplots(figsize=(15, 8))
+    fig, ax = plt.subplots(figsize=(10, 5))
     df = ex.df.sort_values(by=param)
 
     ax.plot(
@@ -519,8 +530,8 @@ def _one_dim_exploration(ex, folder: str = None):
         )
         legend.append("Kuramoto Order Parameter - Net 2 - I Pop")
 
-    plt.legend(legend, loc=[0.0, 1.0], fontsize=FONTSIZE)
-    ax.set_xlabel("Noise Strength $\sigma$", fontsize=FONTSIZE)
+    plt.legend(legend, loc=[0.0, 1.0])
+    ax.set_xlabel("Noise Strength $\sigma$")
     ax.set_ylim(0, 1.1)
 
     save_to_file("one_dim_exp", folder=folder)
@@ -1308,6 +1319,8 @@ def heat_map_vis(
     value: str,
     title: str = "",
     colorbar: str = "",
+    xlabel: str = None,
+    ylabel: str = None,
     ax=None,
     **kwargs,
 ):
@@ -1324,6 +1337,8 @@ def heat_map_vis(
             min(df[param_Y], default=0),
             max(df[param_Y], default=0),
         ],
+        xlabel=xlabel,
+        ylabel=ylabel,
         title=title,
         colorbar=colorbar,
         ax=ax,
@@ -1344,7 +1359,7 @@ def heat_map_pivoted(
     if not ax:
         fig, ax = plt.subplots()
 
-    ax.set_title(title, fontsize=FONTSIZE)
+    ax.set_title(title)
 
     im = ax.imshow(
         pivot_table,
