@@ -253,8 +253,8 @@ def post_processing(results: dict) -> dict:
         plv_net_1_e = np.mean(processing.order_parameter_over_time(neurons_net_1_e))
         plv_net_2_e = np.mean(processing.order_parameter_over_time(neurons_net_2_e))
 
-        results["plv_net_2_e"] = plv_net_2_e
         results["plv_net_1_e"] = plv_net_1_e
+        results["plv_net_2_e"] = plv_net_2_e
 
     results["mean_phase_coherence"] = mpc
     results["phase_synchronization_over_time"] = global_order_parameter

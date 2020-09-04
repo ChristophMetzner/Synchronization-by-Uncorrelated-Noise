@@ -137,15 +137,20 @@ def plot_exp_figure(
         param_X = axis_names[0]
         param_Y = axis_names[1]
 
-    fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(17, 20))
+    fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(10, 11))
+
+    x_label = "Frequency Ratio p"
+    y_label = "Noise Strength $\sigma^2$"
 
     heat_map_vis(
         df=ex.df,
         value="plv_net_1_e",
         param_X=param_X,
         param_Y=param_Y,
-        title="Within Phase Synchronization - Network 1 - Excitatory",
+        title="Within Phase Synchronization - Net 1 - Excitatory",
         colorbar="Kuramoto Order Parameter",
+        xlabel=x_label,
+        ylabel=y_label,
         vmin=vmin_phase,
         vmax=vmax_phase,
         ax=axs.flat[0],
@@ -156,8 +161,10 @@ def plot_exp_figure(
         value="plv_net_1_i",
         param_X=param_X,
         param_Y=param_Y,
-        title="Within Phase Synchronization - Network 1 - Inhibitory",
+        title="Within Phase Synchronization - Net 1 - Inhibitory",
         colorbar="Kuramoto Order Parameter",
+        xlabel=x_label,
+        ylabel=y_label,
         vmin=vmin_phase,
         vmax=vmax_phase,
         ax=axs.flat[1],
@@ -170,6 +177,8 @@ def plot_exp_figure(
         param_Y=param_Y,
         title="Within Phase Synchronization - Net 2 - Excitatory",
         colorbar="Kuramoto Order Parameter",
+        xlabel=x_label,
+        ylabel=y_label,
         vmin=vmin_phase,
         vmax=vmax_phase,
         ax=axs.flat[2],
@@ -182,6 +191,8 @@ def plot_exp_figure(
         param_Y=param_Y,
         title="Within Phase Synchronization - Net 2 - Inhibitory",
         colorbar="Kuramoto Order Parameter",
+        xlabel=x_label,
+        ylabel=y_label,
         vmin=vmin_phase,
         vmax=vmax_phase,
         ax=axs.flat[3],
@@ -206,6 +217,8 @@ def plot_exp_figure(
         param_Y=param_Y,
         title="Dominant Frequency Ratio",
         colorbar="Ratio",
+        xlabel=x_label,
+        ylabel=y_label,
         vmin=vmin_ratio,
         vmax=1.0,
         ax=axs.flat[4],
@@ -218,6 +231,8 @@ def plot_exp_figure(
         param_Y=param_Y,
         title="Mean Phase Coherence between Networks",
         colorbar="Mean Phase Coherence",
+        xlabel=x_label,
+        ylabel=y_label,
         vmin=vmin_phase,
         vmax=vmax_phase,
         ax=axs.flat[5],
@@ -531,7 +546,7 @@ def _one_dim_exploration(ex, folder: str = None):
         legend.append("Kuramoto Order Parameter - Net 2 - I Pop")
 
     plt.legend(legend, loc=[0.0, 1.0])
-    ax.set_xlabel("Noise Strength $\sigma$")
+    ax.set_xlabel("Noise Strength $\sigma^2$")
     ax.set_ylim(0, 1.1)
 
     save_to_file("one_dim_exp", folder=folder)
@@ -542,6 +557,7 @@ def plot_results(
     full_raster: bool = False,
     pop_rates: bool = True,
     phase_analysis: bool = False,
+    show_lfp: bool = True,
     raster_right: int = None,
     x_max_psd: int = 120,
     x_min_psd: int = 10,
@@ -566,6 +582,7 @@ def plot_results(
     :param full_raster: if True, raster plot will be shown.
     :param pop_rates: if True displays population rates.
     :param phase_analysis: if True plots phase analysis.
+    :param show_lfp: if True plots the LFP surrogate.
     :param raster_right: right limit for raster time axis.
     :param x_max_psd: maximum frequency x to show in PSD plot.
     :param x_min_psd: minimum frequency x to show in PSD plot.
@@ -606,7 +623,8 @@ def plot_results(
             save=save,
         )
 
-    lfp_nets(model, skip=100, single_net=networks == 1)
+    if show_lfp:
+        lfp_nets(model, skip=100, single_net=networks == 1)
 
     if full_raster:
         fig, axs = plt.subplots(1, 2, figsize=(40, 18))
@@ -1139,6 +1157,7 @@ def phases_inter_nets(
     :param skip: amount of ms to skip.
     :param model: the given model.
     :type model: dict
+    :param folder: folder path to save plots in.
     """
     lfp1, lfp2 = processing.lfp_nets(model, skip=skip)
     f_lfp1, f_lfp2 = (
@@ -1216,6 +1235,15 @@ def phases_intra_nets(model: dict, skip: int = 200, duration: int = 600):
     :param model: input model.
     :type model: dict
     """
+    # print("plv_net_1: ", model["plv_net_1"])
+    # print("plv_net_1_i: ", model["plv_net_1_i"])
+    # print("plv_net_2: ", model["plv_net_2"])
+    # print("plv_net_2_i: ", model["plv_net_2_i"])
+    #
+    # if model["model_EI"]:
+    #     print("plv_net_1_e: ", model["plv_net_1_e"])
+    #     print("plv_net_2_e: ", model["plv_net_2_e"])
+
     print("Computing within synchronization for network 1 and 2")
 
     v_i = processing.filter_signals(model["v_all_neurons_i1"])
@@ -1490,7 +1518,7 @@ def spike_variability_analysis(
     #     fontsize=14,
     # )
     axs[0].set_xlabel("Time [ms]", fontsize=fontsize)
-    axs[0].set_ylabel("Voltage [mV]")
+    axs[0].set_ylabel("Voltage [mV]", fontsize=fontsize)
     axs[0].set_ylim(-70, -40)
     for i in range(0, len(v)):
         axs[0].plot(v[i][window[0] : window[1]], linewidth=0.75, c="grey", alpha=0.15)
@@ -1541,6 +1569,56 @@ def spike_variability_analysis(
     save_to_file("spike_variability", folder=folder, key=key, dpi=150)
 
 
+def spike_participation_histograms_per_network(model, network: int = 1):
+    width = 6
+
+    lfp_e, lfp_i = processing.lfp(model, population=network)
+    lfp_e, lfp_i = lfp_e[400:], lfp_i[400:]
+
+    peaks_e, peaks_i = find_peaks(lfp_e, height=-57), find_peaks(lfp_i, height=-53)
+    print(len(peaks_e[0]), len(peaks_i[0]))
+
+    y_e, y_i = [lfp_e[p] for p in peaks_e[0]], [lfp_i[p] for p in peaks_i[0]]
+
+    fig, ax = plt.subplots(figsize=(20, 5))
+    plt.title("Peak detection of E Population Signal")
+    plt.plot(lfp_e, c_inh, linewidth=2.0)
+    plt.plot(peaks_e[0], y_e, "r+", linewidth=3, c=c_exc)
+    plt.show()
+
+    fig, ax = plt.subplots(figsize=(20, 5))
+    plt.title("Peak detection of I Population Signal")
+    plt.plot(lfp_i, c_inh, linewidth=2.0)
+    plt.plot(peaks_i[0], y_i, "r+", linewidth=3, c=c_exc)
+    plt.show()
+
+    if network == 1:
+        v = model["v_all_neurons_e"]
+        v2 = model["v_all_neurons_i1"]
+    else:
+        v = model["v_all_neurons_e2"]
+        v2 = model["v_all_neurons_i2"]
+
+    p_e, p_e_peaks = processing.spike_participation(v, peaks_e, width)
+    p_i, p_i_peaks = processing.spike_participation(v2, peaks_i, width)
+
+    fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(14, 10))
+    axs[0, 0].set_xlim(0, 1)
+    axs[0, 0].hist(list(p_e.values()), bins=20, color=c_exc, alpha=1.0)
+    axs[0, 0].set_title("Participation per Neuron")
+
+    axs[0, 1].hist(list(p_i.values()), bins=20, color=c_inh, alpha=1.0)
+    axs[0, 1].set_xlim(0, 1)
+
+    axs[1, 0].hist(list(p_e_peaks.values()), bins=20, color=c_exc, alpha=1.0)
+    axs[1, 0].set_title("Participation per Peak")
+    axs[1, 0].set_xlim(0, 1)
+
+    axs[1, 1].hist(list(p_i_peaks.values()), bins=20, color=c_inh, alpha=1.0)
+    axs[1, 1].set_title("Participation per Peak")
+    axs[1, 1].set_xlim(0, 1)
+
+
 def spike_participation_histograms(model):
     """
     The LFP signal for EI population should be split up into LFP of E and LFP of I.
@@ -1551,9 +1629,6 @@ def spike_participation_histograms(model):
     
     Also phase analysis methods should only use then LFP of E cells.
     """
-
-    t = model["t_all_neurons_i1"]
-
     lfp = processing.lfp_single_net(model)
     lfp = lfp[400:2000]
 
@@ -1580,8 +1655,8 @@ def spike_participation_histograms(model):
     axs[0].set_title(
         "Histogram of spike participation per neuron in peaks of network 1"
     )
-    axs[0].hist(list(p_1.values()), bins=20, color=c_exc)
-    axs[0].hist(list(p_2.values()), bins=20, color=c_inh)
+    axs[0].hist(list(p_1.values()), bins=20, color=c_exc, alpha=0.65)
+    axs[0].hist(list(p_2.values()), bins=20, color=c_inh, alpha=0.65)
     axs[0].legend(
         ["Net 1 - participation per neuron", "Net 2 - participation per I neuron"]
     )

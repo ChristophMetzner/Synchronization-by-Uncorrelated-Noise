@@ -377,21 +377,20 @@ def spike_participation(v, peaks, width: int = 3, threshold=-47):
     """
     peak_count = len(peaks[0])
     participation_n = {}
+
+    for idx, v_n in enumerate(v):
+        participation_n[idx] = 0
+
     participation_p = {}
 
     for peak in peaks[0]:
+        participation_p[peak] = 0
+
         for idx, v_n in enumerate(v):
             v_p = v_n[int(peak) - width : int(peak) + width]
             if any([s for s in v_p if s >= threshold]):
-                if peak in participation_p:
-                    participation_p[peak] += 1
-                else:
-                    participation_p[peak] = 1
-
-                if idx in participation_n:
-                    participation_n[idx] += 1
-                else:
-                    participation_n[idx] = 1
+                participation_p[peak] += 1
+                participation_n[idx] += 1
 
     for k in participation_n.keys():
         participation_n[k] = participation_n[k] / peak_count
