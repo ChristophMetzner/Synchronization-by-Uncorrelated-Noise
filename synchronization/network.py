@@ -290,18 +290,19 @@ def network_sim(signal, params: dict):
             f"Net 1 - poisson rate {poisson_group_rate} - single neuron {poisson_rate} - strength {poisson_strength}"
         )
 
-        P_E = PoissonInput(
-            target=E,
-            target_var="v",
-            N=N_P,
-            rate=poisson_rate * Hz,
-            weight="(VT_e - Vr_e) * poisson_strength",
-        )
-        net.add(P_E)
+        if params["model_EI"]:
+            P_E = PoissonInput(
+                target=E,
+                target_var="v",
+                N=N_P,
+                rate=poisson_rate * Hz,
+                weight="(VT_e - Vr_e) * poisson_strength",
+            )
+            net.add(P_E)
 
         if params["poisson_I_enabled"]:
             I_rate = poisson_rate * poisson_I_ratio
-            logger.debug("Poisson rate to I pop:", I_rate)
+            logger.debug(f"Poisson rate to I pop: {I_rate}")
             P_I = PoissonInput(
                 target=I,
                 target_var="v",
@@ -325,14 +326,15 @@ def network_sim(signal, params: dict):
             rate_2 = params["poisson_p"] * poisson_rate
             logger.debug(f"Net 2 - rate for single neuron {rate_2}")
 
-            P_E_2 = PoissonInput(
-                target=E2,
-                target_var="v",
-                N=params["poisson_size"],
-                rate=rate_2 * Hz,
-                weight="(VT_e - Vr_e) * poisson_strength",
-            )
-            net.add(P_E_2)
+            if params["model_EI"]:
+                P_E_2 = PoissonInput(
+                    target=E2,
+                    target_var="v",
+                    N=params["poisson_size"],
+                    rate=rate_2 * Hz,
+                    weight="(VT_e - Vr_e) * poisson_strength",
+                )
+                net.add(P_E_2)
 
             if params["poisson_I_enabled"]:
                 I_rate = rate_2 * poisson_I_ratio

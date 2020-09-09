@@ -78,19 +78,19 @@ def plot_ING_exp_figure(
         ax=axs.flat[1],
     )
 
-    heat_map_vis(
-        df=ex.df,
-        value="phase_synchronization",
-        param_X=param_x,
-        param_Y=param_y,
-        title="Phase Synchronization",
-        colorbar="Kuramoto Order Parameter",
-        vmin=vmin_phase,
-        vmax=vmax_phase,
-        xlabel=x_label,
-        ylabel=y_label,
-        ax=axs.flat[2],
-    )
+    # heat_map_vis(
+    #     df=ex.df,
+    #     value="phase_synchronization",
+    #     param_X=param_x,
+    #     param_Y=param_y,
+    #     title="Phase Synchronization",
+    #     colorbar="Kuramoto Order Parameter",
+    #     vmin=vmin_phase,
+    #     vmax=vmax_phase,
+    #     xlabel=x_label,
+    #     ylabel=y_label,
+    #     ax=axs.flat[2],
+    # )
 
     heat_map_vis(
         df=ex.df,
@@ -106,17 +106,17 @@ def plot_ING_exp_figure(
         ax=axs.flat[3],
     )
 
-    # heat_map_vis(
-    #     df=ex.df,
-    #     value="mean_phase_coherence",
-    #     param_X=param_x,
-    #     param_Y=param_y,
-    #     title="Mean Phase Coherence between Networks",
-    #     colorbar="Mean Phase Coherence",
-    #     vmin=vmin_phase,
-    #     vmax=vmax_phase,
-    #     ax=axs.flat[4],
-    # )
+    heat_map_vis(
+        df=ex.df,
+        value="mean_phase_coherence",
+        param_X=param_x,
+        param_Y=param_y,
+        title="Mean Phase Coherence between Networks",
+        colorbar="Mean Phase Coherence",
+        vmin=vmin_phase,
+        vmax=vmax_phase,
+        ax=axs.flat[2],
+    )
 
     save_to_file(filename, folder="ING")
 
@@ -496,14 +496,14 @@ def _one_dim_exploration(ex, folder: str = None):
     )
     legend.append("Mean Phase Coherence - Networks")
 
-    if "phase_synchronization" in df:
-        ax.plot(
-            df[param],
-            df["phase_synchronization"],
-            linewidth=linewidth_across,
-            marker=marker_across,
-        )
-        legend.append("Phase Synchronization - Networks")
+    # if "phase_synchronization" in df:
+    #     ax.plot(
+    #         df[param],
+    #         df["phase_synchronization"],
+    #         linewidth=linewidth_across,
+    #         marker=marker_across,
+    #     )
+    #     legend.append("Phase Synchronization - Networks")
 
     if "plv_net_1_e" in df:
         ax.plot(
@@ -1191,8 +1191,8 @@ def phases_inter_nets(
     # plt.title("Phases of Network 1 and 2 - First 800 ms", fontsize=FONTSIZE)
     plt.xlabel("Time [ms]", fontsize=FONTSIZE)
     plt.ylabel("Angle", fontsize=FONTSIZE)
-    plt.plot(processing.phase(f_lfp2[:duration]), linewidth=1.5, c=c_inh)
-    plt.plot(processing.phase(f_lfp1[:duration]), linewidth=1.5, c=c_exc)
+    plt.plot(processing.phase(f_lfp2[skip:duration + skip]), linewidth=1.5, c=c_inh)
+    plt.plot(processing.phase(f_lfp1[skip:duration + skip]), linewidth=1.5, c=c_exc)
     plt.legend(["Net 1", "Net 2"])
 
     if folder:
@@ -1454,9 +1454,9 @@ def isi_histograms(
     :param folder: relative output folder.
     """
     if model["model_EI"]:
-        fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(10, 5))
+        fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(10, 6), sharex='all', sharey='all')
     else:
-        fig, axs = plt.subplots(ncols=2, figsize=(10, 4))
+        fig, axs = plt.subplots(ncols=2, figsize=(10, 4), sharex='all', sharey='all')
 
     ax = _isi_histogram(axs.flat[0], model["isi_I"], bins, filter_outlier, color=c_inh)
     ax.set_title("Inhibitory Population of Network 1")
@@ -1484,7 +1484,7 @@ def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc)
     ax.set_xlabel("Time [ms]")
     ax.set_ylabel("Count")
     ax.hist(isi, bins=bins, color=color)
-    ax.axvline(avg_E, color="orange", linestyle="dashed", linewidth=3)
+    ax.axvline(avg_E, color="orange", linestyle="dashed", linewidth=2.0)
     min_ylim, max_ylim = ax.get_ylim()
     ax.text(avg_E * 1.1, max_ylim * 0.7, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=12)
 
