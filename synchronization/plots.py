@@ -212,20 +212,6 @@ def plot_exp_figure(
 
     heat_map_vis(
         df=ex.df,
-        value="freq_ratio",
-        param_X=param_X,
-        param_Y=param_Y,
-        title="Dominant Frequency Ratio",
-        colorbar="Ratio",
-        xlabel=x_label,
-        ylabel=y_label,
-        vmin=vmin_ratio,
-        vmax=1.0,
-        ax=axs.flat[4],
-    )
-
-    heat_map_vis(
-        df=ex.df,
         value="mean_phase_coherence",
         param_X=param_X,
         param_Y=param_Y,
@@ -235,6 +221,20 @@ def plot_exp_figure(
         ylabel=y_label,
         vmin=vmin_phase,
         vmax=vmax_phase,
+        ax=axs.flat[4],
+    )
+
+    heat_map_vis(
+        df=ex.df,
+        value="freq_ratio",
+        param_X=param_X,
+        param_Y=param_Y,
+        title="Dominant Frequency Ratio",
+        colorbar="Ratio",
+        xlabel=x_label,
+        ylabel=y_label,
+        vmin=vmin_ratio,
+        vmax=1.0,
         ax=axs.flat[5],
     )
 
