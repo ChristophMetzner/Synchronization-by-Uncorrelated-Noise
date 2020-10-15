@@ -27,4 +27,18 @@ Install `synchronization` package locally so that the Jupyter notebooks can impo
 pip install -e . 
 ```
 
-Any change to the code in `synchronization/` is immediately reflected as `-e` installs the package in editable mode. 
+Any change to the code in `synchronization/` is immediately reflected as `-e` installs the package in editable mode.
+
+
+## Jupyter Extensions
+
+We recommend installing the [jupyterlab-toc](https://github.com/jupyterlab/jupyterlab-toc) extension as some notebooks are grouped into sections and subsections.
+By using a TOC extension, reading and editing the notebooks becomes considerably easier.
+   
+   
+## Notebooks
+
+* `notebooks/2_nets_ING.ipynb` reproduces **scenario 1** of two all-to-all coupled interacting inhibitory networks.
+* `notebooks/2_nets_PING_all_to_all.ipynb` reproduces **scenario 2** of two all-to-all coupled excitatory-inhibitory networks.
+* `notebooks/2_nets_PING_sparse.ipynb` reproduces **scenario 3** of two sparse random excitatory-inhibitory networks.
+

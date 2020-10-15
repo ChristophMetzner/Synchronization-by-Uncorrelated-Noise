@@ -616,12 +616,12 @@ def plot_results(
         lfp_nets(model, skip=100, single_net=networks == 1)
 
     if full_raster:
-        fig, axs = plt.subplots(1, 2, figsize=(40, 18))
+        fig, axs = plt.subplots(1, networks, figsize=(40, 18))
         raster(
             title="Raster of 1st network",
             model=model,
             key="stoch_weak_PING",
-            ax=axs[0],
+            ax=axs[0] if networks > 1 else axs,
             x_right=raster_right,
             folder=folder,
             save=save,
@@ -638,7 +638,7 @@ def plot_results(
                 save=save,
             )
 
-    fig, axs = plt.subplots(1, 1, figsize=(10, 4))
+    fig, axs = plt.subplots(figsize=(10, 4))
     raster(
         title=None,
         model=model,
@@ -650,8 +650,8 @@ def plot_results(
         save=save,
     )
 
-    fig, axs = plt.subplots(1, 1, figsize=(10, 4))
     if networks > 1:
+        fig, axs = plt.subplots(figsize=(10, 4))
         raster(
             title=None,
             model=model,
@@ -718,18 +718,14 @@ def lfp(
     population: int = 1,
 ):
     duration = duration if duration else model["runtime"]
-
     lfp1, lfp2 = processing.lfp(model, duration, skip, population=population)
-
     t = np.linspace(0, duration, int(duration / dt))
 
     fig = plt.figure(figsize=FIG_SIZE)
     ax = fig.add_subplot(111)
     ax.set_title(title)
-
     ax.set_xlabel("Elapsed Time in ms")
     ax.set_ylabel("Voltage")
-
     ax.plot(t, lfp1, "0.75", c=c_inh)
     ax.plot(t, lfp2, "0.25", c=c_exc)
 
@@ -737,9 +733,7 @@ def lfp(
         ["Excitatory Group", "Inhibitory Group",]
     )
     plt.tight_layout()
-
     save_to_file("summed_voltage", save, prefix)
-
     return fig, ax
 
 
