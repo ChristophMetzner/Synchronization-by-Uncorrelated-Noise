@@ -23,7 +23,6 @@ FONTSIZE = 14
 
 # Colors
 c_exc = "r"
-# c_inh = "cornflowerblue"
 c_inh = "midnightblue"
 c_net_1 = "darkorange"
 c_net_2 = "teal"
@@ -254,7 +253,7 @@ def plot_exploration(
     vmax_bandpower: int = 1000,
     folder: str = None,
 ):
-    """Plots 2 dimensional maps to visualize parameter exploration.
+    """ Plots 2 dimensional maps to visualize parameter exploration.
 
     :param ex: mopet exploration
     :type ex: mopet.Exploration
@@ -269,7 +268,6 @@ def plot_exploration(
     :param vmin_phase:
     :param vmax_phase:
     """
-
     if len(ex.explore_params.keys()) == 1:
         _one_dim_exploration(ex, folder)
         return
@@ -453,17 +451,6 @@ def plot_exploration(
 
 def _one_dim_exploration(ex, folder: str = None):
     param = list(ex.explore_params.keys())[0]
-    metric = "freq_ratio"
-    #
-    # fig, ax = plt.subplots(figsize=(15, 3))
-    # df = ex.df.sort_values(by=param)
-    #
-    # ax.plot(df[param], df[metric], c=c_inh, marker=".")
-    # ax.set_title("Frequency Ratio")
-    # ax.set_xlabel(param)
-    # ax.set_ylim(0, 1.1)
-    # ax.set_ylabel("Dom Freq Ratio")
-
     metric = "mean_phase_coherence"
     legend = []
 
@@ -496,6 +483,8 @@ def _one_dim_exploration(ex, folder: str = None):
     )
     legend.append("Mean Phase Coherence - Networks")
 
+    # We excluded Kuramoto order parameter between networks
+    #   as mean phase coherence captures also delays between networks.
     # if "phase_synchronization" in df:
     #     ax.plot(
     #         df[param],
@@ -651,7 +640,6 @@ def plot_results(
 
     fig, axs = plt.subplots(1, 1, figsize=(10, 4))
     raster(
-        # title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 1",
         title=None,
         model=model,
         key="exc_net1",
@@ -665,7 +653,6 @@ def plot_results(
     fig, axs = plt.subplots(1, 1, figsize=(10, 4))
     if networks > 1:
         raster(
-            # title=f"{excerpt_x_left}-{excerpt_x_right} ms of network 2",
             title=None,
             model=model,
             key="exc_net2",
@@ -945,10 +932,6 @@ def raster(
         markersize="4.0",
     )
 
-    # if model["model_EI"]:
-    # if only inhibitory we don't need to add a legend.
-    # plt.legend(["Excitatory", "Inhibitory"])
-
     ax.set_xlim(left=x_left if x_left else 0, right=x_right)
 
     plt.tight_layout()
@@ -1191,7 +1174,6 @@ def phases_inter_nets(
         plt.plot(f_lfp1, c=c_inh)
 
     plt.figure(figsize=fig_size)
-    # plt.title("Phases of Network 1 and 2 - First 800 ms", fontsize=FONTSIZE)
     plt.xlabel("Time [ms]", fontsize=FONTSIZE)
     plt.ylabel("Angle", fontsize=FONTSIZE)
     plt.plot(processing.phase(f_lfp2[skip:duration + skip]), linewidth=1.5, c=c_inh)
@@ -1238,15 +1220,6 @@ def phases_intra_nets(model: dict, skip: int = 200, duration: int = 600):
     :param model: input model.
     :type model: dict
     """
-    # print("plv_net_1: ", model["plv_net_1"])
-    # print("plv_net_1_i: ", model["plv_net_1_i"])
-    # print("plv_net_2: ", model["plv_net_2"])
-    # print("plv_net_2_i: ", model["plv_net_2_i"])
-    #
-    # if model["model_EI"]:
-    #     print("plv_net_1_e: ", model["plv_net_1_e"])
-    #     print("plv_net_2_e: ", model["plv_net_2_e"])
-
     print("Computing within synchronization for network 1 and 2")
 
     v_i = processing.filter_signals(model["v_all_neurons_i1"])
@@ -1479,6 +1452,16 @@ def isi_histograms(
 
 
 def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc):
+    """
+    Plots a ISI histogram based on the given `isi`s.
+
+    :param ax: axis used for plotting.
+    :param isi: list of ISIs.
+    :param bins: number of bins.
+    :param filter_outlier: applies simple heuristic to remove outliers.
+    :param color: color for plotting.
+    :return:
+    """
     avg_E = np.average(isi)
     if filter_outlier:
         isi = processing.filter_inter_spike_intervals(isi)
@@ -1490,7 +1473,6 @@ def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc)
     ax.axvline(avg_E, color="orange", linestyle="dashed", linewidth=2.0)
     min_ylim, max_ylim = ax.get_ylim()
     ax.text(avg_E * 1.1, max_ylim * 0.7, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=12)
-
     return ax
 
 
@@ -1572,7 +1554,18 @@ def spike_variability_analysis(
     save_to_file("spike_variability", folder=folder, key=key, dpi=150)
 
 
-def spike_participation_histograms_per_network(model, network: int = 1):
+def spike_participation_histograms_per_network(model, network: int = 1, show_detection: bool = False):
+    """
+    Plots the spike participation distribution of neurons in their population rhythm.
+
+    We first detect the peaks in the population activity voltage trace.
+    And then use a window with predefined width to count the spikes per detected peak.
+
+    :param model: given model.
+    :param network: either 1 or 2.
+    :param show_detection: if True plots the voltage trace and marks the detected peaks.
+    :return:
+    """
     width = 6
 
     lfp_e, lfp_i = processing.lfp(model, population=network)
@@ -1583,17 +1576,18 @@ def spike_participation_histograms_per_network(model, network: int = 1):
 
     y_e, y_i = [lfp_e[p] for p in peaks_e[0]], [lfp_i[p] for p in peaks_i[0]]
 
-    fig, ax = plt.subplots(figsize=(20, 5))
-    plt.title("Peak detection of E Population Signal")
-    plt.plot(lfp_e, c_inh, linewidth=2.0)
-    plt.plot(peaks_e[0], y_e, "r+", linewidth=3, c=c_exc)
-    plt.show()
+    if show_detection:
+        fig, ax = plt.subplots(figsize=(20, 5))
+        plt.title("Peak detection of E Population Signal")
+        plt.plot(lfp_e, c_inh, linewidth=2.0)
+        plt.plot(peaks_e[0], y_e, "r+", linewidth=3, c=c_exc)
+        plt.show()
 
-    fig, ax = plt.subplots(figsize=(20, 5))
-    plt.title("Peak detection of I Population Signal")
-    plt.plot(lfp_i, c_inh, linewidth=2.0)
-    plt.plot(peaks_i[0], y_i, "r+", linewidth=3, c=c_exc)
-    plt.show()
+        fig, ax = plt.subplots(figsize=(20, 5))
+        plt.title("Peak detection of I Population Signal")
+        plt.plot(lfp_i, c_inh, linewidth=2.0)
+        plt.plot(peaks_i[0], y_i, "r+", linewidth=3, c=c_exc)
+        plt.show()
 
     if network == 1:
         v = model["v_all_neurons_e"]

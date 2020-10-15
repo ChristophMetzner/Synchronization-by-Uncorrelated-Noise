@@ -96,7 +96,7 @@ def lfp_nets(model, skip: int = None, gamma_filter: bool = False):
 
 
 def _lfp(v, N: int) -> np.ndarray:
-    """Calculates local field potential of `N` neurons `v`.
+    """ Calculates local field potential of `N` neurons `v`.
 
     :param v: array of membrane voltage over time of `N` neurons.
     :type v: ndarray
@@ -297,11 +297,9 @@ def group_neurons(v, spike_t: int, window, t_start=5, t_end=5, thr=-70):
     Simple spike detection algorithm for given time window.
 
     Ideas:
-    * Could also use recorded SpikeMonitor.
+        * Could also use recorded SpikeMonitor.
     """
-
     window = window if window else (120, 170)
-
     first = []
     second = []
 
