@@ -73,16 +73,14 @@ def get_params():
     params["gL_exc"] = 10.0  # [nS] Conductance
     params["taum_exc"] = params["C_exc"] / params["gL_exc"]  # [ms]
     params["EL_exc"] = -65.0  # [mV]            reversal potential of membrane
-    params[
-        "Ew_exc"
-    ] = -80.0  # [mV]            reversal potential for adaptation param w
+    # reversal potential for adaptation param w
+    params["Ew_exc"] = -80.0  # [mV]
     params["VT_exc"] = -50.0  # [mV]            membrane threshold
     params["deltaT_exc"] = 1.5  # [mV]
     params["Vcut_exc"] = -40.0  # [mV]
     params["tauw_exc"] = 200.0  # [ms]
     params["a_exc"] = 4.0  # [nS]               subthreshold adaptation param
     params["b_exc"] = 40.0  # [pA]              spike-frequency adaptation param
-    # TODO: why is Vr so high? In Naud et al. it is around -40-60 mv?
     params["Vr_exc"] = -70.0  # [mV]            reset voltage
     params["t_ref_exc"] = 1.0  # [ms]
 

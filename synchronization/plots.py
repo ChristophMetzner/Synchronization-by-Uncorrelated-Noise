@@ -1063,6 +1063,9 @@ def population_rates(model: dict, skip: int = None):
     r_e = model["r_e"][skip:]
     r_i1 = model["r_i1"][skip:]
 
+    print(f"Average E firing frequency: {np.average(r_e)}")
+    print(f"Average I firing frequency: {np.average(r_i1)}")
+
     if "r_e_t" in model:
         axs[0, 0].plot(model["r_e_t"][skip:], r_e, c=c_exc)
     else:
