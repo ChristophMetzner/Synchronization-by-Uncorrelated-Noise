@@ -39,6 +39,18 @@ def plot_ING_exp_figure(
     vmin_ratio: int = 0,
     filename: str = "ING_exp",
 ):
+    """
+    Plots two dimensional heat maps of ING model exploration.
+
+    :param ex:
+    :param param_x:
+    :param param_y:
+    :param vmax_phase:
+    :param vmin_phase:
+    :param vmin_ratio:
+    :param filename:
+    :return:
+    """
     if not param_x or not param_y:
         axis_names = list(ex.explore_params.keys())
         param_x = axis_names[0]
@@ -114,11 +126,12 @@ def plot_ING_exp_figure(
         colorbar="Mean Phase Coherence",
         vmin=vmin_phase,
         vmax=vmax_phase,
+        xlabel=x_label,
+        ylabel=y_label,
         ax=axs.flat[2],
     )
 
     save_to_file(filename, folder="ING")
-
     return fig, axs
 
 
@@ -131,6 +144,21 @@ def plot_exp_figure(
     vmin_ratio: int = 0,
     filename: str = "PING_exp",
 ):
+    """
+    This method is used to plot the two dimensional exploration Figure in the thesis.
+
+    Only a limited set of metrics is included.
+    Use `plot_exploration` method to plot heat maps for all available metrics.
+
+    :param ex: loaded Mopet exploration.
+    :param param_X: param name for x axis.
+    :param param_Y: param name for y axis.
+    :param vmax_phase: max value for phase measures.
+    :param vmin_phase: min value for phase measures.
+    :param vmin_ratio: min value for frequency ratio.
+    :param filename: name of plot on disk.
+    :return: (fig, axs)
+    """
     if not param_X or not param_Y:
         axis_names = list(ex.explore_params.keys())
         param_X = axis_names[0]
@@ -261,12 +289,12 @@ def plot_exploration(
     :type param_X: str, optional
     :param param_Y: param for y axis, defaults to None
     :type param_Y: str, optional
-    :param folder:
-    :param vmax_bandpower:
-    :param vmin_ratio:
-    :param vmax_freq:
-    :param vmin_phase:
-    :param vmax_phase:
+    :param folder: folder ot save plot to.
+    :param vmax_bandpower: max value of bandpower.
+    :param vmin_ratio: min value of dom frequency ratio.
+    :param vmax_freq: max value of dom frequency ratio.
+    :param vmin_phase: min value of phase measures.
+    :param vmax_phase: max value of phase measures.
     """
     if len(ex.explore_params.keys()) == 1:
         _one_dim_exploration(ex, folder)
@@ -450,8 +478,13 @@ def plot_exploration(
 
 
 def _one_dim_exploration(ex, folder: str = None):
+    """
+    Plots one dimensional exploration results.
+
+    :param ex: given Mopet exploration.
+    :param folder: optionally save figures in folder.
+    """
     param = list(ex.explore_params.keys())[0]
-    metric = "mean_phase_coherence"
     legend = []
 
     linewidth_within = 1.0
@@ -476,7 +509,7 @@ def _one_dim_exploration(ex, folder: str = None):
 
     ax.plot(
         df[param],
-        df[metric],
+        df["mean_phase_coherence"],
         linewidth=linewidth_across,
         marker=marker_across,
         color="mediumblue",
@@ -717,6 +750,19 @@ def lfp(
     skip: int = None,
     population: int = 1,
 ):
+    """ Plot the local field potential.
+
+    :param model: given model
+    :param title: title of plot.
+    :param dt: step size.
+    :param duration: duration to plot.
+    :param prefix: file prefix
+    :param save: if True, saves plot to disk.
+    :param skip: ms to skip of recording.
+    :param population: selects the network.
+    :return: (fig, ax)
+    """
+
     duration = duration if duration else model["runtime"]
     lfp1, lfp2 = processing.lfp(model, duration, skip, population=population)
     t = np.linspace(0, duration, int(duration / dt))
@@ -810,77 +856,6 @@ def psd(
     return fig, ax
 
 
-def psd_multiple_models(
-    models: list,
-    fig_size: tuple,
-    duration: int = None,
-    dt: float = 1.0,
-    skip: int = 200,
-    xlim: int = 120,
-):
-    duration = duration if duration else models[0]["runtime"]
-    if skip:
-        duration -= skip
-
-    net_1_1, net_1_2 = processing.lfp_nets(models[0], skip=skip)
-    net_2_1, net_2_2 = processing.lfp_nets(models[1], skip=skip)
-
-    # number of data points used in each block for the FTT.
-    # Set to number of data points in the input signal.
-    NFFT = int((duration / dt / 1.0))
-
-    # Calculating the Sampling frequency.
-    # As our time unit is here ms and step size of 1 ms, a fs of 1.0 is the best we can do.
-    fs = 1.0 / dt
-
-    # NFFT: length of each segment, set here to 1.0.
-    # Thus each segment is exactly one data point
-    psd1_1, freqs = mlab.psd(
-        net_1_1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none
-    )
-    psd1_2, _ = mlab.psd(net_1_2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
-
-    psd2_1, _ = mlab.psd(net_2_1, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
-    psd2_2, _ = mlab.psd(net_2_2, NFFT=NFFT, Fs=fs, noverlap=0, window=mlab.window_none)
-
-    # We multiply by 1000 to get from ms to s.
-    freqs = freqs * 1000
-
-    # Remove unwanted power at 0 Hz
-    psd1_1[0] = 0.0
-    psd1_2[0] = 0.0
-    psd2_1[0] = 0.0
-    psd2_2[0] = 0.0
-
-    fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
-    ax = fig.add_subplot(111)
-    # ax.set_title("Power Spectral Density", fontsize=16)
-    ax.set_xlabel("Frequency (Hz)", fontsize=16)
-    ax.set_ylabel("Power", fontsize=16)
-
-    # first model
-    ax.plot(freqs, psd1_1, alpha=0.3, linewidth=5.5, c=c_exc)
-    ax.plot(freqs, psd1_2, alpha=0.3, linewidth=5.5, c="royalblue")
-
-    # second model
-    ax.plot(freqs, psd2_1, alpha=1.0, linewidth=5.5, c=c_exc)
-    ax.plot(freqs, psd2_2, alpha=1.0, linewidth=5.5, c="royalblue")
-
-    plt.legend(
-        [
-            "strength = 1.0 - Net 1",
-            "strength = 1.0 - Net 2",
-            "strength = 12.5 - Net 1",
-            "strength = 12.5 - Net 2",
-        ]
-    )
-
-    ax.set_xlim([0, xlim])
-    ax.set_xticks(range(0, xlim + 10, 10))
-
-    return fig, ax
-
-
 def raster(
     model: dict,
     title: str = None,
@@ -893,6 +868,21 @@ def raster(
     fig_size: Tuple = None,
     ax=None,
 ):
+    """
+    Plots spike rasters.
+
+    :param model: given model.
+    :param title: optional title of plot.
+    :param x_left: optional start of x axis.
+    :param x_right: optional end of x axis.
+    :param save: if True, saves plot to disk.
+    :param key: key used in filename of plot.
+    :param folder: folder to save plot in.
+    :param population: sets the network.
+    :param fig_size: figure size.
+    :param ax: axis.
+    :return: (fig, ax)
+    """
     fig = None
     if not ax:
         fig = plt.figure(figsize=fig_size if fig_size else (10, 7))
@@ -934,6 +924,14 @@ def raster(
 
 
 def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
+    """
+    Plots the local field potential of both networks.
+
+    :param model: loaded model.
+    :param single_net: if True, assumes only presence of network 1.
+    :param skip: ms to skip in recording.
+    :return: ax
+    """
     dt = model["net_record_dt"]
     duration = model["runtime"]
 
@@ -964,7 +962,7 @@ def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
     return ax
 
 
-def membrane_potentials_sample(model: dict, detail_window=(900, 1000)):
+def membrane_potentials_sample(model: dict, detail_window=(900, 1000), window=(1000, 2000)):
     """
     Plots several membrane potential traces of I and E cells.
 
@@ -975,30 +973,33 @@ def membrane_potentials_sample(model: dict, detail_window=(900, 1000)):
     v_i2 = model["v_all_neurons_i2"]
 
     t = model["t_all_neurons_i1"]
+    t_detailed = model["t_all_neurons_i1"]
+    if window:
+        t = t[window[0]: window[1]]
 
     if model["model_EI"]:
         v_e1 = model["v_all_neurons_e"]
 
         plt.figure(figsize=(20, 3))
-        plt.title("Membrane Voltages of excitatory neurons in Net 1", fontsize=FONTSIZE)
-        plt.xlabel("Time in [ms]", fontsize=FONTSIZE)
-        plt.ylabel("Voltage in [mV]", fontsize=FONTSIZE)
-        plt.plot(t, v_e1[0], c=c_exc, linewidth=2.5)
-        plt.plot(t, v_e1[1], linewidth=0.5)
-        plt.plot(t, v_e1[2], linewidth=0.5)
+        plt.title("Membrane Voltages of excitatory neurons in Net 1")
+        plt.xlabel("Time in [ms]")
+        plt.ylabel("Voltage in [mV]")
+        plt.plot(t, v_e1[0][window[0]: window[1]] if window else v_e1[0], c=c_exc, linewidth=2.5)
+        plt.plot(t, v_e1[1][window[0]: window[1]] if window else v_e1[1], linewidth=0.5)
+        plt.plot(t, v_e1[2][window[0]: window[1]] if window else v_e1[2], linewidth=0.5)
 
     plt.figure(figsize=(20, 3))
-    plt.title("Membrane Voltages of inhibitory neurons in Net 2", fontsize=FONTSIZE)
-    plt.xlabel("Time in [ms]", fontsize=FONTSIZE)
-    plt.ylabel("Voltage in [mV]", fontsize=FONTSIZE)
-    plt.plot(t, v_i1[0], c=c_inh, linewidth=2.5)
-    plt.plot(t, v_i1[1], linewidth=0.5)
-    plt.plot(t, v_i1[2], linewidth=0.5)
+    plt.title("Membrane Voltages of inhibitory neurons in Net 2")
+    plt.xlabel("Time in [ms]")
+    plt.ylabel("Voltage in [mV]")
+    plt.plot(t, v_i1[0][window[0]: window[1]] if window else v_i1[0], c=c_inh, linewidth=2.5)
+    plt.plot(t, v_i1[1][window[0]: window[1]] if window else v_i1[1], linewidth=0.5)
+    plt.plot(t, v_i1[2][window[0]: window[1]] if window else v_i1[2], linewidth=0.5)
 
     plt.figure(figsize=(20, 3))
     plt.title("Detailed look at single excitatory and inhibitory trace in Net 1")
     plt.plot(
-        t[detail_window[0] : detail_window[1]],
+        t_detailed[detail_window[0] : detail_window[1]],
         v_i1[0][detail_window[0] : detail_window[1]],
         c=c_inh,
         linewidth=2.5,
@@ -1006,7 +1007,7 @@ def membrane_potentials_sample(model: dict, detail_window=(900, 1000)):
 
     if model["model_EI"]:
         plt.plot(
-            t[detail_window[0] : detail_window[1]],
+            t_detailed[detail_window[0] : detail_window[1]],
             v_e1[0][detail_window[0] : detail_window[1]],
             c=c_exc,
             linewidth=2.5,
@@ -1021,9 +1022,9 @@ def membrane_potentials_sample(model: dict, detail_window=(900, 1000)):
     plt.title("Network 2", fontsize=14)
     plt.xlabel("Time in [ms]", fontsize=14)
     plt.ylabel("Voltage in [mV]", fontsize=14)
-    plt.plot(t, v_i2[0], c="green", linewidth=0.5)
-    plt.plot(t, v_i2[1], linewidth=2.5)
-    plt.plot(t, v_i2[2], linewidth=0.5)
+    plt.plot(t, v_i2[0][window[0]: window[1]] if window else v_i2[0], c="green", linewidth=0.5)
+    plt.plot(t, v_i2[1][window[0]: window[1]] if window else v_i2[1], linewidth=2.5)
+    plt.plot(t, v_i2[2][window[0]: window[1]] if window else v_i2[2], linewidth=0.5)
 
 
 def population_rates(model: dict, skip: int = None):
@@ -1195,7 +1196,6 @@ def phase_difference(signal_1, signal_2):
 
     :param signal_1:
     :param signal_2:
-    :return:
     """
     # Do not unwrap because we want to have values in range of [-2*pi, 2*pi].
     phase_differences = processing.phase_difference(signal_1, signal_2, unwrap=False)
@@ -1323,7 +1323,7 @@ def heat_map_vis(
     **kwargs,
 ):
     """
-    Minimal interace to plot heat map based on DataFrame input.
+    Minimal interface to plot heat map based on DataFrame input.
     """
     heat_map_pivoted(
         pivot_table=df.pivot_table(
@@ -1377,34 +1377,6 @@ def heat_map_pivoted(
 
     if not ax:
         plt.show()
-
-
-def heat_map(
-    models: List[Dict],
-    x: str = "mean",
-    y: str = "sigma",
-    metric: str = "bandpower",
-    **kwargs,
-):
-    """
-    Plots heat map for noise experiment.
-
-    Setup:
-        x: sigma
-        y: mean
-        z: amplitude
-    """
-    data = _prepare_data(metric, models, x, y)
-    fig = plt.figure(figsize=FIG_SIZE_QUADRATIC)
-
-    df = pd.DataFrame.from_dict(data)
-    df = df.sort_values(by=[x, y])
-
-    heatmap_data = pd.pivot_table(df, values=metric, index=[x], columns=y)
-
-    ax = sns.heatmap(heatmap_data, **kwargs)
-
-    return fig, ax, df
 
 
 def isi_histograms(
@@ -1480,28 +1452,42 @@ def spike_variability_analysis(
     key: str = None,
     mean_voltage: bool = False,
 ):
+    """
+    Visualizes the membrane voltage variability of the second network depending on a cycle of the first network.
+
+    Groups neurons `v2` into two groups.
+    Those that spiked in a time window `t_width` around `t_s` and those that didn't spike in this cycle.
+
+    :param v: voltage traces of first network.
+    :param v2: voltage traces of second network.
+    :param window: time window for plots.
+    :param t_s: cycle time.
+    :param t_width: tuple of (start, end). Defines the window around `t_s`.
+    :param folder: folder to save plot.
+    :param key: file key.
+    :param mean_voltage: if True, plots the mean voltage of both groups.
+    """
     first, second = processing.group_neurons(
         v2, window=window, spike_t=t_s - window[0], t_start=t_width[0], t_end=t_width[1]
     )
 
     fontsize = 12
-
     n_plots = 2
     if mean_voltage:
         n_plots += 1
 
     figsize = (10, n_plots * 2.5)
     fig, axs = plt.subplots(figsize=figsize, nrows=n_plots)
-    # axs[0].set_title(
-    #     f"Voltage traces of neurons in Net 1 - with focus on spike at {t_s} ms",
-    #     fontsize=14,
-    # )
+
+    # Voltage traces of first network
     axs[0].set_xlabel("Time [ms]", fontsize=fontsize)
     axs[0].set_ylabel("Voltage [mV]", fontsize=fontsize)
     axs[0].set_ylim(-70, -40)
+
     for i in range(0, len(v)):
         axs[0].plot(v[i][window[0] : window[1]], linewidth=0.75, c="grey", alpha=0.15)
 
+    # Mark the cycle and the window around the cycle.
     axs[0].axvline(t_s - window[0], color="orange", linestyle="solid", linewidth=3)
     axs[0].axvline(
         t_s - window[0] - t_width[0], color="orange", linestyle="dotted", linewidth=3
@@ -1510,7 +1496,7 @@ def spike_variability_analysis(
         t_s - window[0] + t_width[1], color="orange", linestyle="dotted", linewidth=3
     )
 
-    # axs[1].set_title("Grouped voltage traces of I cells in Net 2", fontsize=fontsize)
+    # Voltage traces of second network
     axs[1].set_xlabel("Time [ms]", fontsize=fontsize)
     axs[1].set_ylabel("Voltage [mV]")
     axs[1].set_ylim(-70, -40)
@@ -1520,15 +1506,12 @@ def spike_variability_analysis(
     for s in second[:100]:
         axs[1].plot(s[window[0] : window[1]], c=c_inh, linewidth=0.5, alpha=0.75)
 
+    # Legend
     exc_patch = mpatches.Patch(color=c_exc, label="Group of spiking neurons")
     inh_patch = mpatches.Patch(color=c_inh, label="Group of suppressed neurons")
     axs[1].legend(handles=[exc_patch, inh_patch])
 
-    # axs[2].set_title(
-    #     "Comparison of mean membrane potential of spiking and non-spiking group",
-    #     fontsize=14,
-    # )
-
+    # Mean Voltage Plot
     if mean_voltage:
         axs[2].set_xlabel("Time [ms]", fontsize=fontsize)
         axs[2].set_ylabel("Voltage [mV]")
@@ -1663,43 +1646,18 @@ def spike_participation_histograms(model):
     )
 
 
-def _prepare_data(metric: str, models: [dict], x: str, y: str):
-    data = {x: [], y: [], metric: []}
-
-    for model in models:
-        # x: mean
-        # y: sigma
-        # z: max_amplitude
-        mean_ = model["ou_mu_mean"]
-        sigma_ = model["ou_mu_sigma"]
-        tau_ = model["ou_mu_tau"]
-
-        max_amplitude, peak_freq = processing.band_power(model)
-
-        if x == "tau":
-            data[x].append(tau_)
-        elif x == "mean":
-            data[x].append(mean_)
-        else:
-            data[x].append(tau_)
-
-        data[y].append(sigma_)
-
-        if metric == "bandpower":
-            value = max_amplitude
-        elif metric == "freq":
-            value = peak_freq
-        else:
-            value = max_amplitude
-
-        data[metric].append(value)
-
-    return data
-
-
 def save_to_file(
     name: str, save: bool = True, key: str = None, folder: str = None, dpi: int = 300
 ):
+    """
+    General purpose method to save a figure as file to disk.
+
+    :param name: name of figure.
+    :param save: if True, saves to disk.
+    :param key: unique key.
+    :param folder: optional folder relative to PLOTS_PATH.
+    :param dpi: defines quality of figure.
+    """
     if save:
         base = f"{name}-{key}.png" if key else f"{name}.png"
         fname = f"{folder}/{base}" if folder else base

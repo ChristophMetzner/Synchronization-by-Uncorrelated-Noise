@@ -24,6 +24,16 @@ The following areas are included:
 def lfp(
     model: dict, duration: int = None, skip: int = None, population: int = 1
 ) -> Tuple:
+    """
+    Computes the local field potential (or population activity) of E and I population of a network.
+
+    :param model: loaded model.
+    :param duration: optional, limit duration.
+    :param skip: ms to skip.
+    :param population: specifies which network to use.
+    :return: (lfp of E pop, lfp of I pop)
+    """
+
     if duration:
         duration = int(duration)
 
@@ -109,6 +119,15 @@ def _lfp(v, N: int) -> np.ndarray:
 
 
 def band_power(model, network: int = 1, granularity: int = 1, skip: int = None):
+    """
+    Computes the max band power and peak frequency of network signal.
+
+    :param model: loaded model.
+    :param network: specifies which network to use.
+    :param granularity: granularity of PSD estimate.
+    :param skip: ms to skip in recording.
+    :return: (max amplitude, peak frequency)
+    """
     lfp = lfp_single_net(model, population=network, skip=skip)
 
     runtime_ = model["runtime"] - skip if skip else model["runtime"]
@@ -242,8 +261,10 @@ def phase_synchronization(signals):
     """
     Computes the average phase synchronization.
 
-    :param signals:
-    :return:
+    Uses the Kuramoto order parameter as snychronization index.
+
+    :param signals: list of signals of same length.
+    :return: synchronization index
     """
     # zero mean
     signals = [s - np.mean(s) for s in signals]
