@@ -1,0 +1,10 @@
+scipy==1.6.0
+brian2==2.4.2
+numba==0.48.0
+PyQt5==5.14.1
+matplotlib==3.1.2
+seaborn==0.11.1
+jupyter==1.0.0
+jupyterlab==3.0.7
+mopet==0.1.6
+brian2tools==0.2.1.1

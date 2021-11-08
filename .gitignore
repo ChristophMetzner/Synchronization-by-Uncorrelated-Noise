@@ -1,2 +1,27 @@
+# Python
 *.pkl
 *.pyc
+*.egg-info
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IntelliJ
+.idea
+
+# VS Code
+.vscode
+
+# Brian2
+brian2_compile
+notebooks/output
+
+# Virtual Environment
+venv
+
+# Output folder for plots
+plots_out
+
+# HD5 Files
+*.h5
+
