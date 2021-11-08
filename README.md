@@ -1,13 +1,18 @@
 # Synchronization by Uncorrelated Noise
 
-This repository contains the source code of the master thesis *Effect of Noise on the Synchronization of Interacting Excitatory-Inhibitory Networks* by Lucas Rebscher.
+This repository contains the source code of the paper [*Synchronization through uncorrelated noise in excitatory-inhibitory networks*](https://doi.org/10.1101/2021.10.29.466430).
 
 ## Relevant Folders
 
 * **synchronization** (python package which contains the complete source code)
-* **notebooks** (contains all jupyter notebooks that utilize the `synchronization` package)
-* **meng_and_riecke** (matlab code snippets provided on request by Meng and Riecke.)
+* **notebooks** (contains jupyter notebooks that utilize the `synchronization` package)
+* **models** (target destination for model files created at the end of a run)
 
+## Relevant Notebooks
+
+* `notebooks/2_nets_ING.ipynb` reproduces **scenario 1**: two all-to-all coupled interacting inhibitory networks.
+* `notebooks/2_nets_PING_all_to_all.ipynb` reproduces **scenario 2**: two all-to-all coupled excitatory-inhibitory networks.
+* `notebooks/2_nets_PING_sparse.ipynb` reproduces **scenario 3**: two sparse random excitatory-inhibitory networks.
 
 ## Development Guide
 
@@ -36,9 +41,5 @@ We recommend installing the [jupyterlab-toc](https://github.com/jupyterlab/jupyt
 By using a TOC extension, reading and editing the notebooks becomes considerably easier.
    
    
-## Notebooks
 
-* `notebooks/2_nets_ING.ipynb` reproduces **scenario 1** of two all-to-all coupled interacting inhibitory networks.
-* `notebooks/2_nets_PING_all_to_all.ipynb` reproduces **scenario 2** of two all-to-all coupled excitatory-inhibitory networks.
-* `notebooks/2_nets_PING_sparse.ipynb` reproduces **scenario 3** of two sparse random excitatory-inhibitory networks.
 
