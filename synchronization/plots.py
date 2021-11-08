@@ -1,11 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import seaborn as sns
 import pandas as pd
 import os
 
-from typing import Tuple, List, Dict
+from typing import Tuple
 from matplotlib import mlab
 from scipy.signal import find_peaks
 
@@ -19,13 +18,17 @@ FIG_SIZE_QUADRATIC = [8, 6]
 FIG_SIZE_PSD = [10, 3]
 
 # Title and Axes Fontsize
-FONTSIZE = 14
+FONTSIZE = 12
+FORMAT = "pdf"
 
 # Colors
-c_exc = "r"
+c_exc = "firebrick"
 c_inh = "midnightblue"
-c_net_1 = "darkorange"
-c_net_2 = "teal"
+c_net_1 = c_exc
+c_net_2 = "orangered"
+c_net_2_inh = "royalblue"
+brown = "#A20025"
+orange = "#FF6347"
 
 ING_FOLDER = "ING"
 
@@ -487,22 +490,18 @@ def _one_dim_exploration(ex, folder: str = None):
     param = list(ex.explore_params.keys())[0]
     legend = []
 
-    linewidth_within = 1.0
-    marker_within = "x"
-
-    linewidth_across = 2.0
-    marker_across = "o"
+    linewidth_within = 1.2
+    linewidth_across = 1.2
 
     alpha = 0.7
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(8, 2.5))
     df = ex.df.sort_values(by=param)
 
     ax.plot(
         df[param],
         df["freq_ratio"],
         linewidth=linewidth_across,
-        marker=marker_across,
         color=c_inh,
     )
     legend.append("Dominant Frequency Ratio")
@@ -511,13 +510,10 @@ def _one_dim_exploration(ex, folder: str = None):
         df[param],
         df["mean_phase_coherence"],
         linewidth=linewidth_across,
-        marker=marker_across,
         color="mediumblue",
     )
     legend.append("Mean Phase Coherence - Networks")
 
-    # We excluded Kuramoto order parameter between networks
-    #   as mean phase coherence captures also delays between networks.
     # if "phase_synchronization" in df:
     #     ax.plot(
     #         df[param],
@@ -532,7 +528,6 @@ def _one_dim_exploration(ex, folder: str = None):
             df[param],
             df["plv_net_1_e"],
             linewidth=linewidth_within,
-            marker=marker_within,
             alpha=alpha,
         )
         legend.append("Kuramoto Order Parameter - Net 1 - E Pop")
@@ -542,7 +537,6 @@ def _one_dim_exploration(ex, folder: str = None):
             df[param],
             df["plv_net_1_i"],
             linewidth=linewidth_within,
-            marker=marker_within,
             alpha=alpha,
         )
         legend.append("Kuramoto Order Parameter - Net 1 - I Pop")
@@ -552,7 +546,6 @@ def _one_dim_exploration(ex, folder: str = None):
             df[param],
             df["plv_net_2_e"],
             linewidth=linewidth_within,
-            marker=marker_within,
             alpha=alpha,
         )
         legend.append("Kuramoto Order Parameter - Net 2 - E Pop")
@@ -562,12 +555,11 @@ def _one_dim_exploration(ex, folder: str = None):
             df[param],
             df["plv_net_2_i"],
             linewidth=linewidth_within,
-            marker=marker_within,
             alpha=alpha,
         )
         legend.append("Kuramoto Order Parameter - Net 2 - I Pop")
 
-    plt.legend(legend, loc=[0.0, 1.0])
+    plt.legend(legend, loc=[0.0, 1.0], ncol=2, fontsize=8)
     ax.set_xlabel("Noise Strength $\sigma^2$")
     ax.set_ylim(0, 1.1)
 
@@ -586,10 +578,12 @@ def plot_results(
     excerpt_x_left: int = 500,
     excerpt_x_right: int = 900,
     psd_group: str = None,
+    psd_combine: bool = False,
     skip: int = 200,
     networks: int = 2,
     folder: str = None,
     save: bool = False,
+    first: bool = False,
 ):
     """
     Plots all relevant figures needed to understand network behavior.
@@ -603,6 +597,7 @@ def plot_results(
     :param model: model dict holding recorded data.
     :param full_raster: if True, raster plot will be shown.
     :param pop_rates: if True displays population rates.
+    :param psd_combine: if True combines PSD network plots into one plot instead of two.
     :param phase_analysis: if True plots phase analysis.
     :param show_lfp: if True plots the LFP surrogate.
     :param raster_right: right limit for raster time axis.
@@ -620,7 +615,7 @@ def plot_results(
         model,
         title=None,
         population=1,
-        fig_size=(5, 3),
+        fig_size=(4, 3),
         x_max=x_max_psd,
         x_min=x_min_psd,
         groups=psd_group,
@@ -628,22 +623,24 @@ def plot_results(
         key="1",
         folder=folder,
         save=save,
+        combine=psd_combine
     )
 
-    if networks > 1:
-        psd(
-            model,
-            title=None,
-            population=2,
-            fig_size=(5, 3),
-            x_max=x_max_psd,
-            x_min=x_min_psd,
-            groups=psd_group,
-            skip=skip,
-            key="2",
-            folder=folder,
-            save=save,
-        )
+    if not psd_combine:
+        if networks > 1:
+            psd(
+                model,
+                title=None,
+                population=2,
+                fig_size=(4, 3),
+                x_max=x_max_psd,
+                x_min=x_min_psd,
+                groups=psd_group,
+                skip=skip,
+                key="2",
+                folder=folder,
+                save=save,
+            )
 
     if show_lfp:
         lfp_nets(model, skip=100, single_net=networks == 1)
@@ -671,30 +668,34 @@ def plot_results(
                 save=save,
             )
 
-    fig, axs = plt.subplots(figsize=(10, 4))
+    fig, axs = plt.subplots(figsize=(6, 4.0), ncols=1, nrows=2, sharey=True)
+    fig.tight_layout()
     raster(
-        title=None,
+        title="Network 1" if first and networks > 1 else None,
         model=model,
         key="exc_net1",
         x_left=excerpt_x_left,
         x_right=excerpt_x_right,
-        ax=axs,
+        ax=axs.flat[0],
         folder=folder,
         save=save,
+        show_x_label=False,
+        legend=first,
     )
 
     if networks > 1:
-        fig, axs = plt.subplots(figsize=(10, 4))
+        # fig, axs = plt.subplots(figsize=(6, 2.0))
         raster(
-            title=None,
+            title="Network 2" if first else None,
             model=model,
             key="exc_net2",
             x_left=excerpt_x_left,
             x_right=excerpt_x_right,
             population=2,
-            ax=axs,
+            ax=axs.flat[1],
             folder=folder,
             save=save,
+            legend=first
         )
 
     if pop_rates:
@@ -798,6 +799,7 @@ def psd(
     save: bool = False,
     groups: str = None,
     fig_size: tuple = None,
+    combine: bool = False,
 ):
     """
     Plots the Power Spectral Density.
@@ -807,7 +809,12 @@ def psd(
     if skip:
         duration -= skip
 
-    lfp1, lfp2 = processing.lfp(model, population=population, skip=skip)
+    if combine:
+        net1_lfp1, net1_lfp2 = processing.lfp(model, population=1, skip=skip)
+        net2_lfp1, net2_lfp2 = processing.lfp(model, population=2, skip=skip)
+    else:
+        net1_lfp1, net1_lfp2 = processing.lfp(model, population=population, skip=skip)
+        net2_lfp1, net2_lfp2 = None, None
 
     # number of data points used in each block for the FTT.
     # Set to number of data points in the input signal.
@@ -819,40 +826,65 @@ def psd(
 
     # NFFT: length of each segment, set here to 1.0.
     # Thus each segment is exactly one data point
-    psd1, freqs = mlab.psd(lfp1, NFFT=nfft, Fs=fs, noverlap=0, window=mlab.window_none)
-    psd2, _ = mlab.psd(lfp2, NFFT=nfft, Fs=fs, noverlap=0, window=mlab.window_none)
+    net1_psd1, freqs = mlab.psd(net1_lfp1, NFFT=nfft, Fs=fs, noverlap=0, window=mlab.window_none)
+    net1_psd2, _ = mlab.psd(net1_lfp2, NFFT=nfft, Fs=fs, noverlap=0, window=mlab.window_none)
+
+    if combine:
+        net2_psd1, _ = mlab.psd(net2_lfp1, NFFT=nfft, Fs=fs, noverlap=0, window=mlab.window_none)
+        net2_psd2, _ = mlab.psd(net2_lfp2, NFFT=nfft, Fs=fs, noverlap=0, window=mlab.window_none)
+
+        net2_psd1[0] = 0.0
+        net2_psd2[0] = 0.0
+    else:
+        net2_psd1, net2_psd2 = None, None
 
     # We multiply by 1000 to get from ms to s.
     freqs = freqs * 1000
 
     # Remove unwanted power at 0 Hz
-    psd1[0] = 0.0
-    psd2[0] = 0.0
+    net1_psd1[0] = 0.0
+    net1_psd2[0] = 0.0
 
+    line_width = 2.0
     fig = plt.figure(figsize=fig_size if fig_size else FIG_SIZE_PSD)
     ax = fig.add_subplot(111)
     ax.set_title(title, fontsize=FONTSIZE)
     ax.set_xlabel("Frequency [Hz]", fontsize=FONTSIZE)
     ax.set_ylabel("Power", fontsize=FONTSIZE)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
 
     if groups == "EXC":
-        ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
-        plt.legend(["Excitatory"])
+        ax.plot(freqs, net1_psd1, "0.75", linewidth=line_width, c=c_net_1 if combine else c_exc)
+
+        if combine:
+            ax.plot(freqs, net2_psd1, "0.75", linewidth=line_width, c=c_net_2)
+            plt.legend(loc=2, frameon=False)
+
+            plt.legend(["E Net 1", "E Net 2"], loc=2, frameon=False)
 
     elif groups == "INH":
-        ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
-        plt.legend(["Inhibitory"])
+        ax.plot(freqs, net1_psd2, "0.75", linewidth=line_width, c=c_inh if combine else c_inh)
+        #plt.legend(["Inhibitory"], loc=2)
+
+        if combine:
+            ax.plot(freqs, net2_psd2, "0.75", linewidth=line_width, c=c_net_2_inh, alpha=0.5)
+            plt.legend(["Net 1", "Net 2"], loc=1, frameon=False)
 
     else:
-        ax.plot(freqs, psd1, "0.75", linewidth=3.0, c=c_exc)
-        ax.plot(freqs, psd2, "0.75", linewidth=3.0, c=c_inh)
-        plt.legend(["Excitatory", "Inhibitory"])
+        ax.plot(freqs, net1_psd1, "0.75", linewidth=line_width, c=c_exc)
+        ax.plot(freqs, net1_psd2, "0.75", linewidth=line_width, c=c_inh)
+        plt.legend(["Excitatory", "Inhibitory"], loc=2, frameon=False)
 
+        if combine:
+            ax.plot(freqs, net2_psd1, "0.75", linewidth=line_width, c=c_exc)
+            ax.plot(freqs, net2_psd2, "0.75", linewidth=line_width, c=c_inh)
+
+    plt.locator_params(axis='y', nbins=6)
     ax.set_xlim([x_min, x_max])
-    ax.set_xticks(range(x_min, x_max + 10, 10))
+    ax.set_xticks(range(x_min, x_max + 10, 20))
 
     save_to_file("psd", save, key, folder)
-
     return fig, ax
 
 
@@ -867,10 +899,13 @@ def raster(
     population: int = 1,
     fig_size: Tuple = None,
     ax=None,
+    show_x_label: bool = True,
+    legend: bool = False,
 ):
     """
     Plots spike rasters.
 
+    :param show_x_label:
     :param model: given model.
     :param title: optional title of plot.
     :param x_left: optional start of x axis.
@@ -883,18 +918,20 @@ def raster(
     :param ax: axis.
     :return: (fig, ax)
     """
-    fig = None
     if not ax:
-        fig = plt.figure(figsize=fig_size if fig_size else (10, 7))
+        fig = plt.figure(figsize=fig_size if fig_size else (10, 9) if title or legend else (10, 7))
         ax = fig.add_subplot(111)
 
     if population == 1:
         s_e = model["net_spikes_e"]
         s_i = model["net_spikes_i1"]
-
+        c_exc = c_net_1
+        inh = c_inh
     else:
         s_e = model["net_spikes_e2"]
         s_i = model["net_spikes_i2"]
+        inh = c_net_2_inh
+        c_exc = c_net_2
 
     if s_e[0].size == 0 and s_i[0].size == 0:
         print("0 size array of spikes, cannot create raster plot.")
@@ -902,25 +939,51 @@ def raster(
 
     if title:
         ax.set_title(title, fontsize=FONTSIZE)
-    ax.set_xlabel("Time [ms]", fontsize=FONTSIZE)
+
+    if show_x_label:
+        ax.set_xlabel("Time [ms]", fontsize=FONTSIZE)
+
     ax.set_ylabel("Neuron Index", fontsize=FONTSIZE)
 
+    handles = [
+        mpatches.Patch(color=inh, label="I", linewidth=0.5),
+    ]
+
     if model["model_EI"]:
-        ax.plot(s_e[1] * 1000, s_e[0], "k.", c=c_exc, markersize="2.0")
+        ax.plot(s_e[1] * 1000, s_e[0], "k.", c=c_exc, markersize="1.0")
+
+        handles.append(mpatches.Patch(color=c_exc, label="E", linewidth=0.5))
 
     ax.plot(
         s_i[1] * 1000,
         s_i[0] + (s_e[0].max() + 1 if s_e[0].size != 0 and model["model_EI"] else 0),
         "k.",
-        c=c_inh,
-        markersize="4.0",
+        c=inh,
+        markersize="1.0",
     )
 
-    ax.set_xlim(left=x_left if x_left else 0, right=x_right)
+    handles.reverse()
+    if legend:
+        ax.legend(
+            handles=handles, 
+            loc=(0.7, 1),
+            ncol=2, 
+            borderaxespad=0,
+            frameon=False
+        )
 
-    plt.tight_layout()
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    ax.set_xlim(left=x_left if x_left else 0, right=x_right)
+    plt.locator_params(axis='y', nbins=6)
+    plt.locator_params(axis='x', nbins=6)
+
+    if not ax:
+        plt.tight_layout(pad=0.1, w_pad=0.1)
+
     save_to_file("raster", save=save, key=key, folder=folder)
-    return fig, ax
+    return ax
 
 
 def lfp_nets(model: dict, single_net: bool = False, skip: int = None):
@@ -1019,9 +1082,9 @@ def membrane_potentials_sample(model: dict, detail_window=(900, 1000), window=(1
         plt.xticks(np.arange(detail_window[0], detail_window[1], 5.0))
 
     plt.figure(figsize=(20, 3))
-    plt.title("Network 2", fontsize=14)
-    plt.xlabel("Time in [ms]", fontsize=14)
-    plt.ylabel("Voltage in [mV]", fontsize=14)
+    plt.title("Network 2", fontsize=FONTSIZE)
+    plt.xlabel("Time in [ms]", fontsize=FONTSIZE)
+    plt.ylabel("Voltage in [mV]", fontsize=FONTSIZE)
     plt.plot(t, v_i2[0][window[0]: window[1]] if window else v_i2[0], c="green", linewidth=0.5)
     plt.plot(t, v_i2[1][window[0]: window[1]] if window else v_i2[1], linewidth=2.5)
     plt.plot(t, v_i2[2][window[0]: window[1]] if window else v_i2[2], linewidth=0.5)
@@ -1090,8 +1153,8 @@ def synaptic_conductance(model: dict, start: int = 100, end: int = None):
     :param model: current model, must contain recorded AMPA and GABA conductances.
     """
     plt.figure(figsize=(20, 5))
-    plt.xlabel("Time in [ms]", fontsize=14)
-    plt.ylabel("Conductance in [nS]", fontsize=14)
+    plt.xlabel("Time in [ms]", fontsize=FONTSIZE)
+    plt.ylabel("Conductance in [nS]", fontsize=FONTSIZE)
     legend = ["GABA Conductance - Net 1"]
 
     print("Mean GABA Conductance - Net 1: ", model["gaba"].mean())
@@ -1146,8 +1209,8 @@ def phases_inter_nets(
         processing.filter(lfp2, lowcut=30, highcut=120),
     )
 
-    duration = 500
-    fig_size = (10, 2.7)
+    duration = 200
+    fig_size = (6, 1.7)
 
     global_order_parameter = processing.order_parameter_over_time((f_lfp1, f_lfp2))
     total_value = np.mean(global_order_parameter)
@@ -1171,9 +1234,18 @@ def phases_inter_nets(
     plt.figure(figsize=fig_size)
     plt.xlabel("Time [ms]", fontsize=FONTSIZE)
     plt.ylabel("Angle", fontsize=FONTSIZE)
-    plt.plot(processing.phase(f_lfp2[skip:duration + skip]), linewidth=1.5, c=c_inh)
-    plt.plot(processing.phase(f_lfp1[skip:duration + skip]), linewidth=1.5, c=c_exc)
-    plt.legend(["Net 1", "Net 2"])
+
+    if processing.is_model_EI(model):
+        c_1 = c_net_1
+        c_2 = c_net_2
+    else:
+        c_1 = c_inh
+        c_2 = c_net_2_inh
+
+    plt.plot(processing.phase(f_lfp1[skip:duration + skip]), linewidth=1.5, c=c_1)
+    plt.plot(processing.phase(f_lfp2[skip:duration + skip]), linewidth=1.5, c=c_2)
+
+    plt.locator_params(axis='x', nbins=6)
 
     if folder:
         save_to_file(name="phases", folder=folder)
@@ -1396,22 +1468,48 @@ def isi_histograms(
     :param folder: relative output folder.
     """
     if model["model_EI"]:
-        fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(10, 6), sharex='all', sharey='all')
+        fig, axs = plt.subplots(ncols=1, nrows=2, figsize=(4, 6), sharex='all', sharey='all')
     else:
-        fig, axs = plt.subplots(ncols=2, figsize=(10, 4), sharex='all', sharey='all')
+        fig, axs = plt.subplots(ncols=1, figsize=(10, 4), sharex='all', sharey='all')
 
     ax = _isi_histogram(axs.flat[0], model["isi_I"], bins, filter_outlier, color=c_inh)
-    ax.set_title("Inhibitory Population of Network 1")
+    ax.set_title("Network 1")
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
 
-    ax = _isi_histogram(axs.flat[1], model["isi_I2"], bins, filter_outlier, color=c_inh)
-    ax.set_title("Inhibitory Population of Network 2")
+    ax = _isi_histogram(axs.flat[1], model["isi_I2"], bins, filter_outlier, color=c_net_2_inh)
 
     if "model_EI" not in model or model["model_EI"]:
-        ax = _isi_histogram(axs.flat[2], model["isi_E"], bins, filter_outlier)
-        ax.set_title("Excitatory Population of Network 1")
+        ax = _isi_histogram(axs.flat[0], model["isi_E"], bins, filter_outlier, color=c_exc)
+        ax.set_title("Network 1")
 
-        ax = _isi_histogram(axs.flat[3], model["isi_E2"], bins, filter_outlier)
-        ax.set_title("Excitatory Population of Network 2")
+        ax = _isi_histogram(axs.flat[1], model["isi_E2"], bins, filter_outlier, color=c_net_2)
+        ax.set_title("Network 2")
+
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    axs.flat[0].legend(
+        handles=[
+            mpatches.Patch(color=c_net_1, label="E", linewidth=0.5),
+            mpatches.Patch(color=c_inh, label="I", linewidth=0.5),
+        ],
+        # bbox_to_anchor=(0, 1.02, 1, 0.2), 
+        loc="upper right", 
+        ncol=2, 
+        borderaxespad=0,
+        frameon=False
+    )
+
+    axs.flat[1].legend(
+        handles=[
+            mpatches.Patch(color=c_net_2, label="E", linewidth=0.5),
+            mpatches.Patch(color=c_net_2_inh, label="I", linewidth=0.5),
+        ],
+        loc="upper right", 
+        ncol=2, 
+        borderaxespad=0,
+        frameon=False
+    )
 
     plt.tight_layout()
     save_to_file("ISI", key=key, folder=folder)
@@ -1435,10 +1533,10 @@ def _isi_histogram(ax, isi, bins: int, filter_outlier: bool, color: str = c_exc)
     ax.set_title("ISI Histogram")
     ax.set_xlabel("Time [ms]")
     ax.set_ylabel("Count")
-    ax.hist(isi, bins=bins, color=color)
+    ax.hist(isi, bins=bins, color=color, alpha=0.7)
     ax.axvline(avg_E, color="orange", linestyle="dashed", linewidth=2.0)
     min_ylim, max_ylim = ax.get_ylim()
-    ax.text(avg_E * 1.1, max_ylim * 0.7, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=12)
+    ax.text(avg_E * 1.1, max_ylim * 0.7, r"$\mu$: {:.2f} ms".format(avg_E), fontsize=FONTSIZE)
     return ax
 
 
@@ -1471,21 +1569,27 @@ def spike_variability_analysis(
         v2, window=window, spike_t=t_s - window[0], t_start=t_width[0], t_end=t_width[1]
     )
 
-    fontsize = 12
-    n_plots = 2
+    fontsize = FONTSIZE
+    n_plots = 3
     if mean_voltage:
         n_plots += 1
 
-    figsize = (10, n_plots * 2.5)
+    figsize = (8, n_plots * 2.0)
     fig, axs = plt.subplots(figsize=figsize, nrows=n_plots)
 
+    # color_spiking = 'royalblue'
+    color_skipping = 'lightskyblue'
+
     # Voltage traces of first network
-    axs[0].set_xlabel("Time [ms]", fontsize=fontsize)
-    axs[0].set_ylabel("Voltage [mV]", fontsize=fontsize)
+    # axs[0].set_xlabel("Time [ms]", fontsize=fontsize)
+    # axs[0].set_ylabel("Voltage [mV]")
     axs[0].set_ylim(-70, -40)
+    axs[0].set_xlim(0, 60)
+    axs[0].spines['right'].set_visible(False)
+    axs[0].spines['top'].set_visible(False)
 
     for i in range(0, len(v)):
-        axs[0].plot(v[i][window[0] : window[1]], linewidth=0.75, c="grey", alpha=0.15)
+        axs[0].plot(v[i][window[0] : window[1] + 1], linewidth=0.75, c=c_inh, alpha=0.25)
 
     # Mark the cycle and the window around the cycle.
     axs[0].axvline(t_s - window[0], color="orange", linestyle="solid", linewidth=3)
@@ -1495,21 +1599,35 @@ def spike_variability_analysis(
     axs[0].axvline(
         t_s - window[0] + t_width[1], color="orange", linestyle="dotted", linewidth=3
     )
+    
+    axs[0].text(t_s - window[0] - t_width[0], -38, "gamma cycle", color="orange", weight="bold")
+    axs[0].set_title("I neurons (Net 1)", fontsize=fontsize, loc='left')
 
-    # Voltage traces of second network
-    axs[1].set_xlabel("Time [ms]", fontsize=fontsize)
-    axs[1].set_ylabel("Voltage [mV]")
+    # Voltage traces of second network - spiking
+    # axs[1].set_xlabel("Time [ms]", fontsize=fontsize)
+    axs[1].set_ylabel("Voltage [mV]", fontsize=fontsize)
     axs[1].set_ylim(-70, -40)
+    axs[1].set_xlim(0, 60)
+    axs[1].spines['right'].set_visible(False)
+    axs[1].spines['top'].set_visible(False)
 
     for f in first[:100]:
-        axs[1].plot(f[window[0] : window[1]], c=c_exc, linewidth=0.5, alpha=0.75)
-    for s in second[:100]:
-        axs[1].plot(s[window[0] : window[1]], c=c_inh, linewidth=0.5, alpha=0.75)
+        axs[1].plot(f[window[0] : window[1] + 1], c=c_net_2_inh, linewidth=0.5, alpha=0.75)
 
-    # Legend
-    exc_patch = mpatches.Patch(color=c_exc, label="Group of spiking neurons")
-    inh_patch = mpatches.Patch(color=c_inh, label="Group of suppressed neurons")
-    axs[1].legend(handles=[exc_patch, inh_patch])
+    axs[1].set_title("I neurons (Net 2) - firing in cycle ", fontsize=fontsize, loc='left')
+
+    # Voltage traces of second network - non-spiking
+    axs[2].set_xlabel("Time [ms]", fontsize=fontsize)
+    # axs[2].set_ylabel("Voltage [mV]")
+    axs[2].set_ylim(-70, -40)
+    axs[2].set_xlim(0, 60)
+    axs[2].spines['right'].set_visible(False)
+    axs[2].spines['top'].set_visible(False)
+    axs[2].set_title("I neurons (Net 2) - skipping cycle ", fontsize=fontsize, loc='left')
+
+    for s in second[:100]:
+        axs[2].plot(s[window[0] : window[1] + 1], c=color_skipping, linewidth=0.5, alpha=0.75)
+
 
     # Mean Voltage Plot
     if mean_voltage:
@@ -1518,17 +1636,17 @@ def spike_variability_analysis(
         axs[2].set_ylim(-70, -40)
         if first:
             axs[2].plot(
-                np.mean(first, axis=0)[window[0] : window[1]], c=c_exc, linewidth=3.0
+                np.mean(first, axis=0)[window[0] : window[1] + 1], c=c_exc, linewidth=3.0
             )
 
         if second:
             axs[2].plot(
-                np.mean(second, axis=0)[window[0] : window[1]], c=c_inh, linewidth=3.0
+                np.mean(second, axis=0)[window[0] : window[1] + 1], c=c_inh, linewidth=3.0
             )
 
         axs[2].legend(["Group of spiking neurons", "Group of suppressed neurons"])
 
-    save_to_file("spike_variability", folder=folder, key=key, dpi=150)
+    save_to_file("spike_variability", folder=folder, key=key)
 
 
 def spike_participation_histograms_per_network(model, network: int = 1, show_detection: bool = False):
@@ -1597,10 +1715,10 @@ def spike_participation_histograms(model):
     """
     The LFP signal for EI population should be split up into LFP of E and LFP of I.
     Or then simply the average membrane potentials of both cell types.
-    
+
     It does not make sense ot use the current LFP and find spike matches for E and I when they fire not at the same time.
     This must be considered in further analysis...
-    
+
     Also phase analysis methods should only use then LFP of E cells.
     """
     lfp = processing.lfp_single_net(model)
@@ -1647,7 +1765,7 @@ def spike_participation_histograms(model):
 
 
 def save_to_file(
-    name: str, save: bool = True, key: str = None, folder: str = None, dpi: int = 300
+    name: str, save: bool = True, key: str = None, folder: str = None, dpi: int = 600
 ):
     """
     General purpose method to save a figure as file to disk.
@@ -1659,11 +1777,14 @@ def save_to_file(
     :param dpi: defines quality of figure.
     """
     if save:
-        base = f"{name}-{key}.png" if key else f"{name}.png"
+        base = f"{name}-{key}" if key else f"{name}"
         fname = f"{folder}/{base}" if folder else base
 
         if folder:
             os.makedirs(constants.PLOTS_PATH + "/" + folder, exist_ok=True)
 
         plt.tight_layout()
-        plt.savefig(f"{constants.PLOTS_PATH}/{fname}", dpi=dpi, bbox_inches="tight")
+        plt.savefig(f"{constants.PLOTS_PATH}/{fname}.{FORMAT}", dpi=dpi, bbox_inches="tight", format=FORMAT)
+
+        # Always as PNG
+        plt.savefig(f"{constants.PLOTS_PATH}/{fname}.png", dpi=dpi, bbox_inches="tight", format="png")

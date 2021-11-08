@@ -20,6 +20,9 @@ The following areas are included:
 
 """
 
+def is_model_EI(model):
+    return "model_EI" not in model or model["model_EI"]
+
 
 def lfp(
     model: dict, duration: int = None, skip: int = None, population: int = 1
@@ -73,7 +76,7 @@ def lfp_single_net(
     :return: lfp over time.
     :rtype: ndarray
     """
-    model_ei = "model_EI" not in model or model["model_EI"]
+    model_ei = is_model_EI(model)
     if population == 1:
         i_identifier = "v_all_neurons_i1"
         e_identifier = "v_all_neurons_e"
